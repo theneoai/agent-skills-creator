@@ -610,7 +610,7 @@ metadata:
 
 ## 参考标准 (Reference Standards)
 
-- **agentskills.io**: Skill 格式规范 v2.1.0 (100% 兼容性)
+- **agentskills.io**: Skill 格式规范 v2.1.0 (100% 兼容性, 10K+ skills)
 - **ISO 9001:2015**: 质量管理体系 (85% 采用率, 1.5M 认证)
 - **ISO 27001**: 信息安全管理体系 (45% adoption, 2M certificates)
 - **TOGAF 10.0**: 企业架构框架 (60% 市场份额)
