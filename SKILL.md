@@ -500,6 +500,7 @@ Example: 评估 git-commit Skill，使用 F1≥0.90 阈值，MRR≥0.85，MultiT
 | E7 | API 限流 | 指数退避 | - | Medium | < 30s |
 | E7 | API 限流 | 指数退避 | - | Medium | < 30s |
 | E7 | API 限流 | 指数退避 | - | Medium | < 30s |
+| E7 | API 限流 | 指数退避 | - | Medium | < 30s |
 
 ### 恢复策略详情
 

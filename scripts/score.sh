@@ -1,15 +1,15 @@
 
-# ── Dimension 7: Readability (5%) ──────────────────────────────────────────
-RD_SCORE=5
-RD_NOTES=""
-HAS_SECTIONS=$(grep -c "^## " "$SKILL_FILE" || true)
-HAS_PARAGRAPHS=$(grep -c "^$" "$SKILL_FILE" || true)
-AVG_LINE_LEN=$(awk '{sum+=length; count++} END {print sum/count}' "$SKILL_FILE")
-LONG_LINES=$(awk -F: 'length($2) > 120 {count++} END {print count+0}' "$SKILL_FILE")
+# ── Dimension 10: Actionability (5%) ─────────────────────────────────────
+AC_SCORE=5
+AC_NOTES=""
+HAS_COMMANDS=$(grep -cE "```bash|```sh|\$ [a-z]|run |execute |bash " "$SKILL_FILE" || true)
+HAS_STEPS=$(grep -cE "Step [0-9]|Phase [0-9]|[0-9]+\." "$SKILL_FILE" || true)
+HAS_DECISIONS=$(grep -ciE "if.*then|when.*choose|select.*option|decision" "$SKILL_FILE" || true)
+HAS_RECOVERY=$(grep -ciE "fallback|retry|recover|rollback|reset" "$SKILL_FILE" || true)
 
-[[ $HAS_SECTIONS -ge 5 ]] && RD_SCORE=$((RD_SCORE+2)) && RD_NOTES+="well-structured "
-[[ $HAS_SECTIONS -ge 10 ]] && RD_SCORE=$((RD_SCORE+1)) && RD_NOTES+="detailed-toc "
-[[ $LONG_LINES -lt 5 ]] && RD_SCORE=$((RD_SCORE+1)) && RD_NOTES+="readable-lines "
-[[ $AVG_LINE_LEN -lt 100 ]] && RD_SCORE=$((RD_SCORE+1)) && RD_NOTES+="concise "
-[[ $RD_SCORE -gt 10 ]] && RD_SCORE=10
-dim_score "Readability" 5 "$RD_SCORE" "$RD_NOTES"
+[[ $HAS_COMMANDS -ge 2 ]] && AC_SCORE=$((AC_SCORE+2)) && AC_NOTES+="has-commands "
+[[ $HAS_STEPS -ge 5 ]] && AC_SCORE=$((AC_SCORE+2)) && AC_NOTES+="step-by-step "
+[[ $HAS_DECISIONS -gt 0 ]] && AC_SCORE=$((AC_SCORE+1)) && AC_NOTES+="decision-points "
+[[ $HAS_RECOVERY -gt 0 ]] && AC_SCORE=$((AC_SCORE+1)) && AC_NOTES+="recovery-path "
+[[ $AC_SCORE -gt 10 ]] && AC_SCORE=10
+dim_score "Actionability" 5 "$AC_SCORE" "$AC_NOTES"
