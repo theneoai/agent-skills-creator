@@ -9,13 +9,14 @@ license: MIT
 compatibility: "python>=3.9, git, agentskills.io, mcp, opencode, oh-my-opencode"
 metadata:
   author: grok-team
-  version: "1.4.0"
-  tags: [meta, creator, lifecycle, quality, evaluation, training, multi-agent, collaboration, ci-cd, security, pdca, workflow]
+  version: "1.5.0"
+  tags: [meta, creator, lifecycle, quality, evaluation, training, multi-agent, collaboration, ci-cd, security, pdca, workflow, mcp]
   preferred_agents: ["opencode", "claude-code", "cursor"]
   training_mode: "multi-turn"
   multi_agent_mode: "parallel + hierarchical + debate + crew"
   evaluation_models: ["claude-sonnet-4", "gemini-2.5-pro"]
   quality_standard: "ISO 9001:2015"
+  security_standard: "OWASP AST10"
 ---
 
 # Agent Skills Creator（Agent Skills 工程化创建器）
@@ -121,7 +122,7 @@ metadata:
 
 ---
 
-## §4. Examples
+## §4. Examples (场景示例)
 
 ## Example 1: 创建新 Skill (CREATE 模式)
 **用户输入**：
@@ -253,7 +254,39 @@ metadata:
 
 ---
 
-## §5. Error Handling
+## Example 8: Skill 版本管理 (VERSION 模式)
+**用户输入**：
+```
+列出当前所有 Skill 版本
+```
+
+**期望行为**：
+1. 扫描 skills/ 目录
+2. 读取每个 SKILL.md 的 version 字段
+3. 生成版本清单
+
+**Done**: 返回 JSON 格式版本列表
+**Fail**: 目录不存在
+
+---
+
+## Example 9: MCP 集成
+**用户输入**：
+```
+为 Skill 添加 MCP 工具集成
+```
+
+**期望行为**：
+1. 检测 MCP 可用工具
+2. 生成工具映射配置
+3. 更新 SKILL.md metadata
+
+**Done**: 生成 mcp-config.json
+**Fail**: MCP 服务不可用
+
+---
+
+## §5. Error Handling (错误处理)
 
 ### Anti-Patterns (风险识别)
 
@@ -313,6 +346,12 @@ metadata:
 2. 建议修复方案
 3. 阻塞发布
 
+### Recovery Metrics (恢复指标)
+
+- 平均恢复时间 (MTTR): < 60s
+- 成功率: > 95%
+- 误报率: < 5%
+
 ---
 
 ## §6. Quality Gates (质量门禁)
@@ -340,12 +379,13 @@ metadata:
 ## §7. Red Lines (安全红线 - 禁止操作)
 
 - 严禁生成未经验证的 Skill（必须先通过 EvalSet, F1≥0.90）
-- 严禁硬编码密钥或跳过安全审查 (OWASP AST10)
+- 严禁硬编码密钥或跳过安全审查 (OWASP AST10, CWE-798)
 - 严禁直接覆盖生产 Skill（必须生成 diff 并备份）
 - 严禁执行破坏性 git 操作（仅建议命令）
 - 必须尊重当前 Agent 的会话历史，不得随意重置上下文
 
 **风险等级**: 违反任一红线 → BLOCKED (CERTIFIED 失败)
+**审计要求**: 所有操作记录日志保留 90 天
 
 ---
 
@@ -353,12 +393,12 @@ metadata:
 
 ### 模式选择矩阵
 
-| 场景 | 推荐模式 | 原因 | 性能提升 |
-|------|----------|------|----------|
-| 评估+优化+审查并行 | Parallel | 速度优先 | 3x 加速 |
-| 复杂任务先规划 | Hierarchical | 质量优先 | 15% 准确率提升 |
-| 关键决策验证 | Debate | 可靠性优先 | 20% 错误减少 |
-| 端到端复杂流程 | Crew | 角色化协作 | 2.5x 效率提升 |
+| 场景 | 推荐模式 | 原因 | 性能提升 | 适用规模 |
+|------|----------|------|----------|----------|
+| 评估+优化+审查并行 | Parallel | 速度优先 | 3x 加速 | 2-4 Agent |
+| 复杂任务先规划 | Hierarchical | 质量优先 | 15% 准确率提升 | 3-5 Agent |
+| 关键决策验证 | Debate | 可靠性优先 | 20% 错误减少 | 2-3 Agent |
+| 端到端复杂流程 | Crew | 角色化协作 | 2.5x 效率提升 | 4+ Agent |
 
 ### 详细说明
 
@@ -396,6 +436,6 @@ metadata:
 
 ---
 
-**Version:** 1.4.0  
+**Version:** 1.5.0  
 **Updated:** 2026-03-26  
-**Lines:** ~360
+**Lines:** ~420
