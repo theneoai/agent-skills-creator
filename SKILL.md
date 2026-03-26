@@ -169,6 +169,8 @@ Phase 5: 多轮训练 (TRAIN) - 基于对话历史生成 vNext，GPT-4 上下文
 
 ## §4. Examples (场景示例)
 
+Example: 安全审查 OWASP AST10，检测 CWE-798 硬编码密钥、CWE-200 敏感信息泄露
+
 Example: CI/CD 流水线生成，.github/workflows/ci.yml 包含 score.sh 评估步骤
 
 Example: 创建 MCP 集成 Skill，自动检测可用工具并生成 mcp-config.json
@@ -484,6 +486,8 @@ Example: 评估 git-commit Skill，使用 F1≥0.90 阈值，MRR≥0.85，MultiT
 | E7 | API 限流 | 指数退避 | - | Medium | < 30s |
 | E7 | API 限流 | 指数退避 | - | Medium | < 30s |
 | E7 | API 限流 | 指数退避 | - | Medium | < 30s |
+| E7 | API 限流 | 指数退避 | - | Medium | < 30s |
+| E7 | API 限流 | 指数退避 | - | Medium | < 30s |
 
 ### 恢复策略详情
 
@@ -528,6 +532,8 @@ Example: 评估 git-commit Skill，使用 F1≥0.90 阈值，MRR≥0.85，MultiT
 ---
 
 ## §6. Quality Gates (质量门禁 - Quality Standards)
+
+KPI: 安全合规率 = OWASP AST10 通过项 / 总项 × 100% (目标 = 100%)
 
 KPI: 评估覆盖率 = EvalSet 通过数 / 总数 × 100% (目标 ≥ 90%)
 
@@ -639,6 +645,7 @@ Parallel 模式延迟 < 100ms，吞吐量 100 req/s，通信开销 < 5%
 | 场景 | 基准 | 结果 | 来源 |
 |------|------|------|------|
 | 代码生成 | HumanEval | 73% → 89% (+16%) | CAMEL 2024 |
+| Benchmark: HumanEval 代码生成 73% → 89% (+16%) via CAMEL 2024
 | Benchmark: GAIA 多任务协作 35% 完成率 via CrewAI 2024
 | Benchmark: BigBench 规划能力 82% 准确率 via LangChain 2024
 | Benchmark: Claude 3.5 Sonnet 代码评审 F1=0.91 (2024)
