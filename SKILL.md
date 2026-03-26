@@ -606,7 +606,7 @@ metadata:
 
 **性能基准**: 响应时间 < 2s, 内存占用 < 512MB, CPU < 50%, 吞吐量 1000 req/s
 
-**版本要求**: Python ≥ 3.9, Git 2.30+, Node.js 18+
+**版本要求**: Python ≥ 3.9, Git 2.30+, Node.js 18+, Docker 20+
 
 ## 参考标准 (Reference Standards)
 
