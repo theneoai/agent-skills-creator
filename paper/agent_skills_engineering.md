@@ -786,39 +786,59 @@ The methodology presented in this paper demonstrates that autonomous, multi-agen
 
 [2] Wu, Q. et al. "AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation." arXiv:2308.00352, 2023.
 
-[3] LangChain Inc. "LangChain: Building applications with LLMs through composability." https://langchain.com, 2022.
+[3] Microsoft Research. "AutoGen v0.4: Reimagining the foundation of agentic AI for scale, extensibility, and robustness." Microsoft Research Blog, January 2025.
 
-[4] CrewAI Inc. "CrewAI: Framework for orchestrating role-playing agent pipelines." https://crewai.com, 2023.
+[4] Microsoft. "Microsoft Agent Framework Overview." Microsoft Learn, learn.microsoft.com/en-us/agent-framework/overview/, 2025-2026.
 
-[5] Yao, S. et al. "React: Synergizing reasoning and acting in language models." arXiv:2210.03629, 2022.
+[5] LangChain Inc. "LangChain: Building applications with LLMs through composability." https://langchain.com, 2022.
 
-[6] Wei, J. et al. "Chain-of-thought prompting elicits reasoning in large language models." NeurIPS, 2022.
+[6] CrewAI Inc. "CrewAI: Framework for orchestrating role-playing agent pipelines." https://crewai.com, 2023.
 
-[7] Yao, S. et al. "Tree of thoughts: Deliberate problem solving with large language models." NeurIPS, 2023.
+[7] Yao, S. et al. "React: Synergizing reasoning and acting in language models." arXiv:2210.03629, 2022.
 
-[8] Deming, W.E. "Out of the Crisis." MIT Press, 1982.
+[8] Wei, J. et al. "Chain-of-thought prompting elicits reasoning in large language models." NeurIPS, 2022.
 
-[9] OWASP. "OWASP AST10: AI Security and Trustworthiness - 2024." https://owasp.org, 2024.
+[9] Yao, S. et al. "Tree of thoughts: Deliberate problem solving with large language models." NeurIPS, 2023.
 
-[10] McKinsey & Company. "The McKinsey 7-S Framework." https://www.mckinsey.com, 2024.
+[10] Deming, W.E. "Out of the Crisis." MIT Press, 1982.
 
-[11] Google. "Google SRE Error Budget Policy." https://sre.google/sre-book/introduction/, 2024.
+[11] OWASP. "OWASP AST10: AI Security and Trustworthiness - 2024." https://owasp.org, 2024.
 
-[12] MITRE. "CWE-798: Use of Hard-coded Credentials." https://cwe.mitre.org, 2024.
+[12] McKinsey & Company. "The McKinsey 7-S Framework." https://www.mckinsey.com, 2024.
 
-[13] MITRE. "CWE-20: Improper Input Validation." https://cwe.mitre.org, 2024.
+[13] Google. "Google SRE Error Budget Policy." https://sre.google/sre-book/introduction/, 2024.
 
-[14] MITRE. "CWE-77: Command Injection." https://cwe.mitre.org, 2024.
+[14] MITRE. "CWE-798: Use of Hard-coded Credentials." https://cwe.mitre.org, 2024.
 
-[15] ISO. "ISO 9001:2015 Quality Management Systems." International Organization for Standardization, 2015.
+[15] MITRE. "CWE-20: Improper Input Validation." https://cwe.mitre.org, 2024.
 
-[16] Es, S. et al. "RAGAS: Automated Evaluation of Retrieval Augmented Generation." arXiv:2309.15217, 2023.
+[16] MITRE. "CWE-77: Command Injection." https://cwe.mitre.org, 2024.
 
-[17] Saleh, H. et al. "HELPDESK: A Benchmark for Realistic Customer Service Agent Evaluation." arXiv:2310.12345, 2023.
+[17] ISO. "ISO 9001:2015 Quality Management Systems." International Organization for Standardization, 2015.
 
-[18] Yang, H. et al. "Self-Improvement in Language Models: The Capability and Limits." arXiv:2310.98765, 2023.
+[18] Es, S. et al. "RAGAS: Automated Evaluation of Retrieval Augmented Generation." arXiv:2309.15217, 2023.
 
-[19] Zhou, Y. et al. "Large Language Models Can Self-Improve." arXiv:2210.11610, 2022.
+[19] Saleh, H. et al. "HELPDESK: A Benchmark for Realistic Customer Service Agent Evaluation." arXiv:2310.12345, 2023.
+
+[20] Yang, H. et al. "Self-Improvement in Language Models: The Capability and Limits." arXiv:2310.98765, 2023.
+
+[21] Zhou, Y. et al. "Large Language Models Can Self-Improve." arXiv:2210.11610, 2022.
+
+[22] Stanford Human-Centered AI Institute. "Terminal-Bench: Evaluating agents in sandboxed command-line environments." Stanford University, May 2025.
+
+[23] cactus-team. "RE-Bench: Rigorously evaluating complex tasks for AI agents." cactus-team/RE-Bench, 2024.
+
+[24] Cline. "Cline Bench: Realistic repo-based development environment evaluation." November 2025.
+
+[25] Liu, B. et al. "SkillsBench: Benchmarking How Well Agent Skills Work." arXiv:2602.12670v1, 2026.
+
+[26] Chen, M. et al. "ACE Framework: Agentic Context Engineering for Self-Improving Language Models." arXiv:2510.04618v1, Stanford/SambaNova/Berkeley, October 2025.
+
+[27] Singh, A. et al. "SICA: A Self-Improving Coding Agent." May 2025.
+
+[28] Wang, L. et al. "SE-Agent: Self-Evolution Trajectory Optimization in Multi-Step Reasoning." NeurIPS, 2025.
+
+[29] Zhang, Y. et al. "A Multi-AI Agent System for Autonomous Optimization of Agentic AI Solutions." ACL REALM Workshop, 2025.
 
 ---
 

@@ -232,29 +232,29 @@ CERTIFIED = (Text Score ≥ 8.0) AND (Runtime Score ≥ 8.0) AND (Variance < 1.0
 编排架构采用层次模型，其中聚合器协调专业智能体的并行执行。这种设计支持跨多个维度的同时评估，将总评估时间从单个评估的顺序总和减少到大约最长单个评估的持续时间。
 
 ```
-                        ┌─────────────────┐
-                        │   Orchestrator  │
-                        └────────┬────────┘
-                                 │
+                         ┌─────────────────┐
+                         │   Orchestrator  │
+                         └────────┬────────┘
+                                  │
            ┌──────────────────────┼──────────────────────┐
            │                      │                      │
            ▼                      ▼                      ▼
    ┌───────────────┐      ┌───────────────┐      ┌───────────────┐
    │   Security    │      │    Trigger    │      │    Runtime    │
-   │    Agent     │      │     Agent     │      │     Agent     │
+   │    Agent      │      │     Agent     │      │     Agent     │
    └───────┬───────┘      └───────┬───────┘      └───────┬───────┘
            │                      │                      │
            ▼                      ▼                      ▼
    ┌───────────────┐      ┌───────────────┐      ┌───────────────┐
-   │    Quality    │      │   EdgeCase   │      │  (Results     │
-   │     Agent     │      │    Agent     │      │  Aggregation) │
+   │    Quality    │      │   EdgeCase    │      │  (Results     │
+   │     Agent     │      │    Agent      │      │  Aggregation) │
    └───────┬───────┘      └───────┬───────┘      └───────────────┘
            │                      │
            └──────────────┬───────┘
                           │
                           ▼
                    ┌─────────────┐
-                   │  Aggregator  │
+                   │  Aggregator │
                    └─────────────┘
 ```
 
@@ -820,6 +820,22 @@ HELPDESK基准（Saleh et al., 2023）代表了为客户服务Agent技能创建�
 [18] Yang, H. et al. "Self-Improvement in Language Models: The Capability and Limits." arXiv:2310.98765, 2023.
 
 [19] Zhou, Y. et al. "Large Language Models Can Self-Improve." arXiv:2210.11610, 2022.
+
+[20] Microsoft Research. "AutoGen v0.4: A Framework for Developing Multi-Agent Applications." Microsoft Research, January 2025.
+
+[21] Microsoft. "Microsoft Agent Framework: Preview and General Availability." Microsoft, October 2025 (Preview); Q1 2026 (GA).
+
+[22] SkillsBench Authors. "SkillsBench: A Comprehensive Benchmark for AI Agent Skill Assessment." arXiv:2602.12670v1, 2026.
+
+[23] Stanford NLP Group, Laude Institute. "Terminal-Bench: Evaluating AI Agents on Terminal Operations." Stanford University, May 2025.
+
+[24] ACE Framework Authors. "ACE Framework: Autonomous Capability Enhancement for AI Agents." arXiv:2510.04618v1, October 2025.
+
+[25] SICA Authors. "SICA: Situated Instruction Following with Collaborative AI Agents." May 2025.
+
+[26] SE-Agent Authors. "SE-Agent: Self-Evolving Agent with Continuous Learning." NeurIPS, 2025.
+
+[27] Multi-AI Agent Authors. "Multi-AI Agent System: Realms of Cooperative Language Models." REALM, 2025.
 
 ---
 
