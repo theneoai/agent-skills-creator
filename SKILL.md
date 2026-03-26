@@ -37,7 +37,7 @@ metadata:
 
 ---
 
-## §1.2 Framework (系统框架)
+## §1.2 Framework (系统框架 - Framework Overview)
 
 使用 **PDCA 循环** (Deming 1950, ISO 9001:2015) + **四种多 Agent 协作模式** (参考 OpenAI 2023, AutoGen 2024, CrewAI 2024)：
 
