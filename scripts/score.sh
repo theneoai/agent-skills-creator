@@ -1,17 +1,15 @@
 
-# ── Dimension 8: Completeness (5%) ─────────────────────────────────────────
-CM_SCORE=5
-CM_NOTES=""
-HAS_SKILL_MD=$(grep -c "SKILL.md" "$SKILL_FILE" || true)
-HAS_EVALS=$(grep -ci "evals\|eval.sh\|evaluation" "$SKILL_FILE" || true)
-HAS_SCRIPTS=$(grep -ci "scripts\|script" "$SKILL_FILE" || true)
-HAS_REFS=$(grep -ci "references\|ref" "$SKILL_FILE" || true)
-HAS_TRIGGERS=$(grep -ci "trigger\|when.*require\|when.*ask" "$SKILL_FILE" || true)
+# ── Dimension 9: Consistency (5%) ──────────────────────────────────────────
+CN_SCORE=5
+CN_NOTES=""
+UNIQUE_VERSIONS=$(grep -oP 'version: "[^"]*"' "$SKILL_FILE" | sort -u | wc -l)
+UNIQUE_AUTHORS=$(grep -oP 'author: "[^"]*"' "$SKILL_FILE" | sort -u | wc -l)
+SECTION_COUNT=$(grep -c "^## §" "$SKILL_FILE" || true)
+HAS_VERSION_HISTORY=$(grep -ci "changelog\|version.*history\|v[0-9]" "$SKILL_FILE" || true)
 
-[[ $HAS_SKILL_MD -gt 0 ]] && CM_SCORE=$((CM_SCORE+1)) && CM_NOTES+="self-referential "
-[[ $HAS_EVALS -gt 0 ]] && CM_SCORE=$((CM_SCORE+2)) && CM_NOTES+="eval-defined "
-[[ $HAS_SCRIPTS -gt 0 ]] && CM_SCORE=$((CM_SCORE+1)) && CM_NOTES+="scripts-defined "
-[[ $HAS_REFS -gt 0 ]] && CM_SCORE=$((CM_SCORE+1)) && CM_NOTES+="references-defined "
-[[ $HAS_TRIGGERS -gt 0 ]] && CM_SCORE=$((CM_SCORE+1)) && CM_NOTES+="triggers-defined "
-[[ $CM_SCORE -gt 10 ]] && CM_SCORE=10
-dim_score "Completeness" 5 "$CM_SCORE" "$CM_NOTES"
+[[ $UNIQUE_VERSIONS -eq 1 ]] && CN_SCORE=$((CN_SCORE+2)) && CN_NOTES+="single-version "
+[[ $UNIQUE_AUTHORS -ge 1 ]] && CN_SCORE=$((CN_SCORE+1)) && CN_NOTES+="author-defined "
+[[ $SECTION_COUNT -ge 8 ]] && CN_SCORE=$((CN_SCORE+2)) && CN_NOTES+="complete-sections "
+[[ $HAS_VERSION_HISTORY -gt 0 ]] && CN_SCORE=$((CN_SCORE+1)) && CN_NOTES+="version-tracked "
+[[ $CN_SCORE -gt 10 ]] && CN_SCORE=10
+dim_score "Consistency" 5 "$CN_SCORE" "$CN_NOTES"
