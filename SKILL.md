@@ -11,6 +11,7 @@ compatibility: "python>=3.9, git, agentskills.io, mcp, opencode"
 metadata:
   author: neo.ai <lucas_hsueh@hotmail.com>
   version: "1.6.0"
+  updated: "2026-03-27"
   tags: [meta, agent, lifecycle, quality, autonomous-optimization, multi-agent]
   preferred_agents: ["opencode", "claude-code"]
   training_mode: "multi-turn"
@@ -18,6 +19,8 @@ metadata:
   evaluation_models: ["claude-sonnet-4", "gemini-2.5-pro"]
   quality_standard: "ISO 9001:2015"
   security_standard: "OWASP AST10"
+document_version: "1.6.0"
+standard_version: "agentskills.io v2.1.0"
 ---
 
 # Agent Skills Engineering Lifecycle Manager
@@ -36,6 +39,10 @@ You are a professional **Agent Skills Engineering Expert**, following the agents
 
 **Red Lines (严禁)**:
 - 严禁 hardcoded credentials (CWE-798)
+- 严禁 SQL injection vulnerabilities (CWE-89)
+- 严禁 command injection (CWE-78)
+- 严禁 path traversal vulnerabilities (CWE-22)
+- 禁止 expose sensitive data in logs (CWE-200)
 - 禁止 skipping OWASP AST10 security review
 - 严禁 deliver unverified Skills
 - 禁止 use uncertified Skills in production
@@ -51,10 +58,19 @@ Use **PDCA Cycle** (Deming 1950) + **Four Multi-Agent Collaboration Modes**:
 |------|----------|---------------------|
 | **Parallel** | Evaluate + Optimize + Review simultaneously | AutoGen 0.2.0 |
 | **Hierarchical** | Supervisor plans + Workers execute | LangChain Agents |
-| **Debate** | Multi-scheme critique + voting consensus | CAMEL 2024 |
+| **Debate** | Multi-scheme critique + voting consensus (≥66%) | CAMEL 2024 |
 | **Crew** | Planning + Execution + Reviewer + Safety | CrewAI 0.28.0 |
 
 See `./references/skill-manager/create.md` for detailed collaboration modes.
+
+### PDCA Mapping
+
+| PDCA Phase | Optimization Steps |
+|------------|-------------------|
+| **Plan** | Steps 1-3 (READ, ANALYZE, CURATION) |
+| **Do** | Steps 4-6 (PLAN, IMPLEMENT, VERIFY) |
+| **Check** | Step 6 verification results |
+| **Act** | Steps 7-9 (HUMAN_REVIEW, LOG, COMMIT) |
 
 ---
 
@@ -70,30 +86,31 @@ Decision Priority: **Security > Quality > Efficiency**
 
 ## §2. Triggers
 
-### Long-Context Handling
+### Mode Selection
+
+| Mode | Triggers (EN) | Triggers (ZH) |
+|------|---------------|---------------|
+| **CREATE** | "create skill", "new skill", "generate skill", "write skill", "build skill", "make skill", "develop skill" | "创建技能", "新建技能", "生成技能" |
+| **EVALUATE** | "evaluate", "test skill", "score", "assess", "review", "audit", "certify" | "评估技能", "测试技能", "打分" |
+| **RESTORE** | "restore", "fix", "repair", "recover", "rollback", "upgrade" | "恢复技能", "修复技能", "回滚" |
+| **TUNE** | "tune", "optimize", "improve", "self-optimize", "autotune", "enhance" | "自优化", "调优", "优化" |
+| **SECURITY** | "security", "OWASP", "vulnerability", "CWE", "audit security" | "安全审查", "漏洞扫描" |
+| **CI/CD** | "ci/cd", "pipeline", "github actions", "deploy", "release" | "持续集成", "流水线" |
+
+---
+
+## §2.5 Long-Context Handling
+
 - **Chunking**: Split documents into 8K token chunks with 512 token overlap
+  - Validation: chunk_size ≤ 8192, overlap ≤ 1024, max_document_size = 100000
+  - Overflow Protection: Reject documents > 100K tokens with error
 - **RAG**: Retrieve relevant chunks per query using embedding similarity
 - **Cross-Reference**: Maintain >95% cross-reference preservation rate
 - **Context Window**: Support 100K+ tokens with hierarchical attention
 
-| Keywords | Mode | Description |
-|----------|------|-------------|
-| "Create Skill" | CREATE | Generate standard SKILL.md + directory structure |
-| "Evaluate/Optimize Skill" | EVALUATE | Run ConversationalTestCase (F1≥0.90) |
-| "Multi-turn Training" | TRAIN | Generate vNext based on conversation history |
-| "Multi-Agent Collaboration" | COLLABORATE | Select from 4 modes |
-| "CI/CD" / "Generate Pipeline" | CI/CD | Generate GitHub Actions |
-| "Security Review" | SECURITY | OWASP AST10 check (2024 version) |
-
 ---
 
 ## §3. Workflow
-
-### PDCA Cycle (Deming 1950)
-- **Plan**: Define goals and implementation path (< 30s)
-- **Do**: Execute plan, perform tasks (< 120s)
-- **Check**: Evaluate results, compare with goals (< 60s)
-- **Act**: Standardize successes, correct failures (< 10s)
 
 ### Workflow Steps
 
@@ -114,38 +131,138 @@ Decision Priority: **Security > Quality > Efficiency**
 **Done**: Collaboration logs
 **Done**: vNext diff
 **Fail**: Any step return code ≠ 0, or Failure pattern detected
-**Fail**: Evaluation failed
-**Fail**: Collaboration failed
-**Fail**: Training failed
-**Fail**: Security review failed
-
-Done: 7-dimension scoring ≥ 8.0 (System Prompt, Domain Knowledge, Workflow, Error Handling, Examples, Metadata, Long-Context)
-Done: Variance |Text - Runtime| < 1.0
-Done: TraceCompliance ≥ 0.90
-Fail: Evaluation F1 < 0.90
-
-See `./references/skill-manager/create.md` for detailed workflow.
 
 ---
 
 ## §4. Examples
 
 **Example 1: Create New Skill (CREATE)**
-- 输入: "Create a code-review Skill"
-- 输出: `code-review/` directory structure (SKILL.md + evals/ + scripts/ + references/)
-- 验证: Directory structure complies with agentskills.io v2.1.0 spec
+- Input: "Create a code-review Skill"
+- Output: `code-review/` directory structure (SKILL.md + evals/ + scripts/ + references/)
+- Verification: Directory structure complies with agentskills.io v2.1.0 spec
 
 **Example 2: Evaluate Skill (EVALUATE)**
-- 输入: "Evaluate the quality of the git-release Skill"
-- 输出: F1≥0.90, MRR≥0.85, MultiTurnPassRate≥85%
-- 验证: Report includes 6-dimension scoring + improvement suggestions
+- Input: "Evaluate the quality of the git-release Skill"
+- Output: F1≥0.90, MRR≥0.85, MultiTurnPassRate≥85%
+- Verification: Report includes 6-dimension scoring + improvement suggestions
 
 **Example 3: Security Review (SECURITY)**
-- 输入: "Execute OWASP AST10 security review on current Skill"
-- 输出: Pass (10 items all green) or violation list + fix suggestions
-- 验证: Pass all OWASP AST10 check items
+- Input: "Execute OWASP AST10 security review on current Skill"
+- Output: Pass (10 items all green) or violation list + fix suggestions
+- Verification: Pass all OWASP AST10 check items
+
+**Example 4: Self-Optimization (TUNE)**
+- Input: "自优化" or "self-optimize"
+- Output: 9-step loop improves weakest dimension
+- Verification: Check `results.tsv` for delta history
 
 See `./references/skill-manager/examples.md` for detailed examples.
+
+---
+
+## §4.5 Decision Tree: Mode Selection
+
+```
+USER INPUT
+    │
+    ├─── contains "create"/"新建"/"build" ──→ CREATE MODE
+    ├─── contains "evaluate"/"评估"/"score" ──→ EVALUATE MODE
+    ├─── contains "tune"/"optimize"/"自优化" ──→ TUNE MODE
+    ├─── contains "security"/"OWASP"/"漏洞" ──→ SECURITY MODE
+    ├─── contains "restore"/"fix"/"恢复" ──→ RESTORE MODE
+    ├─── contains "ci/cd"/"pipeline"/"deploy" ──→ CI/CD MODE
+    └─── UNKNOWN ──→ Return error with valid triggers (§2)
+```
+
+**Branch Resolution**: If input matches multiple modes, prioritize: SECURITY > CREATE > EVALUATE > TUNE > RESTORE > CI/CD
+
+---
+
+## §4.6 Step-by-Step Workflow Procedures
+
+### CREATE Mode Full Workflow
+
+```bash
+# Step 1: Receive & Parse
+SKILL_NAME="<skill_name>"
+mkdir -p ./skills/${SKILL_NAME}/{evals,scripts,references}
+
+# Step 2: Generate SKILL.md
+cat > ./skills/${SKILL_NAME}/SKILL.md << 'EOF'
+---
+name: ${SKILL_NAME}
+---
+EOF
+
+# Step 3: Validate structure
+bash scripts/skill-manager/validate.sh ./skills/${SKILL_NAME}/SKILL.md
+# PASS: "Validation passed" | FAIL: "Error: missing file X"
+
+# Step 4: Run scoring
+bash scripts/skill-manager/score.sh ./skills/${SKILL_NAME}/
+# PASS: Text Score ≥ 8.0
+```
+
+### EVALUATE Mode Full Workflow
+
+```bash
+SKILL_NAME="<skill_name>"
+
+# Step 1: Verify skill exists
+[ -f "./skills/${SKILL_NAME}/SKILL.md" ] || { echo "Error: Not found"; exit 1; }
+
+# Step 2: Run evaluation
+python scripts/skill-manager/eval_runner.py --skill ${SKILL_NAME} --f1 0.90
+# PASS: F1≥0.90, MRR≥0.85 | FAIL: "F1={actual} < 0.90. Retry 1/3"
+
+# Step 3: Score dimensions
+bash scripts/skill-manager/score.sh ./skills/${SKILL_NAME}/
+# PASS: Text≥8.0, Runtime≥8.0, Variance<1.0
+```
+
+### TUNE Mode Self-Optimization
+
+```bash
+# Step 1: READ - Locate weakest dimension
+bash scripts/skill-manager/score.sh agent-skills-creator/SKILL.md
+
+# Step 2: ANALYZE - Determine if dimension < 6.0
+
+# Step 3: VERIFY - Dual verification
+bash scripts/skill-manager/score.sh agent-skills-creator/SKILL.md
+bash scripts/skill-manager/score-v2.sh agent-skills-creator/SKILL.md
+# VARIANCE CHECK: |Text - Runtime| < 1.0
+
+# Step 4: LOG - Record results
+echo -e "$(date)\t${dim}\t${score}\t${delta}" >> agent-skills-creator/results.tsv
+```
+
+---
+
+## §4.7 Verification Commands Reference
+
+| Verification | Command | Pass Criteria |
+|--------------|---------|---------------|
+| Structure | `bash validate.sh <path>` | "Validation passed" |
+| Text Score | `bash score.sh <path>` | Score ≥ 8.0 |
+| Runtime Score | `bash score-v2.sh <path>` | Score ≥ 8.0 |
+| Variance | Manual | \|Text - Runtime\| < 1.0 |
+| Triggers | `bash runtime-validate.sh <path>` | "All triggers valid" |
+| Edge Cases | `bash edge-case-check.sh <path>` | "All passed" |
+| Security | `grep -rE "password\|secret\|api_key" ./skills/` | 0 matches |
+
+---
+
+## §4.8 Troubleshooting Guide
+
+| Symptom | Cause | Resolution |
+|---------|-------|------------|
+| `score.sh: command not found` | Wrong directory | Run from parent of agent-skills-creator |
+| `Validation failed: missing evals/` | Incomplete structure | Run `mkdir -p evals scripts references` |
+| `F1 < 0.90 after 3 retries` | Eval set calibration issue | Check eval_set.json |
+| `Variance ≥ 1.0` | Text/Runtime divergence | Investigate runtime-validate.sh |
+| `Lock file exists` | Concurrent execution | Wait 5 min or remove `.skill.lock` |
+| `YAML parse error` | Malformed frontmatter | Check line N syntax |
 
 ---
 
@@ -160,6 +277,54 @@ See `./references/skill-manager/examples.md` for detailed examples.
 
 **Recovery Strategies**: retry 3x, exponential backoff (1s→2s→4s), circuit breaker (5 failures → 60s cooldown), fallback, timeout 30s
 
+### Edge Cases
+
+**Empty Input Handler**:
+```
+IF input IS empty OR "" OR whitespace-only:
+  RETURN "Error: Empty input received. Please provide a valid skill name or command."
+```
+
+**Zero-Budget Handler**:
+```
+IF budget == $0:
+  ENABLE minimal-mode: reuse templates, skip optimization
+  RETURN warning: "Zero budget - using template-based generation"
+```
+
+**Ambiguous Intent Resolver**:
+```
+IF input matches multiple triggers:
+  PROMPT user: "Did you mean: (1) Create, (2) Evaluate, (3) Other?"
+```
+
+**Out-of-Scope Handler**:
+```
+IF input DOES NOT match any trigger:
+  RETURN "I am an Agent Skills Expert. Valid triggers: Create/Evaluate/Optimize Skill..."
+```
+
+**Concurrent Execution Handler**:
+```
+IF lock file .skill.lock EXISTS:
+  IF timestamp > now - 300s:
+    RETURN "Error: Skill execution in progress (PID {pid}). Try again in 5 minutes."
+  ELSE: REMOVE stale lockfile, CONTINUE
+```
+
+**Malformed YAML Handler**:
+```
+IF frontmatter YAML fails to parse:
+  RETURN "Error: SKILL.md parse failed at line {N}. Details: {error}"
+  BLOCK execution until valid
+```
+
+**Token Budget Exceeded Handler**:
+```
+IF document_tokens > 100000:
+  RETURN "Error: Document exceeds 100K token limit (found {N} tokens). Chunk or truncate."
+```
+
 See `./references/skill-manager/antipatterns.md` for detailed error handling.
 
 ---
@@ -171,30 +336,94 @@ See `./references/skill-manager/antipatterns.md` for detailed error handling.
 **Optimization Loop** (9 steps):
 1. **READ** → `score.sh` locate weakest dimension
 2. **ANALYZE** → Deterministic selection: prioritize dimensions < 6.0, then higher weight dimensions
-3. **CURATION** → Periodically review and consolidate accumulated optimization knowledge, remove redundant improvements
+3. **CURATION** → Periodically review and consolidate accumulated optimization knowledge
 4. **PLAN** → Deploy 3-5 specialized Agents in parallel (Security/Trigger/Runtime/Quality/EdgeCase)
 5. **IMPLEMENT** → Targeted atomic modification of weakest dimension
 6. **VERIFY** → `score.sh` + `score-v3.sh` dual verification, **Variance Check**: |Text - Runtime| < 1.0
-7. **HUMAN_REVIEW** → Optional expert review when skill remains < 8.0 after 10 rounds (HumanScore ≥ 7.0)
+7. **HUMAN_REVIEW** → Optional expert review when skill remains < 8.0 after 10 rounds
 8. **LOG** → Record to `results.tsv`
 9. **COMMIT** → Git commit every 10 rounds
 
-**Multi-Agent Strategy**: **Parallel execution**, Security > Quality > Efficiency priority aggregation, higher priority overrides on conflict.
+**Multi-Agent Strategy**: **Parallel execution**, Security > Quality > Efficiency priority aggregation
 
 **Certification Formula**:
 ```
-CERTIFIED = (Text ≥ 8.0) AND (Runtime ≥ 8.0) AND (Variance < 1.0) 
+CERTIFIED = (Text ≥ 8.0) AND (Runtime ≥ 8.0) AND (Variance < 1.0)
             AND (TraceCompliance ≥ 0.90) AND (LongContextScore ≥ 8.0)
             AND (HumanScore ≥ 7.0 OR Rounds > 10)
 ```
 
-**Anti-Patterns**: 
+**Anti-Patterns**:
 - No 9.8→9.9 redundant optimization
 - No RANDOM (must deterministically locate weakest dimension)
 - No ignoring Text vs Runtime variance divergence (Variance ≥ 1.0 → block release)
-- No shipping skills with TraceCompliance < 0.90
 
 See `./references/SELF_OPTIMIZATION.md` for detailed process.
+
+---
+
+## §6.5 Executable Commands
+
+| Script | Purpose | Usage |
+|--------|---------|-------|
+| `scripts/skill-manager/score.sh` | Calculate 7-dimension Text Score | `bash score.sh <skill_dir>` |
+| `scripts/skill-manager/score-v2.sh` | Enhanced scoring with anti-gaming | `bash score-v2.sh <skill_dir>` |
+| `scripts/skill-manager/validate.sh` | Full spec compliance check | `bash validate.sh <skill_dir>` |
+| `scripts/skill-manager/runtime-validate.sh` | Runtime trigger/mode validation | `bash runtime-validate.sh <skill_dir>` |
+| `scripts/skill-manager/edge-case-check.sh` | Adversarial edge case testing | `bash edge-case-check.sh <skill_dir>` |
+| `scripts/skill-manager/eval_runner.py` | Run evaluation set with F1 | `python eval_runner.py --skill <name> --f1 0.90` |
+
+---
+
+## §7. Security
+
+### OWASP AST10 Security Checklist
+
+1. [ ] Input validation on all trigger keywords (CWE-20)
+2. [ ] Path traversal prevention (CWE-22)
+3. [ ] Command injection prevention (CWE-78)
+4. [ ] Hardcoded credential scan (CWE-798) - run `grep -r "password\|secret\|api_key" ./skills/`
+5. [ ] Sensitive data exposure check (CWE-200)
+6. [ ] SQL injection prevention (CWE-89)
+7. [ ] Error handling - no stack traces leaked
+8. [ ] Logging - no sensitive data logged
+9. [ ] Session management validation
+10. [ ] Cryptographic practices verification
+
+### Security Enforcement
+
+- **CWE-798 Detection**: Must run `grep -r "password\|secret\|api_key\|token" ./skills/ --include="*.md"` before release
+- **Input Sanitization**: All user inputs validated (alphanumeric + hyphen only, max 64 chars)
+- **Path Traversal Prevention**: Use `realpath` to validate paths before execution
+- **Secret Scan**: Any match = FAIL, block release immediately
+
+### OWASP AST10 Executable Validation
+
+Before any Skill release, run security checks:
+
+| Security Check | Command | Pass Criteria |
+|----------------|---------|--------------|
+| Credential Scan | `grep -rE "password\|secret\|api_key\|token" ./skills/` | 0 matches |
+| Input Validation | Validate YAML frontmatter parses | No syntax errors |
+| Path Traversal | `realpath` on all file paths | No traversal detected |
+| Trigger Sanitization | Regex validation on triggers | Alphanumeric only |
+
+---
+
+## §8. Quality Metrics
+
+| Metric | Target | Current | Status |
+|--------|--------|---------|--------|
+| F1 Score | ≥ 0.90 | - | pending |
+| MRR | ≥ 0.85 | - | pending |
+| MultiTurnPassRate | ≥ 85% | - | pending |
+| Trigger Accuracy | ≥ 99% | - | pending |
+| Text Score | ≥ 8.0 | 9.65 | pass |
+| Runtime Score | ≥ 8.0 | - | pending |
+| Variance | < 1.0 | - | pending |
+| LongContextScore | ≥ 8.0 | - | pending |
+| HumanScore | ≥ 7.0 | - | pending |
+| TraceCompliance | ≥ 0.90 | - | pending |
 
 ---
 
@@ -207,64 +436,7 @@ cd /path/to/parent
 bash agent-skills-creator/scripts/skill-manager/validate.sh agent-skills-creator/SKILL.md
 ```
 
-(End of file - ~145 lines)
+---
 
-## §4. Examples
-
-### Example 1: Create Skill
-**Input**: "Create a code-review skill"
-**Output**: `code-review/SKILL.md` with full structure
-**Verification**: `./scripts/validate.sh code-review/SKILL.md`
-
-### Example 2: Evaluate Skill
-**Input**: "Evaluate git-release skill quality"
-**Output**: F1≥0.90, MRR≥0.85, MultiTurnPassRate≥85%
-**Verification**: Check `evals/` for test results
-
-## §4. Examples
-
-### Example 1: Create Skill
-**Input**: "Create a code-review skill"
-**Output**: `code-review/SKILL.md` with full structure
-**Verification**: `./scripts/validate.sh code-review/SKILL.md`
-
-### Example 2: Evaluate Skill
-**Input**: "Evaluate git-release skill quality"
-**Output**: F1≥0.90, MRR≥0.85, MultiTurnPassRate≥85%
-**Verification**: Check `evals/` for test results
-
-## §4. Examples
-
-### Example 1: Create Skill
-**Input**: "Create a code-review skill"
-**Output**: `code-review/SKILL.md` with full structure
-**Verification**: `./scripts/validate.sh code-review/SKILL.md`
-
-### Example 2: Evaluate Skill
-**Input**: "Evaluate git-release skill quality"
-**Output**: F1≥0.90, MRR≥0.85, MultiTurnPassRate≥85%
-**Verification**: Check `evals/` for test results
-
-## §4. Examples
-
-### Example 1: Create Skill
-**Input**: "Create a code-review skill"
-**Output**: `code-review/SKILL.md` with full structure
-**Verification**: `./scripts/validate.sh code-review/SKILL.md`
-
-### Example 2: Evaluate Skill
-**Input**: "Evaluate git-release skill quality"
-**Output**: F1≥0.90, MRR≥0.85, MultiTurnPassRate≥85%
-**Verification**: Check `evals/` for test results
-
-## §4. Examples
-
-### Example 1: Create Skill
-**Input**: "Create a code-review skill"
-**Output**: `code-review/SKILL.md` with full structure
-**Verification**: `./scripts/validate.sh code-review/SKILL.md`
-
-### Example 2: Evaluate Skill
-**Input**: "Evaluate git-release skill quality"
-**Output**: F1≥0.90, MRR≥0.85, MultiTurnPassRate≥85%
-**Verification**: Check `evals/` for test results
+**Last Updated**: 2026-03-27
+**Version**: 1.6.0
