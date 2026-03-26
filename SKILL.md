@@ -566,38 +566,6 @@ bash agent-skills-creator/scripts/skill-manager/validate.sh agent-skills-creator
 
 ---
 
-## §8.5 Benchmark Results
-
-| Benchmark | Baseline | Multi-Agent | Delta |
-|-----------|----------|-------------|-------|
-| HumanEval pass@1 | 76.3% | 85.2% | +8.9% |
-| MMLU accuracy | 72.1% | 79.4% | +7.3% |
-| GAIA average | 38.2% | 52.7% | +14.5% |
-| BIG-bench hard | 61.4% | 73.8% | +12.4% |
-
-### Execution Time
-
-| Operation | Target | Actual |
-|-----------|--------|--------|
-| eval_runner.py | < 45s | 31.2s |
-| validate.sh | < 10s | 6.4s |
-| score.sh | < 15s | 9.8s |
-
----
-
-## §8.6 Quantitative Metadata
-
-| Field | Value |
-|-------|-------|
-| example_count | 47 |
-| test_case_count | 156 |
-| verification_frequency | 14 days |
-| review_cycle_days | 90 |
-| optimization_rounds | 20 |
-| agent_deployment_count | 8 |
-
----
-
 **Last Updated**: 2026-03-27
 **Version**: 1.6.0
 
