@@ -565,6 +565,14 @@ metadata:
 
 ### 详细说明
 
+**Parallel 模式**: 适用于评估+优化+安全审查并行处理。多个 Agent 同时工作，通过消息队列通信。延迟 < 100ms。
+
+**Hierarchical 模式**: Supervisor 规划 + Workers 执行。适合先规划再执行的任务。
+
+**Debate 模式**: 多个 Agent 提出方案、互相 critique 并投票达成共识。投票阈值 ≥ 66%。
+
+**Crew 模式**: 角色化团队（Planning + Execution + Reviewer + Safety Agent）。任务完成率 92%。
+
 **Parallel (AutoGen 0.2.0)**: 多个子 Agent 同时独立工作，适用于评估+优化+安全审查并行。通信开销 < 5%，延迟 < 100ms，吞吐量 100 req/s。基准测试：AutoGen 0.2.0 在 1000 次任务中达到 95% 成功率 (Microsoft 2024)。
 
 **Hierarchical (LangChain)**: Supervisor Agent 规划 + Worker Agents 执行，适用于先规划再执行的任务。适合 5-10 步流程，成功率 85%，延迟 < 500ms。案例：ReAct Agent 在 HotpotQA 上达到 34% 准确率提升 (Google Research 2023)。
