@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.pyc
+.ruff_cache/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.tox/
+dist/
+build/
+*.egg
+
+# Logs
+*.log
+.autotuner.log
+logs/
+*.tsv
+results.tsv
+
+# Backups
+*.backup
+*.bak
+*~
+
+# Temporary
+*.tmp
+temp/
+.cache/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
