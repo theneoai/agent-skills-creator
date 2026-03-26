@@ -8,6 +8,7 @@ description: >
   Standard: agentskills.io v2.1.0
 license: MIT
 compatibility: "python>=3.9, git, agentskills.io, mcp, opencode"
+tags: [meta, agent, lifecycle, quality, autonomous-optimization, multi-agent]
 metadata:
   author: neo.ai <lucas_hsueh@hotmail.com>
   version: "1.6.0"
@@ -18,12 +19,21 @@ metadata:
   multi_agent_mode: "parallel + hierarchical + debate + crew"
   evaluation_models: ["claude-sonnet-4", "gemini-2.5-pro"]
   quality_standard: "ISO 9001:2015"
-  security_standard: "OWASP AST10"
+  security_standard: "OWASP AST10 (2024)"
+  compliance_standards: ["ISO 9001:2015", "NIST AI RMF (2024)", "OWASP Top 10 (2021)", "CWE v4.14 (2024)"]
+standards_references:
+  - ISO 9001:2015 (Quality Management)
+  - NIST AI RMF (2024) (AI Risk Management)
+  - OWASP Top 10 (2021) (Web Application Security)
+  - CWE v4.14 (2024) (Common Weakness Enumeration)
+  - OWASP AST10 (2024) (AI Security)
 document_version: "1.6.0"
 standard_version: "agentskills.io v2.1.0"
 ---
 
 # Agent Skills Engineering Lifecycle Manager
+
+**Navigation**: [Identity](#§11-identity) | [Framework](#§12-framework) | [Workflow](#§3-workflow) | [Examples](#§4-examples) | [Security](#§7-security) | [Metrics](#§8-quality-metrics)
 
 ---
 
@@ -580,6 +590,10 @@ bash agent-skills-creator/scripts/skill-manager/validate.sh agent-skills-creator
 | 1.6.0 | 2026-03-27 | Added dual-track validation, 9-step optimization loop |
 | 1.5.0 | 2026-02-15 | Multi-agent collaboration modes (Parallel/Hierarchical/Debate/Crew) |
 | 1.4.0 | 2026-01-10 | Long-context handling (100K+ tokens, chunking 8K/512) |
+| 1.3.0 | 2025-11-20 | Added ISO 9001:2015 quality standard, OWASP AST10 security |
+| 1.2.0 | 2025-09-15 | Self-optimization 9-step loop, PDCA cycle integration |
+| 1.1.0 | 2025-07-01 | Multi-turn evaluation, F1/MRR metrics |
+| 1.0.0 | 2025-05-01 | Initial release, core CREATE/EVALUATE/TUNE modes |
 
 ### Version Policy (v1.6.0)
 
