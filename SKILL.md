@@ -232,3 +232,15 @@ bash agent-skills-creator/scripts/skill-manager/validate.sh agent-skills-creator
 **Input**: "Evaluate git-release skill quality"
 **Output**: F1≥0.90, MRR≥0.85, MultiTurnPassRate≥85%
 **Verification**: Check `evals/` for test results
+
+## §4. Examples
+
+### Example 1: Create Skill
+**Input**: "Create a code-review skill"
+**Output**: `code-review/SKILL.md` with full structure
+**Verification**: `./scripts/validate.sh code-review/SKILL.md`
+
+### Example 2: Evaluate Skill
+**Input**: "Evaluate git-release skill quality"
+**Output**: F1≥0.90, MRR≥0.85, MultiTurnPassRate≥85%
+**Verification**: Check `evals/` for test results
