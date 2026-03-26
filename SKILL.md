@@ -243,12 +243,12 @@ echo -e "$(date)\t${dim}\t${score}\t${delta}" >> agent-skills-creator/results.ts
 
 | Verification | Command | Pass Criteria |
 |--------------|---------|---------------|
-| Structure | `bash validate.sh <path>` | "Validation passed" |
-| Text Score | `bash score.sh <path>` | Score ≥ 8.0 |
-| Runtime Score | `bash score-v2.sh <path>` | Score ≥ 8.0 |
-| Variance | Manual | \|Text - Runtime\| < 1.0 |
-| Triggers | `bash runtime-validate.sh <path>` | "All triggers valid" |
-| Edge Cases | `bash edge-case-check.sh <path>` | "All passed" |
+| Structure | `bash scripts/skill-manager/validate.sh ./skills/<skill>/SKILL.md` | "Validation passed" |
+| Text Score | `bash scripts/skill-manager/score.sh ./skills/<skill>/` | Score ≥ 8.0 |
+| Runtime Score | `bash scripts/skill-manager/score-v2.sh ./skills/<skill>/` | Score ≥ 8.0 |
+| Variance | `bash score.sh && bash score-v2.sh` | \|Text - Runtime\| < 1.0 |
+| Triggers | `bash scripts/skill-manager/runtime-validate.sh ./skills/<skill>/` | "All triggers valid" |
+| Edge Cases | `bash scripts/skill-manager/edge-case-check.sh ./skills/<skill>/` | "All passed" |
 | Security | `grep -rE "password\|secret\|api_key" ./skills/` | 0 matches |
 
 ---
@@ -424,6 +424,7 @@ WEAKEST: Executability (8.0)
 | 4. PLAN | Deploy 4 agents in parallel | Agents dispatched |
 | 5. IMPLEMENT | Add §4.6 bash exit codes + §4.8 troubleshooting | Changes applied |
 | 6. VERIFY | score.sh: 8.4 (+0.4), Variance: 0.1 | PASS |
+| 7. HUMAN_REVIEW | Skip (score 8.4 ≥ 8.0 threshold) | Conditional pass |
 | 8. LOG | Record to results.tsv | Recorded |
 | 9. COMMIT | Git commit | Committed |
 
@@ -513,7 +514,7 @@ Before any Skill release, run security checks:
 
 ---
 
-## Validation
+## §8.10 Validation
 
 When running validate.sh, execute from the **parent directory**:
 
