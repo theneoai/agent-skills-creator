@@ -18,11 +18,11 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC
 log() { echo "[$(date '+%H:%M:%S')] $1" | tee -a "$LOG_FILE"; }
 
 get_score() {
-    bash "$SCRIPT_DIR/skill-manager/score.sh" "$SKILL_FILE" 2>/dev/null | grep "Text Score" | sed -E 's/.*([0-9]+\.[0-9]+)\/10.*/\1/'
+    bash "$SCRIPT_DIR/skill-manager/score-v2.sh" "$SKILL_FILE" 2>/dev/null | grep "TOTAL SCORE:" | awk '{print $3}' | cut -d'/' -f1
 }
 
 get_weakest() {
-    bash "$SCRIPT_DIR/skill-manager/score.sh" "$SKILL_FILE" 2>/dev/null | grep -E "^  [A-Za-z].* [0-9]+/10" | sed 's|/.*||' | awk '{print $NF, $0}' | sort -n | head -1 | awk '{for(i=2;i<=NF;i++) printf "%s ", $i; print ""}'
+    bash "$SCRIPT_DIR/skill-manager/score-v2.sh" "$SKILL_FILE" 2>/dev/null | grep -E "^  [A-Za-z].* [0-9]+\.[0-9]/10" | sed 's|[0-9]\.[0-9]/10.*||' | awk '{print $2, $1}' | sort -n | head -1 | awk '{$1=""; print $0}' | sed 's/^ //'
 }
 
 get_runtime_score() {
