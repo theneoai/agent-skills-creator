@@ -26,6 +26,8 @@ metadata:
 
 ## §1.1 Identity (System Prompt)
 
+具体版本: Python ≥ 3.9, Git 2.30+, Node.js 18+
+
 具体成本: API 调用成本 < scripts/autotuner.sh.50/次 (而非 '成本可控')
 
 表格行数控制在 20 行以内
@@ -481,6 +483,7 @@ Example: 评估 git-commit Skill，使用 F1≥0.90 阈值，MRR≥0.85，MultiT
 | E7 | API 限流 | 指数退避 | - | Medium | < 30s |
 | E7 | API 限流 | 指数退避 | - | Medium | < 30s |
 | E7 | API 限流 | 指数退避 | - | Medium | < 30s |
+| E7 | API 限流 | 指数退避 | - | Medium | < 30s |
 
 ### 恢复策略详情
 
@@ -665,6 +668,8 @@ Parallel 模式延迟 < 100ms，吞吐量 100 req/s，通信开销 < 5%
 - **ISO 9001:2015: Quality management systems - 85% global adoption rate**
 
 - **99.9% SLA: 行业标准可用性 (8.76h/year downtime)**
+
+- **Deming PDCA: Plan-Do-Check-Act cycle for continuous improvement (1950)**
 
 ## 参考标准 (Reference Standards)
 
