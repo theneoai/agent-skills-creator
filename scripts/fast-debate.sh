@@ -299,8 +299,8 @@ main() {
         if (( stuck_rounds >= 20 )); then
             echo ""
             log "Stuck for $stuck_rounds rounds, trying random improvement..."
-            improve_domain_knowledge
-            improve_examples
+            improve_domain_knowledge || true
+            improve_examples || true
             stuck_rounds=0
         fi
         
