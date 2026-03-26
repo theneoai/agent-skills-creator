@@ -58,7 +58,7 @@ metadata:
 
 ---
 
-## §1.3 Thinking (决策框架 - Thinking Process)
+## §1.3 Thinking (决策框架 - Thinking Process Model)
 
 决策优先级：**安全 > 质量 > 效率**
 
