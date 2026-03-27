@@ -6,8 +6,8 @@ description: >
 license: MIT
 metadata:
   author: theneoai <lucas_hsueh@hotmail.com>
-  version: "1.6.0"
-  updated: "2026-03-27"
+  version: "1.8.0"
+  updated: "2026-03-28"
   tags: [meta, agent, lifecycle, quality, autonomous-optimization, multi-agent]
   preferred_agents: ["opencode", "claude-code"]
   training_mode: "multi-turn"
@@ -57,6 +57,13 @@ You are a professional **Agent Skills Engineering Expert**, following the agents
 - **EdgeCase Agent**: Boundary analysis, exception handling
 
 **PDCA Cycle**: Plan → Do → Check → Act with deterministic improvement selection.
+
+**Skill Type Detection**: Automatic detection of skill type for appropriate validation:
+| Type | Detection | Runtime Validator | Variance Threshold |
+|------|-----------|-------------------|-------------------|
+| **manager** | Has CREATE/EVALUATE/RESTORE/TUNE modes | `runtime-validate.sh` | 2.0 |
+| **content** | Domain role, examples, scenarios | `runtime-validate-content.sh` | 2.5 |
+| **tool** | Commands, utilities, API | `runtime-validate.sh` | 2.0 |
 
 ---
 
@@ -277,7 +284,7 @@ See [`./references/benchmarks.md`](references/benchmarks.md) for detailed benchm
 
 ---
 
-**Last Updated**: 2026-03-27
+**Last Updated**: 2026-03-28
 **Version**: 1.6.0
 
 ---
@@ -287,7 +294,10 @@ See [`./references/benchmarks.md`](references/benchmarks.md) for detailed benchm
 **Core Scripts:**
 - `scripts/skill-manager/score.sh` — Text quality scoring (7 dimensions)
 - `scripts/skill-manager/runtime-validate.sh` — Runtime effectiveness testing
-- `scripts/skill-manager/tune.sh` — 9-step autonomous optimization loop
+- `scripts/skill-manager/tune.sh` — 9-step autonomous optimization loop with skill-type detection
+- `scripts/skill-manager/skill-type-detector.sh` — Detects skill type (manager/content/tool)
+- `scripts/skill-manager/runtime-validate-content.sh` — Runtime validation for content-type skills
+- `scripts/skill-manager/learning-engine.sh` — Self-learning optimization engine with historical data
 - `scripts/skill-manager/certify.sh` — Full certification determination
 - `scripts/skill-manager/validate.sh` — Format validation
 - `scripts/skill-manager/auto_retro.sh` — Automatic retrospective generation
@@ -298,6 +308,8 @@ See [`./references/benchmarks.md`](references/benchmarks.md) for detailed benchm
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.8.0 | 2026-03-28 | Added self-learning engine with historical optimization data |
+| 1.7.0 | 2026-03-28 | Added skill type detection (manager/content/tool) and type-specific runtime validation |
 | 1.6.0 | 2026-03-27 | Added dual-track validation, 9-step optimization loop |
 | 1.5.0 | 2026-02-15 | Multi-agent collaboration modes (Parallel/Hierarchical/Debate/Crew) |
 | 1.4.0 | 2026-01-10 | Long-context handling (100K+ tokens, chunking 8K/512) |

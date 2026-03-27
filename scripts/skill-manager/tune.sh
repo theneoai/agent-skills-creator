@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# tune.sh — AI-driven autonomous skill optimization
+# tune.sh — AI-driven autonomous skill optimization with self-learning
 # Usage: ./tune.sh path/to/SKILL.md [rounds]
 # Analyzes score output to identify weakest dimension and makes targeted improvements.
+# Learns from historical optimization data to select best strategies.
 
 set -euo pipefail
 
@@ -13,15 +14,87 @@ if [[ -z "$SKILL_FILE" || ! -f "$SKILL_FILE" ]]; then
   exit 1
 fi
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/learning-engine.sh" 2>/dev/null || true
+
 REAL_PATH=$(realpath "$SKILL_FILE" 2>/dev/null || echo "$SKILL_FILE")
 SKILL_FILE="$REAL_PATH"
 
 SKILL_DIR=$(dirname "$SKILL_FILE")
 SKILL_NAME=$(basename "$SKILL_DIR")
-SCRIPT_DIR="$(dirname "$0")"
 SCORE_SCRIPT="$SCRIPT_DIR/score-v2.sh"
-RUNTIME_SCRIPT="$SCRIPT_DIR/runtime-validate.sh"
 RESULTS_FILE="$SKILL_DIR/results.tsv"
+
+use_historical=false
+historical_best=""
+IMPROVEMENT=""
+
+detect_skill_type() {
+  local file="$1"
+  
+  local has_mode_section=$(grep -cE "## §2.*Triggers|## § 2.*Triggers|Mode Selection" "$file" || true)
+  local has_create_mode=$(grep -cE "\*\*CREATE\*\*|CREATE Mode" "$file" || true)
+  local has_evaluate_mode=$(grep -cE "\*\*EVALUATE\*\*|EVALUATE Mode" "$file" || true)
+  local has_restore_mode=$(grep -cE "\*\*RESTORE\*\*|RESTORE Mode" "$file" || true)
+  local has_tune_mode=$(grep -cE "\*\*TUNE\*\*|TUNE Mode" "$file" || true)
+  local has_trigger_table=$(grep -cE "Mode.*Triggers.*EN.*ZH|\| Mode \|" "$file" || true)
+  
+  local manager_score=0
+  [[ $has_mode_section -gt 0 ]] && manager_score=$((manager_score + 2))
+  [[ $has_create_mode -gt 0 ]] && manager_score=$((manager_score + 1))
+  [[ $has_evaluate_mode -gt 0 ]] && manager_score=$((manager_score + 1))
+  [[ $has_restore_mode -gt 0 ]] && manager_score=$((manager_score + 1))
+  [[ $has_tune_mode -gt 0 ]] && manager_score=$((manager_score + 1))
+  [[ $has_trigger_table -gt 0 ]] && manager_score=$((manager_score + 2))
+  
+  if [[ $manager_score -ge 4 ]]; then
+    echo "manager"
+    return
+  fi
+  
+  local has_bash_blocks=$(grep -cE '```bash|```sh' "$file" || true)
+  local has_commands=$(grep -cE '\$\(|bash |npm |pip |cargo |python |node ' "$file" || true)
+  local has_usage_section=$(grep -ciE "Usage:|Commands:|Tools:|API|CLI" "$file" || true)
+  
+  local tool_score=0
+  [[ $has_bash_blocks -ge 3 ]] && tool_score=$((tool_score + 2))
+  [[ $has_commands -ge 5 ]] && tool_score=$((tool_score + 2))
+  [[ $has_usage_section -gt 0 ]] && tool_score=$((tool_score + 1))
+  
+  if [[ $tool_score -ge 4 ]]; then
+    echo "tool"
+    return
+  fi
+  
+  echo "content"
+}
+
+echo ""
+echo "Detecting skill type..."
+SKILL_TYPE=$(detect_skill_type "$SKILL_FILE")
+echo "Skill type: $SKILL_TYPE"
+
+if type print_learning_stats >/dev/null 2>&1; then
+  print_learning_stats
+fi
+
+case "$SKILL_TYPE" in
+  manager)
+    RUNTIME_SCRIPT="$SCRIPT_DIR/runtime-validate.sh"
+    VARIANCE_THRESHOLD=2.0
+    echo "Using manager-type runtime validation (threshold: $VARIANCE_THRESHOLD)"
+    ;;
+  tool)
+    RUNTIME_SCRIPT="$SCRIPT_DIR/runtime-validate.sh"
+    VARIANCE_THRESHOLD=2.0
+    echo "Using tool-type runtime validation (threshold: $VARIANCE_THRESHOLD)"
+    ;;
+  content)
+    RUNTIME_SCRIPT="$SCRIPT_DIR/runtime-validate-content.sh"
+    VARIANCE_THRESHOLD=2.5
+    echo "Using content-type runtime validation (threshold: $VARIANCE_THRESHOLD)"
+    ;;
+esac
 
 compare() {
   local a="$1" op="$2" b="$3"
@@ -113,6 +186,77 @@ get_weakest_dimension() {
   done < <(echo "$output" | grep -E "^  [A-Za-z].* [0-9]+\.[0-9]/10")
   
   echo "${weakest:-System}"
+}
+
+apply_improvement() {
+  local improvement="$1"
+  local file="$2"
+  
+  case "$improvement" in
+    "add §1.1 Identity")
+      sed -i.bak '/## § 1 /a\
+\
+### §1.1 Identity\
+The agent'"'"'s core identity:\
+- **Role**: [Specific professional role]\
+- **Expertise**: [Key knowledge domains]\
+- **Boundary**: [Clear scope]' "$file" 2>/dev/null || true
+      rm -f "${file}.bak"
+      ;;
+    "add §1.2 Framework")
+      sed -i.bak '/## § 1 /a\
+\
+### §1.2 Framework\
+Operational framework:\
+- **Architecture**: [e.g., ReAct, CoT]\
+- **Tools**: [Available tools]\
+- **Memory**: [Context management]' "$file" 2>/dev/null || true
+      rm -f "${file}.bak"
+      ;;
+    "add §1.3 Constraints")
+      sed -i.bak '/## § 1 /a\
+\
+### §1.3 Constraints\
+Hard boundaries:\
+- **Never**: [Explicit prohibitions]\
+- **Always**: [Mandatory behaviors]' "$file" 2>/dev/null || true
+      rm -f "${file}.bak"
+      ;;
+    "add quantitative metrics"|"add benchmarks"|"add framework references")
+      sed -i.bak '/## § 2 /a\
+\
+### Quantitative Metrics\
+- **Accuracy**: >95%\
+- **Latency**: <200ms' "$file" 2>/dev/null || true
+      rm -f "${file}.bak"
+      ;;
+    "add done criteria"|"add fail criteria"|"add decision points")
+      sed -i.bak 's/Phase [0-9]/&\
+✅ Done: [Criteria]/' "$file" 2>/dev/null || true
+      rm -f "${file}.bak"
+      ;;
+    "add version field"|"add updated date"|"update version format")
+      sed -i.bak '/^---/a\
+**Updated**: 2026-03-28' "$file" 2>/dev/null || true
+      rm -f "${file}.bak"
+      ;;
+    "add input/output to examples")
+      sed -i.bak '/^## [Ee]xample/a\
+**Input**: [Define input parameters]' "$file" 2>/dev/null || true
+      rm -f "${file}.bak"
+      ;;
+    "add long-context handling")
+      sed -i.bak '/## § 2 /a\
+\
+### Long-Context Handling\
+- **Chunking**: Split documents into 8K token chunks' "$file" 2>/dev/null || true
+      rm -f "${file}.bak"
+      ;;
+    *)
+      echo "  [LEARNING] Unknown improvement: $improvement, trying domain knowledge"
+      improve_domain_knowledge "$file"
+      ;;
+  esac
 }
 
 improve_system_prompt() {
@@ -420,38 +564,64 @@ for ((round=1; round<=ROUNDS; round++)); do
   cp "$SKILL_FILE" "${SKILL_FILE}.backup"
   
   echo "  [4] PLAN → Selecting improvement strategy..."
-  case "$WEAKEST" in
-    System)
-      improve_system_prompt "$SKILL_FILE"
-      ;;
-    Domain)
-      improve_domain_knowledge "$SKILL_FILE"
-      ;;
-    Workflow)
-      improve_workflow "$SKILL_FILE"
-      ;;
-    Consistency)
-      improve_consistency "$SKILL_FILE"
-      ;;
-    Executability)
-      improve_executability "$SKILL_FILE"
-      ;;
-    Metadata)
-      improve_metadata "$SKILL_FILE"
-      ;;
-    Recency)
-      improve_recency "$SKILL_FILE"
-      ;;
-    Error)
-      improve_error_handling "$SKILL_FILE"
-      ;;
-    LongContext)
-      improve_long_context "$SKILL_FILE"
-      ;;
-    *)
-      improve_domain_knowledge "$SKILL_FILE"
-      ;;
-  esac
+  
+  use_historical=false
+  historical_best=""
+  
+  if type learn_from_history >/dev/null 2>&1; then
+    if learn_from_history "$SKILL_TYPE" "$WEAKEST"; then
+      local success_rate=$(awk -F',' -v st="$SKILL_TYPE" -v wd="$WEAKEST" -v imp="$HISTORICAL_BEST" '
+        $1 == st && $2 == wd && $3 == imp { print $5 }
+      ' "$SCRIPT_DIR/learning-db.csv")
+      
+      if [[ -n "$success_rate" ]] && (( $(echo "$success_rate >= 0.4" | bc -l 2>/dev/null) )); then
+        use_historical=true
+        historical_best="$HISTORICAL_BEST"
+        echo "  [LEARNING] Historical best: $historical_best (success rate: $success_rate)"
+      else
+        echo "  [LEARNING] Historical best '$HISTORICAL_BEST' has low success rate ($success_rate), trying other strategy"
+      fi
+    fi
+  fi
+  
+  if [[ "$use_historical" == "true" ]] && [[ -n "$historical_best" ]]; then
+    echo "  [LEARNING] Using historical best strategy: $historical_best"
+    IMPROVEMENT="$historical_best"
+    apply_improvement "$historical_best" "$SKILL_FILE"
+  else
+    case "$WEAKEST" in
+      System)
+        improve_system_prompt "$SKILL_FILE"
+        ;;
+      Domain)
+        improve_domain_knowledge "$SKILL_FILE"
+        ;;
+      Workflow)
+        improve_workflow "$SKILL_FILE"
+        ;;
+      Consistency)
+        improve_consistency "$SKILL_FILE"
+        ;;
+      Executability)
+        improve_executability "$SKILL_FILE"
+        ;;
+      Metadata)
+        improve_metadata "$SKILL_FILE"
+        ;;
+      Recency)
+        improve_recency "$SKILL_FILE"
+        ;;
+      Error)
+        improve_error_handling "$SKILL_FILE"
+        ;;
+      LongContext)
+        improve_long_context "$SKILL_FILE"
+        ;;
+      *)
+        improve_domain_knowledge "$SKILL_FILE"
+        ;;
+    esac
+  fi
    
   echo "  [5] IMPLEMENT → Applying: $IMPROVEMENT"
   NEW_OUTPUT=$(run_score "$SKILL_FILE")
@@ -461,16 +631,17 @@ for ((round=1; round<=ROUNDS; round++)); do
   RUNTIME_SCORE=$(run_runtime_validation "$SKILL_FILE" "$NEW_SCORE")
   VARIANCE=$(check_variance "$NEW_SCORE" "$RUNTIME_SCORE")
   
-  if (( $(echo "$VARIANCE >= 2.0" | bc -l) )); then
+  if (( $(echo "$VARIANCE >= $VARIANCE_THRESHOLD" | bc -l) )); then
     echo ""
-    echo "  ✗ HALT: Variance $VARIANCE >= 2.0 detected after $WEAKEST improvement"
+    echo "  ✗ HALT: Variance $VARIANCE >= $VARIANCE_THRESHOLD detected after $WEAKEST improvement"
     echo "  Text Score: $NEW_SCORE | Runtime Score: ${RUNTIME_SCORE:-0.0}"
     cp "${SKILL_FILE}.backup" "$SKILL_FILE"
     echo "  Reverted to previous version."
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "  TUNE HALTED DUE TO HIGH VARIANCE"
-    echo "  Round: $round | Variance: $VARIANCE"
+    echo "  Skill type: $SKILL_TYPE"
+    echo "  Round: $round | Variance: $VARIANCE (threshold: $VARIANCE_THRESHOLD)"
     echo "  Weakest dimension: $WEAKEST"
     echo "  Improvement attempted: $IMPROVEMENT"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -498,6 +669,10 @@ for ((round=1; round<=ROUNDS; round++)); do
   
   echo "  [8] LOG → Recording to results.tsv..."
   echo -e "$round\t$NEW_SCORE\t$DELTA\t$STATUS\t$WEAKEST\t$IMPROVEMENT" >> "$RESULTS_FILE"
+  
+  if type record_learning >/dev/null 2>&1; then
+    record_learning "$SKILL_TYPE" "$WEAKEST" "$IMPROVEMENT" "$DELTA" "$round"
+  fi
   
   if (( round % 5 == 0 )); then
     echo "  Round $round: $NEW_SCORE (Δ$DELTA) [$STATUS] | weakest: $WEAKEST"
@@ -535,6 +710,8 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  VARIANCE CHECK"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  Skill type: $SKILL_TYPE"
+echo "  Variance threshold: $VARIANCE_THRESHOLD"
   RUNTIME_SCORE=$(run_runtime_validation "$SKILL_FILE" "$PREV_SCORE")
   VARIANCE=$(check_variance "$PREV_SCORE" "$RUNTIME_SCORE")
   echo "  Text Score:    $PREV_SCORE/10"
@@ -542,8 +719,8 @@ echo "  Runtime Score:  ${RUNTIME_SCORE:-0.0}/10"
 echo "  Variance:       $VARIANCE"
 if (( $(echo "$VARIANCE < 1.0" | bc -l) )); then
   echo "  Status: ✓ Consistent (variance < 1.0)"
-elif (( $(echo "$VARIANCE < 2.0" | bc -l) )); then
-  echo "  Status: ⚠ Moderate gap (1.0 ≤ variance < 2.0)"
+elif (( $(echo "$VARIANCE < $VARIANCE_THRESHOLD" | bc -l) )); then
+  echo "  Status: ✓ Acceptable gap (1.0 ≤ variance < $VARIANCE_THRESHOLD) for $SKILL_TYPE skill"
 else
-  echo "  Status: ✗ RED FLAG (variance ≥ 2.0)"
+  echo "  Status: ✗ HIGH VARIANCE (variance ≥ $VARIANCE_THRESHOLD)"
 fi
