@@ -209,7 +209,7 @@ See [`./references/skill-manager/antipatterns.md`](references/skill-manager/anti
 - Capture current metrics (Text Score, Runtime Score, Variance, Mode Detection)
 - Log to RETROSPECTIVE.md automatically
 - Detect and flag anti-patterns (high variance, low scores)
-- Update OPTIMIZATION_ANTIPATTERNS.md with new learnings
+- Auto-infer lessons from changes and update OPTIMIZATION_METHODOLOGY.md
 - Enable continuous self-improvement through accumulated knowledge
 
 **Certification Formula**:
