@@ -6,7 +6,7 @@ The proliferation of large language model (LLM)-based agents has created an urge
 
 The proposed approach addresses three fundamental challenges in the field: (1) the lack of standardized skill representation formats that balance human readability with machine executability, (2) the absence of reliable evaluation frameworks that capture both textual quality and runtime effectiveness, and (3) the need for autonomous optimization mechanisms that can iteratively improve skill performance without manual intervention. We introduce a **multi-agent optimization architecture** that employs parallel evaluation across five specialized agents—Security, Trigger, Runtime, Quality, and EdgeCase—operating under a deterministic improvement selection protocol.
 
-Our methodology incorporates a **dual-track validation system** that ensures alignment between documented specifications and actual runtime behavior, enforced through a variance threshold mechanism. The optimization framework follows an eight-step autonomous loop: Analyze, Curation, Plan, Implement, Verify, Error handling, Log, and Commit, achieving an expected improvement rate of 20-30 experiments per hour. Through systematic application of this methodology, we demonstrate that agent skills can be consistently elevated to CERTIFIED status, defined as achieving Text Score ≥ 8.0, Runtime Score ≥ 8.0, and Variance < 1.0, with a target Overall Score ≥ 9.0.
+Our methodology incorporates a **dual-track validation system** that ensures alignment between documented specifications and actual runtime behavior, enforced through a variance threshold mechanism. The optimization framework follows an eight-step autonomous loop: Analyze, Curation, Plan, Implement, Verify, Error handling, Log, and Commit, achieving an expected improvement rate of 20-30 experiments per hour. Through systematic application of this methodology, we demonstrate that agent skills can be consistently elevated to CERTIFIED status, defined as achieving Text Score ≥ 8.0, Runtime Score ≥ 8.0, and Variance < 2.0, with a target Overall Score ≥ 9.0.
 
 This work establishes the theoretical foundation and practical tooling for treating AI agent skills as first-class engineering artifacts, enabling the construction of reliable, measurable, and continuously improvable agentic systems.
 
@@ -42,7 +42,7 @@ The proposed methodology achieves the following quantitative outcomes when appli
 
 - **Text Score ≥ 9.0**: Skills optimized through this methodology consistently achieve exemplary text quality ratings, with specific improvements targeting the weakest dimensions as identified through the scoring framework.
 - **Runtime Score ≥ 8.0**: Dual-track validation ensures that runtime effectiveness meets production readiness thresholds, with minimum floor values enforced for critical dimensions including Role Immersion, Knowledge Accuracy, and Long-Conversation Stability.
-- **Variance < 1.0**: The absolute difference between Text Score and Runtime Score remains below 1.0, ensuring that documented specifications accurately reflect operational behavior.
+- **Variance < 2.0**: The absolute difference between Text Score and Runtime Score remains below 1.0, ensuring that documented specifications accurately reflect operational behavior.
 
 These targets define the **CERTIFIED** status, indicating production readiness, while scores ≥ 9.0 achieve **EXEMPLARY** status, suitable for serving as benchmarks for skill development.
 

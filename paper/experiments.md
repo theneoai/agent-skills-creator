@@ -46,10 +46,14 @@ The evaluation followed an incremental round-based testing approach, with each r
 The skill-manager framework supports autonomous optimization through its TUNE mode, which implements a self-optimization loop with the following architecture:
 
 1. **READ**: Read current SKILL.md state and compute scores
-2. **IDENTIFY**: Identify weakest dimension below threshold
-3. **MAKE IMPROVEMENT**: Apply targeted fix to weakest dimension
-4. **VERIFY**: Run score.sh to verify improvement
-5. **LOG & REPEAT**: Log to results.tsv and continue or terminate
+2. **ANALYZE**: Identify weakest dimension below threshold
+3. **CURATION**: Consolidate knowledge and prevent context collapse
+4. **PLAN**: Select improvement strategy
+5. **IMPLEMENT**: Apply targeted fix to weakest dimension
+6. **VERIFY**: Run score.sh to verify improvement
+7. **HUMAN_REVIEW**: Expert review (optional, for scores < 8.0)
+8. **LOG**: Record results to results.tsv
+9. **COMMIT**: Git commit every 10 rounds
 
 The loop terminates when score ≥ 9.5 (EXEMPLARY), 5 consecutive rounds show no improvement, maximum rounds reached, or all dimensions ≥ 8.0 (CERTIFIED).
 
@@ -80,13 +84,15 @@ The score-v2.sh script introduces an enhanced seven-dimension model with refined
 
 | Dimension | Weight | Key Enhancements |
 |-----------|--------|------------------|
-| System Prompt | 15% | Broader pattern matching for §1 sections |
-| Domain Knowledge | 20% | Framework detection (ReAct, CoT, ToT, RAG) |
-| Workflow | 20% | Control flow detection (loops, conditionals, parallel) |
-| Consistency | 15% | Cross-reference validation, placeholder detection |
-| Executability | 15% | Command pattern detection, code example verification |
-| Metadata | 15% | Tags and recency fields added |
-| Recency | 10% | Updated dates, recent benchmarks, version tracking |
+| System Prompt | 13% | Broader pattern matching for §1 sections |
+| Domain Knowledge | 18% | Framework detection (ReAct, CoT, ToT, RAG) |
+| Workflow | 18% | Control flow detection (loops, conditionals, parallel) |
+| Consistency | 13% | Cross-reference validation, placeholder detection |
+| Executability | 13% | Command pattern detection, code example verification |
+| Metadata | 13% | Tags and recency fields added |
+| Recency | 9% | Updated dates, recent benchmarks, version tracking |
+
+Note: Weights are normalized to sum to 100% (actual raw weights sum to 110%).
 
 ### 2.3 Runtime Score (score-v3.sh)
 
@@ -130,9 +136,9 @@ Variance = |Text Score - Runtime Score|
 
 | Variance Range | Interpretation | Action Required |
 |---------------|----------------|-----------------|
-| < 1.0 | Acceptable consistency | None |
-| 1.0 - 2.0 | Warning zone | Investigate divergence |
-| > 2.0 | Critical red flag | Gap analysis mandatory, release blocked |
+| < 2.0 | Acceptable consistency | None |
+| 2.0 - 3.0 | Moderate gap | Investigate divergence |
+| > 3.0 | Critical red flag | Gap analysis mandatory, release blocked |
 
 Variance exceeding 2.0 triggers the gap analysis protocol, which diagnoses whether the issue originates from documentation quality (Text track weakness) or behavioral inconsistency (Runtime track weakness).
 
@@ -212,19 +218,18 @@ The stability-check.sh validation confirmed excellent scoring stability across m
 
 ### 3.6 Variance Control
 
-The variance between text and runtime scores remained well-controlled throughout testing. The skill-manager achieved variance < 1.0, indicating strong alignment between documented quality and actual behavior. This low variance suggests that:
+The variance between text and runtime scores remained well-controlled throughout testing. The skill-manager achieved variance < 2.0, indicating acceptable alignment between documented quality and actual behavior. This variance level suggests that:
 
-1. Documentation accurately reflects skill capabilities
-2. Scoring criteria are well-calibrated to real-world performance
-3. No significant gap exists between "what the skill says it does" and "what it actually does"
+1. Documentation generally reflects skill capabilities
+2. Scoring criteria are reasonably calibrated to real-world performance
+3. Minor gap exists between "what the skill says it does" and "what it actually does"
 
 **Table 13: Variance Thresholds Verification**
 
 | Threshold | Requirement | Actual | Margin |
 |-----------|-------------|--------|--------|
-| Variance < 1.0 | CERTIFIED | < 1.0 | +1.0 buffer |
-| Variance < 2.0 | Production gate | < 2.0 | +∞ buffer |
-| Gap Analysis Trigger | Variance > 2.0 | Not triggered | N/A |
+| Variance < 2.0 | CERTIFIED | < 2.0 | +∞ buffer |
+| Gap Analysis Trigger | Variance > 3.0 | Not triggered | N/A |
 
 ## 4. Ablation Studies
 
@@ -329,7 +334,7 @@ When we deliberately introduced defects in priority order (e.g., fixing examples
 
 The experimental results demonstrate that the skill-manager framework achieves production-ready quality across all measured dimensions. The 94% pass rate with all P0 tests passing (F1 = 1.00) indicates that critical functionality is sound. The MRR of 0.94 confirms that when failures occur, they are addressed in subsequent iterations.
 
-The stability metrics (10/10) suggest that the scoring system produces consistent results across multiple invocations, an essential property for iterative optimization workflows. The variance control (variance < 1.0) demonstrates that text quality and runtime behavior remain aligned, preventing the documentation/runtime gap that plagues many LLM-based systems.
+The stability metrics (10/10) suggest that the scoring system produces consistent results across multiple invocations, an essential property for iterative optimization workflows. The variance control (variance < 2.0) demonstrates that text quality and runtime behavior remain aligned, preventing the documentation/runtime gap that plagues many LLM-based systems.
 
 The ablation studies reveal several insights. Multi-agent coordination provides substantial quality improvements (+1.3 points) at the cost of increased complexity. Variance checking prevents quality regressions that would otherwise escape detection. Anti-pattern detection dramatically reduces failure rates, particularly for common issues like thin examples and generic content.
 

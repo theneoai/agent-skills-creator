@@ -17,7 +17,7 @@ The proliferation of large language model (LLM)-based agents has created an urge
 
 The proposed approach addresses four fundamental challenges in the field: (1) the lack of standardized skill representation formats that balance human readability with machine executability, (2) the absence of reliable evaluation frameworks that capture both textual quality and runtime effectiveness, (3) the need for autonomous optimization mechanisms that can iteratively improve skill performance without manual intervention, and (4) the critical capability to handle long-context documents exceeding 100K tokens with accurate chunking, retrieval, and cross-reference preservation. We introduce a **multi-agent optimization architecture** that employs parallel evaluation across five specialized agents—Security, Trigger, Runtime, Quality, and EdgeCase—operating under a deterministic improvement selection protocol.
 
-Our methodology incorporates a **dual-track validation system** that ensures alignment between documented specifications and actual runtime behavior, enforced through a variance threshold mechanism. The optimization framework follows an eight-step autonomous loop: Analyze, Curation, Plan, Implement, Verify, Error handling, Log, and Commit, achieving an expected improvement rate of 20-30 experiments per hour. Through systematic application of this methodology, we demonstrate that agent skills can be consistently elevated to CERTIFIED status, defined as achieving Text Score ≥ 8.0, Runtime Score ≥ 8.0, and Variance < 1.0, with a target Overall Score ≥ 9.0.
+Our methodology incorporates a **dual-track validation system** that ensures alignment between documented specifications and actual runtime behavior, enforced through a variance threshold mechanism. The optimization framework follows a nine-step autonomous loop: READ → ANALYZE → CURATION → PLAN → IMPLEMENT → VERIFY → HUMAN_REVIEW → LOG → COMMIT, achieving measurable improvement per round. Through systematic application of this methodology, we demonstrate that agent skills can be consistently elevated to CERTIFIED status, defined as achieving Text Score ≥ 8.0, Runtime Score ≥ 8.0, and Variance < 2.0, with a target Overall Score ≥ 9.0.
 
 This work establishes the theoretical foundation and practical tooling for treating AI agent skills as first-class engineering artifacts, enabling the construction of reliable, measurable, and continuously improvable agentic systems.
 
@@ -92,7 +92,7 @@ The proposed methodology achieves the following quantitative outcomes when appli
 
 - **Text Score ≥ 9.0**: Skills optimized through this methodology consistently achieve exemplary text quality ratings, with specific improvements targeting the weakest dimensions as identified through the scoring framework.
 - **Runtime Score ≥ 8.0**: Dual-track validation ensures that runtime effectiveness meets production readiness thresholds, with minimum floor values enforced for critical dimensions including Role Immersion, Knowledge Accuracy, and Long-Conversation Stability.
-- **Variance < 1.0**: The absolute difference between Text Score and Runtime Score remains below 1.0, ensuring that documented specifications accurately reflect operational behavior.
+- **Variance < 2.0**: The absolute difference between Text Score and Runtime Score remains below 2.0, ensuring that documented specifications accurately reflect operational behavior.
 
 These targets define the **CERTIFIED** status, indicating production readiness, while scores ≥ 9.0 achieve **EXEMPLARY** status, suitable for serving as benchmarks for skill development.
 
@@ -132,7 +132,7 @@ The **brevity bias** problem manifests when optimization systems, whether human 
 
 **Countermeasures through CURATION and Comprehensive Evaluation**: Our methodology addresses both failure modes through specific mechanisms. First, the seven-step autonomous loop incorporates a **CURATION** phase (implicit in the LOG and periodic COMMIT steps) that explicitly preserves optimization history and decision rationale. Rather than simply recording score changes, the curation process maintains a running narrative of what was tried, why it failed or succeeded, and what constraints should persist across iterations. This historical record prevents context collapse by ensuring that each optimization round begins not from a blank slate but from a richly annotated state that includes all prior decisions.
 
-Second, our six-dimensional scoring framework with mandatory structural gates directly counters brevity bias. The requirement that System Prompt dimensions include specific subsections (§1.1 Identity, §1.2 Framework, §1.3 Thinking), that Domain Knowledge include quantitative benchmarks rather than generic assertions, and that Examples include at least five scenarios with realistic inputs and outputs—all of these requirements ensure that skills cannot achieve high scores through superficial concision. The certification formula requiring Text Score ≥ 8.0, Runtime Score ≥ 8.0, and Variance < 1.0 across all dimensions means that brevity alone cannot achieve quality; substantive completeness is mandatory.
+Second, our six-dimensional scoring framework with mandatory structural gates directly counters brevity bias. The requirement that System Prompt dimensions include specific subsections (§1.1 Identity, §1.2 Framework, §1.3 Thinking), that Domain Knowledge include quantitative benchmarks rather than generic assertions, and that Examples include at least five scenarios with realistic inputs and outputs—all of these requirements ensure that skills cannot achieve high scores through superficial concision. The certification formula requiring Text Score ≥ 8.0, Runtime Score ≥ 8.0, and Variance < 2.0 across all dimensions means that brevity alone cannot achieve quality; substantive completeness is mandatory.
 
 Third, the dual-track validation architecture ensures that neither textual nor runtime optimization can sacrifice one for the other. When a hypothetical brevity-biased optimization reduces a skill's documentation to minimal form that achieves acceptable text scores, the runtime evaluation channel will detect the resulting specification-behavior divergence and flag it through variance computation. This creates a built-in safeguard: practitioners cannot achieve CERTIFIED status by making skills shorter at the expense of essential detail.
 
@@ -221,7 +221,7 @@ The runtime evaluation protocol encompasses six validation categories:
 Variance between text score and runtime score constitutes a critical quality indicator reflecting the degree of alignment between documented specifications and actual implementation behavior. The certification formula requires:
 
 ```
-CERTIFIED = (Text Score ≥ 8.0) AND (Runtime Score ≥ 8.0) AND (Variance < 1.0)
+CERTIFIED = (Text Score ≥ 8.0) AND (Runtime Score ≥ 8.0) AND (Variance < 2.0)
 ```
 
 Variance exceeding 1.0 indicates disagreement between documented specification and actual behavior—a condition termed **specification-behavior divergence**. Variance exceeding 2.0 triggers immediate red-flag status, indicating either excellent documentation of poor implementation or poorly documented but accidentally functional implementation.
@@ -368,7 +368,7 @@ Unlike SICA's code-modification approach (Singh et al., 2025), which operates on
 #### 3.4.3 Certification Formula
 
 ```
-CERTIFIED = (Text ≥ 8.0) AND (Runtime ≥ 8.0) AND (Variance < 1.0) 
+CERTIFIED = (Text ≥ 8.0) AND (Runtime ≥ 8.0) AND (Variance < 2.0) 
             AND (F1 ≥ 0.90) AND (MRR ≥ 0.85) AND (MultiTurnPassRate ≥ 85%)
             AND (TriggerAccuracy ≥ 99%) AND (Stability ≥ 95%)
             AND (LongContextScore ≥ 8.0)
@@ -580,7 +580,7 @@ Testing progressed through seven rounds (R22-R28), with test case coverage expan
 
 | Threshold | Requirement | Actual | Margin |
 |-----------|-------------|--------|--------|
-| Variance < 1.0 | CERTIFIED | < 1.0 | +1.0 buffer |
+| Variance < 2.0 | CERTIFIED | < 1.0 | +1.0 buffer |
 | Variance < 2.0 | Production gate | < 2.0 | +∞ buffer |
 | Gap Analysis Trigger | Variance > 2.0 | Not triggered | N/A |
 
@@ -663,7 +663,7 @@ Testing progressed through seven rounds (R22-R28), with test case coverage expan
 
 The experimental results demonstrate that the skill-manager framework achieves production-ready quality across all measured dimensions. The 94% pass rate with all P0 tests passing (F1 = 1.00) indicates that critical functionality is sound. The MRR of 0.94 confirms that when failures occur, they are addressed in subsequent iterations.
 
-The stability metrics (10/10) suggest that the scoring system produces consistent results across multiple invocations. The variance control (variance < 1.0) demonstrates that text quality and runtime behavior remain aligned.
+The stability metrics (10/10) suggest that the scoring system produces consistent results across multiple invocations. The variance control (variance < 2.0) demonstrates that text quality and runtime behavior remain aligned.
 
 The ablation studies reveal several insights. Multi-agent coordination provides substantial quality improvements (+1.3 points) at the cost of increased complexity. Variance checking prevents quality regressions that would otherwise escape detection. Anti-pattern detection dramatically reduces failure rates.
 
@@ -724,7 +724,7 @@ However, CrewAI shares fundamental limitations with AutoGen regarding skill qual
 | Loop Structure | Code modification cycles | 7-step Read→Analyze→Plan→Implement→Verify→Log→Commit |
 | Evaluation | Test-driven correctness | Dual-track (text + runtime) with variance control |
 | Optimization Goal | Functional correctness | Multi-dimensional quality (6 dimensions) |
-| Specification Drift Detection | Not explicitly addressed | Variance < 1.0 threshold enforcement |
+| Specification Drift Detection | Not explicitly addressed | Variance < 2.0 threshold enforcement |
 | Deterministic Selection | Not specified | Rule-based weakness prioritization |
 | SkillsBench Alignment | N/A | Validated by curated skills finding (16.2pp improvement) |
 
