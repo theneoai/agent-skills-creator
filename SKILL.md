@@ -100,10 +100,10 @@ Decision Priority: **Security > Quality > Efficiency**
 
 | Mode | Triggers (EN) | Triggers (ZH) |
 |------|---------------|---------------|
-| **CREATE** | "create skill", "new skill", "generate skill", "write skill", "build skill", "make skill", "develop skill" | "创建技能", "新建技能", "生成技能" |
-| **EVALUATE** | "evaluate", "test skill", "score", "assess", "review", "audit", "certify" | "评估技能", "测试技能", "打分" |
-| **RESTORE** | "restore", "fix", "repair", "recover", "rollback", "upgrade" | "恢复技能", "修复技能", "回滚" |
-| **TUNE** | "tune", "optimize", "improve", "self-optimize", "autotune", "enhance" | "自优化", "调优", "优化" |
+| **CREATE** | "create skill", "new skill", "generate skill", "write skill", "build skill", "make skill", "develop skill", "write a new skill", "create a skill from scratch", "build skill from scratch" | "创建技能", "新建技能", "生成技能" |
+| **EVALUATE** | "evaluate", "test skill", "score", "assess", "review", "audit", "certify", "test the skill quality", "evaluate my skill", "score my skill", "assess the skill" | "评估技能", "测试技能", "打分" |
+| **RESTORE** | "restore", "fix", "repair", "recover", "rollback", "upgrade", "restore the skill", "fix skill", "repair the broken skill", "upgrade skill" | "恢复技能", "修复技能", "回滚" |
+| **TUNE** | "tune", "optimize", "improve", "self-optimize", "autotune", "enhance", "tune the skill", "optimize skill", "improve score", "boost skill" | "自优化", "调优", "优化" |
 | **SECURITY** | "security", "OWASP", "vulnerability", "CWE", "audit security" | "安全审查", "漏洞扫描" |
 | **CI/CD** | "ci/cd", "pipeline", "github actions", "deploy", "release" | "持续集成", "流水线" |
 

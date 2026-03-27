@@ -26,10 +26,10 @@ MAX=0
 dim_score() {
   local name="$1" weight="$2" score="$3" notes="$4"
   local weighted
-  weighted=$(echo "scale=2; $score * $weight / 100" | bc)
+  weighted=$(echo "scale=2; $score * $weight / 110" | bc)
   TOTAL=$(echo "scale=2; $TOTAL + $weighted" | bc)
-  MAX=$(echo "scale=2; $MAX + $weight / 100 * 10" | bc)
-  printf "  %-22s %2d/10  (×%.2f)  %s\n" "$name" "$score" "$(echo "scale=2; $weight/100" | bc)" "$notes"
+  MAX=$(echo "scale=2; $MAX + $weight / 110 * 10" | bc)
+  printf "  %-22s %2d/10  (×%.2f)  %s\n" "$name" "$score" "$(echo "scale=2; $weight/110" | bc)" "$notes"
 }
 
 # ── Dimension 1: System Prompt (20%) ───────────────────────────────────────
@@ -147,10 +147,10 @@ dim_score "Metadata" 10 "$MD_SCORE" "$MD_NOTES"
 # ── Dimension 7: Long-Context Handling (10%) ───────────────────────────────
 LC_SCORE=2
 LC_NOTES=""
-HAS_CHUNKING=$(grep -ci "chunk|分块|8K|token" "$SKILL_FILE" || true)
-HAS_RAG=$(grep -ci "RAG|retrieve|检索|rag" "$SKILL_FILE" || true)
-HAS_CROSSREF=$(grep -ci "cross-reference|preservation|保留|cross.reference" "$SKILL_FILE" || true)
-HAS_LONGTEXT=$(grep -ci "100K|100000|long.context|long-document" "$SKILL_FILE" || true)
+HAS_CHUNKING=$(grep -Eci "chunk|分块|8K|token" "$SKILL_FILE" || true)
+HAS_RAG=$(grep -Eci "RAG|retrieve|检索|rag" "$SKILL_FILE" || true)
+HAS_CROSSREF=$(grep -Eci "cross-reference|preservation|保留|cross.reference" "$SKILL_FILE" || true)
+HAS_LONGTEXT=$(grep -Eci "100K|100000|long.context|long-document" "$SKILL_FILE" || true)
 
 [[ $HAS_CHUNKING -gt 0 ]] && LC_SCORE=$((LC_SCORE+2)) && LC_NOTES+="chunking "
 [[ $HAS_RAG -gt 0 ]] && LC_SCORE=$((LC_SCORE+3)) && LC_NOTES+="RAG "
