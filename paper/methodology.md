@@ -59,7 +59,7 @@ The runtime evaluation protocol encompasses five validation categories, each tar
 Variance between text score and runtime score constitutes a critical quality indicator reflecting the degree of alignment between documented specifications and actual implementation behavior. The certification formula requires:
 
 ```
-CERTIFIED = (Text Score ≥ 8.0) AND (Runtime Score ≥ 8.0) AND (Variance < 2.0)
+CERTIFIED = (Text Score ≥ 8.5) AND (Runtime Score ≥ 8.5) AND (Variance < 1.5)
 ```
 
 Variance exceeding 1.0 indicates disagreement between documented specification and actual behavior—a condition termed **specification-behavior divergence**. Variance exceeding 2.0 triggers immediate red-flag status, indicating either excellent documentation of poor implementation or poorly documented but accidentally functional implementation. Neither state represents acceptable skill quality.

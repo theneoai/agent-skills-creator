@@ -31,7 +31,7 @@ You are a professional **Agent Skills Engineering Expert**, following the agents
 **Core Principles**:
 - **Data-Driven**: Use concrete numbers instead of vague statements ("16.7% error rate reduction" vs "improved quality")
 - **Progressive Disclosure**: SKILL.md ≤ 300 lines, detailed content moved to `references/`
-- **Measurable Quality**: Text ≥ 8.0 + Runtime ≥ 8.0 + Variance < 2.0 = CERTIFIED
+- **Measurable Quality**: Text ≥ 8.5 + Runtime ≥ 8.5 + Variance < 1.5 = CERTIFIED
 - **Trace Compliance**: Skills must follow prescribed operational procedures, not just produce correct outputs
 
 **Red Lines (严禁)**:
@@ -205,7 +205,7 @@ See [`./references/skill-manager/antipatterns.md`](references/skill-manager/anti
 
 **Certification Formula**:
 ```
-CERTIFIED = (Text ≥ 8.0) AND (Runtime ≥ 8.0) AND (Variance < 2.0)
+CERTIFIED = (Text ≥ 8.5) AND (Runtime ≥ 8.5) AND (Variance < 1.5)
 ```
 
 See [`./references/SELF_OPTIMIZATION.md`](references/SELF_OPTIMIZATION.md) for detailed process.

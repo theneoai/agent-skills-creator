@@ -83,7 +83,10 @@ build skill for web scraping
 develop a new skill from scratch
 write skill for image processing
 I need a skill — start quick
-start standard skill creation"
+start standard skill creation
+initiate skill project
+setup skill for database
+prepare skill for text analysis"
             ;;
         EVALUATE)
             test_inputs="evaluate my skill at skills/data-proc
@@ -93,7 +96,9 @@ assess the skill performance
 check skill for issues
 review skill quality
 certify my skill
-audit skill for production"
+audit skill for production
+validate skill output
+benchmark skill accuracy"
             ;;
         RESTORE)
             test_inputs="restore the underperforming skill
@@ -102,7 +107,10 @@ repair the broken skill
 upgrade skill to 9.5
 improve my low-scoring skill
 heal the damaged skill
-fix skill quality issues"
+fix skill quality issues
+recover corrupted skill
+rollback to previous version
+reset skill to defaults"
             ;;
         TUNE)
             test_inputs="optimize skill performance
@@ -111,7 +119,10 @@ autotune my skill
 boost skill quality
 improve score for my skill
 skill optimization loop
-enhance skill capabilities"
+enhance skill capabilities
+refine skill precision
+sharpen skill accuracy
+streamline skill workflow"
             ;;
     esac
     
@@ -423,10 +434,10 @@ main() {
     
     if (( $(echo "$VARIANCE < 1.0" | bc -l) )); then
         echo -e "  ${GREEN}Variance < 1.0 ✓ — Consistent${NC}"
-    elif (( $(echo "$VARIANCE < 2.0" | bc -l) )); then
-        echo -e "  ${YELLOW}Variance < 2.0 — Moderate gap${NC}"
+    elif (( $(echo "$VARIANCE < 1.5" | bc -l) )); then
+        echo -e "  ${YELLOW}Variance < 1.5 — Moderate gap${NC}"
     else
-        echo -e "  ${RED}Variance > 2.0 ✗ — RED FLAG${NC}"
+        echo -e "  ${RED}Variance > 1.5 ✗ — RED FLAG${NC}"
         echo "  Excellent docs but weak runtime (or vice versa)"
     fi
     echo ""
@@ -435,13 +446,13 @@ main() {
     echo "  CERTIFICATION CHECK"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
-    TEXT_OK=$(echo "$TEXT_SCORE >= 8.0" | bc -l)
-    RUNTIME_OK=$(echo "$RUNTIME_SCORE >= 8.0" | bc -l)
-    VARIANCE_OK=$(echo "$VARIANCE < 2.0" | bc -l)
+    TEXT_OK=$(echo "$TEXT_SCORE >= 8.5" | bc -l)
+    RUNTIME_OK=$(echo "$RUNTIME_SCORE >= 8.5" | bc -l)
+    VARIANCE_OK=$(echo "$VARIANCE < 1.5" | bc -l)
     
-    echo "  Text ≥ 8.0:      $TEXT_SCORE → $([ "$TEXT_OK" -eq 1 ] && echo -e "${GREEN}PASS${NC}" || echo -e "${RED}FAIL${NC}")"
-    echo "  Runtime ≥ 8.0:  $RUNTIME_SCORE → $([ "$RUNTIME_OK" -eq 1 ] && echo -e "${GREEN}PASS${NC}" || echo -e "${RED}FAIL${NC}")"
-    echo "  Variance < 2.0: $VARIANCE → $([ "$VARIANCE_OK" -eq 1 ] && echo -e "${GREEN}PASS${NC}" || echo -e "${RED}FAIL${NC}")"
+    echo "  Text ≥ 8.5:      $TEXT_SCORE → $([ "$TEXT_OK" -eq 1 ] && echo -e "${GREEN}PASS${NC}" || echo -e "${RED}FAIL${NC}")"
+    echo "  Runtime ≥ 8.5:  $RUNTIME_SCORE → $([ "$RUNTIME_OK" -eq 1 ] && echo -e "${GREEN}PASS${NC}" || echo -e "${RED}FAIL${NC}")"
+    echo "  Variance < 1.5: $VARIANCE → $([ "$VARIANCE_OK" -eq 1 ] && echo -e "${GREEN}PASS${NC}" || echo -e "${RED}FAIL${NC}")"
     echo ""
     
     if [[ "$TEXT_OK" -eq 1 && "$RUNTIME_OK" -eq 1 && "$VARIANCE_OK" -eq 1 ]]; then
