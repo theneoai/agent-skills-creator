@@ -24,8 +24,18 @@
 
 ```
 skill/
-├── SKILL.md                 # ≤300 行 (当前 642)
-├── references/              # 新增
+├── SKILL.md                 # ≤300 行
+├── engine/                  # 核心优化引擎
+│   ├── main.sh             # 入口点
+│   ├── orchestrator.sh     # 工作流编排
+│   ├── agents/             # 专业化 agents
+│   ├── evolution/          # 自优化循环
+│   └── lib/                # 共享库
+├── eval/                    # 评估框架
+│   ├── main.sh             # 评估入口
+│   ├── scorer/             # 评分引擎
+│   └── certifier.sh        # 认证系统
+├── references/              # 详细文档
 │   ├── create.md           # CREATE 详细流程
 │   ├── evaluate.md         # EVALUATE 详细流程
 │   ├── restore.md          # RESTORE 详细流程
@@ -36,7 +46,6 @@ skill/
 │   ├── long-context.md     # 长文本处理
 │   ├── quality-metrics.md  # 质量指标详解
 │   └── benchmarks.md       # 基准数据
-├── scripts/
 └── test_results/
 ```
 
@@ -52,7 +61,7 @@ skill/
 
 **对比**: skill-manager 在 tune.sh 中有路径白名单限制
 
-**当前代码** (skill/scripts/skill-manager/tune.sh:16-21):
+**当前代码** (skill/engine/evolution/engine.sh:16-21):
 ```bash
 REAL_PATH=$(realpath "$SKILL_FILE" 2>/dev/null || echo "$SKILL_FILE")
 SKILL_FILE="$REAL_PATH"  # 无路径验证！
@@ -126,13 +135,13 @@ SKILL_FILE="$REAL_PATH"
 **5.1 添加 lib/ 模块化**
 
 ```
-scripts/skill-manager/lib/
+engine/lib/
 ├── weights.sh          # 评分权重配置
 ├── trigger_patterns.sh # 触发词正则
 └── constants.sh       # 常量定义
 ```
 
-**5.2 改进 tune.sh**
+**5.2 改进 engine.sh**
 
 | 特性 | 当前 | 优化后 |
 |------|------|--------|
@@ -145,13 +154,13 @@ scripts/skill-manager/lib/
 
 ```bash
 # 快速验证
-scripts/skill-manager/quick-validate.sh   # < 10s 快速检查
+eval/quick-validate.sh   # < 10s 快速检查
 
 # 批量评分
-scripts/skill-manager/batch-score.sh       # 批量处理多个 skill
+eval/batch-score.sh       # 批量处理多个 skill
 
 # 报告生成
-scripts/skill-manager/report.sh            # 生成评估报告
+eval/report.sh            # 生成评估报告
 ```
 
 ---

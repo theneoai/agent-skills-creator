@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Shellcheck
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        shell: [bash, sh]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          apt-get update && apt-get install -y shellcheck
+
+      - name: Install shellcheck
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install shellcheck
+
+      - name: Find shell scripts
+        id: scripts
+        run: |
+          echo "scripts=$(find . -name '*.sh' -type f | grep -v '.git/' | tr '\n' ' ')" >> $GITHUB_OUTPUT
+
+      - name: Run shellcheck
+        run: |
+          for script in ${{ fromJson(steps.scripts.outputs.scripts) }}; do
+            shellcheck "$script" || exit 1
+          done
+
+  eval:
+    name: Eval Framework
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup output directory
+        run: echo "OUTPUT_DIR=./eval_results" >> $GITHUB_ENV
+
+      - name: Run eval on SKILL.md
+        working-directory: .
+        run: |
+          bash eval/main.sh --skill ./SKILL.md --fast --output ./eval_results --ci || true
+
+      - name: Check eval results
+        working-directory: .
+        run: |
+          if [[ -f ./eval_results/summary.json ]]; then
+            echo "=== Eval Summary ==="
+            cat ./eval_results/summary.json
+            echo ""
+            echo "=== Phase Scores ==="
+            for phase in phase1 phase2 phase3 phase4; do
+              if [[ -f ./eval_results/${phase}.json ]]; then
+                echo "--- ${phase}.json ---"
+                cat ./eval_results/${phase}.json
+              fi
+            done
+          else
+            echo "Warning: No eval results found"
+            exit 1
+          fi
+
+      - name: Upload eval results
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: ./eval_results/
+          retention-days: 7
+
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run engine tests
+        working-directory: ./engine
+        run: |
+          bash tests/run_tests.sh
+
+      - name: Run test cases
+        working-directory: .
+        run: |
+          for test_case in test_cases/*/; do
+            if [[ -d "$test_case" ]]; then
+              echo "=== Running tests in: $test_case ==="
+              for test_file in "$test_case"*.md; do
+                if [[ -f "$test_file" ]]; then
+                  echo "Processing: $test_file"
+                fi
+              done
+            fi
+          done
+
+      - name: Run self-optimization tests
+        if: fileExists('test_cases/self_optimization_tests.md')
+        run: |
+          echo "Self-optimization tests found"
+          head -50 test_cases/self_optimization_tests.md

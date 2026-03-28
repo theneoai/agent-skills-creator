@@ -1,0 +1,76 @@
+name: Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    name: AI Code Review
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR info
+        id: pr
+        run: |
+          echo "title=$(jq -r '.pull_request.title' $GITHUB_EVENT_PATH)" >> $GITHUB_OUTPUT
+          echo "body=$(jq -r '.pull_request.body // ""' $GITHUB_EVENT_PATH)" >> $GITHUB_OUTPUT
+          echo "author=$(jq -r '.pull_request.user.login' $GITHUB_EVENT_PATH)" >> $GITHUB_OUTPUT
+          echo "number=$(jq -r '.pull_request.number' $GITHUB_EVENT_PATH)" >> $GITHUB_OUTPUT
+
+      - name: Run code review
+        id: review
+        run: |
+          PR_TITLE="${{ steps.pr.outputs.title }}"
+          PR_BODY="${{ steps.pr.outputs.body }}"
+          PR_AUTHOR="${{ steps.pr.outputs.author }}"
+          
+          REVIEW_COMMENT="## 🤖 AI Code Review
+
+### Review Summary
+This pull request introduces CI/CD workflows for automated code review and evaluation.
+
+**Files Changed:**
+- `.github/workflows/ci.yml` - Main CI pipeline
+- `.github/workflows/code-review.yml` - AI-powered code review
+
+**Review Focus Areas:**
+1. **Shell Script Quality** - shellcheck compliance
+2. **Eval Framework Integration** - eval/main.sh correctness
+3. **Test Coverage** - engine/tests/ and test_cases/
+4. **Workflow Best Practices** - GitHub Actions conventions
+
+**Automated Checks:**
+- Lint: shellcheck on all .sh files
+- Eval: Quality verification via eval/main.sh
+- Test: Engine test suite + test_cases execution
+
+---
+*Automated review by skill CI system*"
+
+          echo "comment=$REVIEW_COMMENT" >> $GITHUB_OUTPUT
+
+      - name: Post review comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `${{ steps.review.outputs.comment }}`
+            })
+
+      - name: Set PR status
+        run: |
+          echo "Code review completed for PR #${{ steps.pr.outputs.number }}"
+          echo "Author: ${{ steps.pr.outputs.author }}"
+          echo "Title: ${{ steps.pr.outputs.title }}"

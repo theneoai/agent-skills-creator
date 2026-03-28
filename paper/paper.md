@@ -122,6 +122,8 @@ The **self-optimization capability** described in this work implements a complet
 
 [5] Yao, S. et al. "React: Synergizing reasoning and acting in language models." arXiv:2210.03629, 2022.
 
+[6] Hsueh, L. "unified-skill-eval: A Real-Time LLM-Based Evaluation Framework for Agent Skill Certification." https://github.com/theneoai/skill/paper/unified_skill_eval_paper.md, 2026.
+
 [6] Wei, J. et al. "Chain-of-thought prompting elicits reasoning in large language models." NeurIPS, 2022.
 
 [7] Yao, S. et al. "Tree of thoughts: Deliberate problem solving with large language models." NeurIPS, 2023.

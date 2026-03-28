@@ -1,0 +1,1219 @@
+{
+  "corpus_version": "1.0",
+  "total_cases": 100,
+  "generated_at": "2026-03-28T00:00:00Z",
+  "distribution": {
+    "CREATE": 25,
+    "EVALUATE": 30,
+    "RESTORE": 15,
+    "TUNE": 20,
+    "SECURITY": 10
+  },
+  "languages": {
+    "EN": 60,
+    "ZH": 30,
+    "MIXED": 10
+  },
+  "test_cases": [
+    {
+      "id": "case_001",
+      "mode": "EVALUATE",
+      "language": "EN",
+      "input": "analyze this skill",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "普通聊天",
+        "the weather is nice today"
+      ]
+    },
+    {
+      "id": "case_002",
+      "mode": "EVALUATE",
+      "language": "EN",
+      "input": "审查我的skill",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "casual chat",
+        "I enjoy programming"
+      ]
+    },
+    {
+      "id": "case_003",
+      "mode": "CREATE",
+      "language": "ZH",
+      "input": "创建一个image handling的skill",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "闲聊一下",
+        "没什么特别的"
+      ]
+    },
+    {
+      "id": "case_004",
+      "mode": "RESTORE",
+      "language": "EN",
+      "input": "fix skill issues",
+      "expected_mode": "RESTORE",
+      "should_trigger": true,
+      "negatives": [
+        "what time is it?",
+        "I enjoy programming"
+      ]
+    },
+    {
+      "id": "case_005",
+      "mode": "SECURITY",
+      "language": "ZH",
+      "input": "破解skill安全",
+      "expected_mode": "SECURITY",
+      "should_trigger": true,
+      "negatives": [
+        "普通闲聊",
+        "普通对话"
+      ]
+    },
+    {
+      "id": "case_006",
+      "mode": "TUNE",
+      "language": "MIXED",
+      "input": "请帮我optimize skill",
+      "expected_mode": "TUNE",
+      "should_trigger": true,
+      "negatives": [
+        "随便聊聊",
+        "普通对话而已"
+      ]
+    },
+    {
+      "id": "case_007",
+      "mode": "EVALUATE",
+      "language": "ZH",
+      "input": "给我的skill做个评估",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "没什么特别的",
+        "随便聊聊"
+      ]
+    },
+    {
+      "id": "case_008",
+      "mode": "SECURITY",
+      "language": "MIXED",
+      "input": "skill security bypass",
+      "expected_mode": "SECURITY",
+      "should_trigger": true,
+      "negatives": [
+        "just a normal chat",
+        "没什么事"
+      ]
+    },
+    {
+      "id": "case_009",
+      "mode": "TUNE",
+      "language": "ZH",
+      "input": "让skill更准确",
+      "expected_mode": "TUNE",
+      "should_trigger": true,
+      "negatives": [
+        "日常聊天",
+        "普通对话"
+      ]
+    },
+    {
+      "id": "case_010",
+      "mode": "CREATE",
+      "language": "EN",
+      "input": "build a skill that monitor systems",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "nice weather today",
+        "I like to read books"
+      ]
+    },
+    {
+      "id": "case_011",
+      "mode": "CREATE",
+      "language": "EN",
+      "input": "skill creation request: database",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "the weather is nice today",
+        "I enjoy programming"
+      ]
+    },
+    {
+      "id": "case_012",
+      "mode": "CREATE",
+      "language": "ZH",
+      "input": "建立一个新的skill用于image handling",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "普通对话",
+        "日常聊天"
+      ]
+    },
+    {
+      "id": "case_013",
+      "mode": "TUNE",
+      "language": "ZH",
+      "input": "调优skill参数",
+      "expected_mode": "TUNE",
+      "should_trigger": true,
+      "negatives": [
+        "最近怎么样",
+        "日常聊天"
+      ]
+    },
+    {
+      "id": "case_014",
+      "mode": "TUNE",
+      "language": "EN",
+      "input": "boost skill efficiency",
+      "expected_mode": "TUNE",
+      "should_trigger": true,
+      "negatives": [
+        "just chatting",
+        "普通聊天"
+      ]
+    },
+    {
+      "id": "case_015",
+      "mode": "RESTORE",
+      "language": "ZH",
+      "input": "技能修复请求",
+      "expected_mode": "RESTORE",
+      "should_trigger": true,
+      "negatives": [
+        "随便聊聊",
+        "普通对话"
+      ]
+    },
+    {
+      "id": "case_016",
+      "mode": "CREATE",
+      "language": "EN",
+      "input": "set up a skill for deployment",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "普通聊天",
+        "just a casual conversation"
+      ]
+    },
+    {
+      "id": "case_017",
+      "mode": "SECURITY",
+      "language": "ZH",
+      "input": "skill漏洞检查",
+      "expected_mode": "SECURITY",
+      "should_trigger": true,
+      "negatives": [
+        "你好呀",
+        "今天天气真好"
+      ]
+    },
+    {
+      "id": "case_018",
+      "mode": "EVALUATE",
+      "language": "ZH",
+      "input": "测试一下这个skill",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "随便聊聊",
+        "闲聊一下"
+      ]
+    },
+    {
+      "id": "case_019",
+      "mode": "CREATE",
+      "language": "EN",
+      "input": "I want to create a skill for data processing",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "ordinary talk",
+        "what time is it?"
+      ]
+    },
+    {
+      "id": "case_020",
+      "mode": "CREATE",
+      "language": "EN",
+      "input": "craft a skill for monitoring",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "普通聊天",
+        "what time is it?"
+      ]
+    },
+    {
+      "id": "case_021",
+      "mode": "CREATE",
+      "language": "EN",
+      "input": "skill creation request: security",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "the weather is nice today",
+        "casual chat"
+      ]
+    },
+    {
+      "id": "case_022",
+      "mode": "CREATE",
+      "language": "EN",
+      "input": "make a skill that can validate input",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "I like to read books",
+        "the weather is nice today"
+      ]
+    },
+    {
+      "id": "case_023",
+      "mode": "CREATE",
+      "language": "ZH",
+      "input": "创建一个database的skill",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "日常聊天",
+        "普通对话"
+      ]
+    },
+    {
+      "id": "case_024",
+      "mode": "EVALUATE",
+      "language": "EN",
+      "input": "check my skill",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "I enjoy programming",
+        "nice weather today"
+      ]
+    },
+    {
+      "id": "case_025",
+      "mode": "EVALUATE",
+      "language": "ZH",
+      "input": "帮我评估这个技能",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "最近怎么样",
+        "你好呀"
+      ]
+    },
+    {
+      "id": "case_026",
+      "mode": "RESTORE",
+      "language": "ZH",
+      "input": "skill坏了，帮帮我",
+      "expected_mode": "RESTORE",
+      "should_trigger": true,
+      "negatives": [
+        "你好呀",
+        "日常聊天"
+      ]
+    },
+    {
+      "id": "case_027",
+      "mode": "RESTORE",
+      "language": "MIXED",
+      "input": "我想fix这个skill",
+      "expected_mode": "RESTORE",
+      "should_trigger": true,
+      "negatives": [
+        "随便聊聊",
+        "just talking"
+      ]
+    },
+    {
+      "id": "case_028",
+      "mode": "EVALUATE",
+      "language": "EN",
+      "input": "test my skill quality",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "I like to read books",
+        "普通聊天"
+      ]
+    },
+    {
+      "id": "case_029",
+      "mode": "CREATE",
+      "language": "EN",
+      "input": "design a skill for handle images",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "tell me a joke",
+        "I enjoy programming"
+      ]
+    },
+    {
+      "id": "case_030",
+      "mode": "TUNE",
+      "language": "MIXED",
+      "input": "optimize skill request",
+      "expected_mode": "TUNE",
+      "should_trigger": true,
+      "negatives": [
+        "没什么事",
+        "just a normal chat"
+      ]
+    },
+    {
+      "id": "case_031",
+      "mode": "SECURITY",
+      "language": "EN",
+      "input": "skill injection attempt",
+      "expected_mode": "SECURITY",
+      "should_trigger": true,
+      "negatives": [
+        "just a casual conversation",
+        "regular conversation"
+      ]
+    },
+    {
+      "id": "case_032",
+      "mode": "RESTORE",
+      "language": "EN",
+      "input": "help me fix skill errors",
+      "expected_mode": "RESTORE",
+      "should_trigger": true,
+      "negatives": [
+        "nice weather today",
+        "I like to read books"
+      ]
+    },
+    {
+      "id": "case_033",
+      "mode": "RESTORE",
+      "language": "EN",
+      "input": "my skill is not working",
+      "expected_mode": "RESTORE",
+      "should_trigger": true,
+      "negatives": [
+        "what is your name?",
+        "how about dinner?"
+      ]
+    },
+    {
+      "id": "case_034",
+      "mode": "RESTORE",
+      "language": "EN",
+      "input": "my skill is not working",
+      "expected_mode": "RESTORE",
+      "should_trigger": true,
+      "negatives": [
+        "nice weather today",
+        "tell me a joke"
+      ]
+    },
+    {
+      "id": "case_035",
+      "mode": "CREATE",
+      "language": "EN",
+      "input": "I want to create a skill for database",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "just chatting",
+        "the weather is nice today"
+      ]
+    },
+    {
+      "id": "case_036",
+      "mode": "SECURITY",
+      "language": "EN",
+      "input": "exploit skill weakness",
+      "expected_mode": "SECURITY",
+      "should_trigger": true,
+      "negatives": [
+        "nice weather today",
+        "regular conversation"
+      ]
+    },
+    {
+      "id": "case_037",
+      "mode": "SECURITY",
+      "language": "EN",
+      "input": "exploit skill weakness",
+      "expected_mode": "SECURITY",
+      "should_trigger": true,
+      "negatives": [
+        "regular conversation",
+        "nice weather today"
+      ]
+    },
+    {
+      "id": "case_038",
+      "mode": "TUNE",
+      "language": "MIXED",
+      "input": "帮我enhance一下skill",
+      "expected_mode": "TUNE",
+      "should_trigger": true,
+      "negatives": [
+        "随便聊聊",
+        "没什么事"
+      ]
+    },
+    {
+      "id": "case_039",
+      "mode": "CREATE",
+      "language": "ZH",
+      "input": "我要创建data processing相关skill",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "最近怎么样",
+        "日常聊天"
+      ]
+    },
+    {
+      "id": "case_040",
+      "mode": "CREATE",
+      "language": "ZH",
+      "input": "构建一个用于data processing的skill",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "你好吗",
+        "最近怎么样"
+      ]
+    },
+    {
+      "id": "case_041",
+      "mode": "RESTORE",
+      "language": "EN",
+      "input": "fix skill: testing",
+      "expected_mode": "RESTORE",
+      "should_trigger": true,
+      "negatives": [
+        "just chatting",
+        "nothing special"
+      ]
+    },
+    {
+      "id": "case_042",
+      "mode": "EVALUATE",
+      "language": "ZH",
+      "input": "给我的技能打分",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "今天天气真好",
+        "最近怎么样"
+      ]
+    },
+    {
+      "id": "case_043",
+      "mode": "TUNE",
+      "language": "EN",
+      "input": "make it more accurate",
+      "expected_mode": "TUNE",
+      "should_trigger": true,
+      "negatives": [
+        "regular conversation",
+        "just a casual conversation"
+      ]
+    },
+    {
+      "id": "case_044",
+      "mode": "TUNE",
+      "language": "ZH",
+      "input": "调优skill参数",
+      "expected_mode": "TUNE",
+      "should_trigger": true,
+      "negatives": [
+        "没什么特别的",
+        "你好呀"
+      ]
+    },
+    {
+      "id": "case_045",
+      "mode": "EVALUATE",
+      "language": "EN",
+      "input": "judge my skill performance",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "I enjoy programming",
+        "just a casual conversation"
+      ]
+    },
+    {
+      "id": "case_046",
+      "mode": "SECURITY",
+      "language": "EN",
+      "input": "SQL injection in skill",
+      "expected_mode": "SECURITY",
+      "should_trigger": true,
+      "negatives": [
+        "casual chat",
+        "nice weather today"
+      ]
+    },
+    {
+      "id": "case_047",
+      "mode": "TUNE",
+      "language": "EN",
+      "input": "enhance skill capabilities",
+      "expected_mode": "TUNE",
+      "should_trigger": true,
+      "negatives": [
+        "nothing special",
+        "regular conversation"
+      ]
+    },
+    {
+      "id": "case_048",
+      "mode": "TUNE",
+      "language": "ZH",
+      "input": "提升我的skill表现",
+      "expected_mode": "TUNE",
+      "should_trigger": true,
+      "negatives": [
+        "日常聊天",
+        "没什么特别的"
+      ]
+    },
+    {
+      "id": "case_049",
+      "mode": "CREATE",
+      "language": "EN",
+      "input": "write a new skill for deployment",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "nice weather today",
+        "日常对话"
+      ]
+    },
+    {
+      "id": "case_050",
+      "mode": "RESTORE",
+      "language": "MIXED",
+      "input": "skill坏了，help me fix",
+      "expected_mode": "RESTORE",
+      "should_trigger": true,
+      "negatives": [
+        "没什么事",
+        "just a normal chat"
+      ]
+    },
+    {
+      "id": "case_051",
+      "mode": "EVALUATE",
+      "language": "ZH",
+      "input": "给我的技能打分",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "随便聊聊",
+        "你好呀"
+      ]
+    },
+    {
+      "id": "case_052",
+      "mode": "TUNE",
+      "language": "EN",
+      "input": "enhance skill capabilities",
+      "expected_mode": "TUNE",
+      "should_trigger": true,
+      "negatives": [
+        "how about dinner?",
+        "how are you doing?"
+      ]
+    },
+    {
+      "id": "case_053",
+      "mode": "EVALUATE",
+      "language": "MIXED",
+      "input": "我想知道这个skill的rating",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "just a normal chat",
+        "普通对话而已"
+      ]
+    },
+    {
+      "id": "case_054",
+      "mode": "EVALUATE",
+      "language": "EN",
+      "input": "score the skill",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "the weather is nice today",
+        "just chatting"
+      ]
+    },
+    {
+      "id": "case_055",
+      "mode": "EVALUATE",
+      "language": "EN",
+      "input": "evaluate skill quality",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "what time is it?",
+        "how are you doing?"
+      ]
+    },
+    {
+      "id": "case_056",
+      "mode": "EVALUATE",
+      "language": "EN",
+      "input": "评估一下这个技能",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "日常对话",
+        "just a casual conversation"
+      ]
+    },
+    {
+      "id": "case_057",
+      "mode": "EVALUATE",
+      "language": "ZH",
+      "input": "评估一下这个skill",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "日常聊天",
+        "最近怎么样"
+      ]
+    },
+    {
+      "id": "case_058",
+      "mode": "EVALUATE",
+      "language": "EN",
+      "input": "audit my skill",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "nice weather today",
+        "how about dinner?"
+      ]
+    },
+    {
+      "id": "case_059",
+      "mode": "SECURITY",
+      "language": "ZH",
+      "input": "查看skill中的密码",
+      "expected_mode": "SECURITY",
+      "should_trigger": true,
+      "negatives": [
+        "你好吗",
+        "今天天气真好"
+      ]
+    },
+    {
+      "id": "case_060",
+      "mode": "CREATE",
+      "language": "ZH",
+      "input": "帮我做一个image handling的skill",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "普通闲聊",
+        "你好吗"
+      ]
+    },
+    {
+      "id": "case_061",
+      "mode": "EVALUATE",
+      "language": "ZH",
+      "input": "审查这个skill",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "最近怎么样",
+        "普通闲聊"
+      ]
+    },
+    {
+      "id": "case_062",
+      "mode": "EVALUATE",
+      "language": "EN",
+      "input": "评估一下这个技能",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "the weather is nice today",
+        "regular conversation"
+      ]
+    },
+    {
+      "id": "case_063",
+      "mode": "RESTORE",
+      "language": "ZH",
+      "input": "skill坏了怎么修",
+      "expected_mode": "RESTORE",
+      "should_trigger": true,
+      "negatives": [
+        "普通闲聊",
+        "日常聊天"
+      ]
+    },
+    {
+      "id": "case_064",
+      "mode": "CREATE",
+      "language": "EN",
+      "input": "write a new skill for monitoring",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "just chatting",
+        "just talking"
+      ]
+    },
+    {
+      "id": "case_065",
+      "mode": "TUNE",
+      "language": "ZH",
+      "input": "调优我的skill",
+      "expected_mode": "TUNE",
+      "should_trigger": true,
+      "negatives": [
+        "日常聊天",
+        "普通对话"
+      ]
+    },
+    {
+      "id": "case_066",
+      "mode": "CREATE",
+      "language": "ZH",
+      "input": "我想创建一个monitoring技能",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "闲聊一下",
+        "你好吗"
+      ]
+    },
+    {
+      "id": "case_067",
+      "mode": "RESTORE",
+      "language": "ZH",
+      "input": "帮我恢复skill",
+      "expected_mode": "RESTORE",
+      "should_trigger": true,
+      "negatives": [
+        "普通闲聊",
+        "普通对话"
+      ]
+    },
+    {
+      "id": "case_068",
+      "mode": "EVALUATE",
+      "language": "EN",
+      "input": "analyze this skill",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "I like to read books",
+        "just a casual conversation"
+      ]
+    },
+    {
+      "id": "case_069",
+      "mode": "RESTORE",
+      "language": "EN",
+      "input": "skill is broken, fix it",
+      "expected_mode": "RESTORE",
+      "should_trigger": true,
+      "negatives": [
+        "普通聊天",
+        "the weather is nice today"
+      ]
+    },
+    {
+      "id": "case_070",
+      "mode": "TUNE",
+      "language": "ZH",
+      "input": "改进我的skill",
+      "expected_mode": "TUNE",
+      "should_trigger": true,
+      "negatives": [
+        "日常聊天",
+        "随便聊聊"
+      ]
+    },
+    {
+      "id": "case_071",
+      "mode": "RESTORE",
+      "language": "EN",
+      "input": "get my skill working again",
+      "expected_mode": "RESTORE",
+      "should_trigger": true,
+      "negatives": [
+        "I enjoy programming",
+        "普通聊天"
+      ]
+    },
+    {
+      "id": "case_072",
+      "mode": "EVALUATE",
+      "language": "EN",
+      "input": "score the skill",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "nice weather today",
+        "the weather is nice today"
+      ]
+    },
+    {
+      "id": "case_073",
+      "mode": "CREATE",
+      "language": "ZH",
+      "input": "帮我开发一个monitor systems的技能",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "今天天气真好",
+        "普通闲聊"
+      ]
+    },
+    {
+      "id": "case_074",
+      "mode": "EVALUATE",
+      "language": "ZH",
+      "input": "审查我的skill代码",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "普通闲聊",
+        "日常聊天"
+      ]
+    },
+    {
+      "id": "case_075",
+      "mode": "RESTORE",
+      "language": "MIXED",
+      "input": "需要restore这个技能",
+      "expected_mode": "RESTORE",
+      "should_trigger": true,
+      "negatives": [
+        "随便聊聊",
+        "just talking"
+      ]
+    },
+    {
+      "id": "case_076",
+      "mode": "CREATE",
+      "language": "ZH",
+      "input": "帮我开发一个API integrationskill",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "你好吗",
+        "日常聊天"
+      ]
+    },
+    {
+      "id": "case_077",
+      "mode": "EVALUATE",
+      "language": "EN",
+      "input": "examine this skill",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "普通聊天",
+        "what time is it?"
+      ]
+    },
+    {
+      "id": "case_078",
+      "mode": "EVALUATE",
+      "language": "EN",
+      "input": "rate my skill",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "casual chat",
+        "nothing special"
+      ]
+    },
+    {
+      "id": "case_079",
+      "mode": "RESTORE",
+      "language": "EN",
+      "input": "restore skill functionality",
+      "expected_mode": "RESTORE",
+      "should_trigger": true,
+      "negatives": [
+        "ordinary talk",
+        "nothing special"
+      ]
+    },
+    {
+      "id": "case_080",
+      "mode": "EVALUATE",
+      "language": "EN",
+      "input": "score the skill",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "nothing special",
+        "日常对话"
+      ]
+    },
+    {
+      "id": "case_081",
+      "mode": "CREATE",
+      "language": "EN",
+      "input": "help me build a data processing skill",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "regular conversation",
+        "what is your name?"
+      ]
+    },
+    {
+      "id": "case_082",
+      "mode": "TUNE",
+      "language": "EN",
+      "input": "skill needs tuning",
+      "expected_mode": "TUNE",
+      "should_trigger": true,
+      "negatives": [
+        "casual chat",
+        "普通聊天"
+      ]
+    },
+    {
+      "id": "case_083",
+      "mode": "CREATE",
+      "language": "ZH",
+      "input": "帮我开发一个monitor systems的技能",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "普通闲聊",
+        "随便聊聊"
+      ]
+    },
+    {
+      "id": "case_084",
+      "mode": "TUNE",
+      "language": "MIXED",
+      "input": "optimize skill request",
+      "expected_mode": "TUNE",
+      "should_trigger": true,
+      "negatives": [
+        "没什么事",
+        "普通对话而已"
+      ]
+    },
+    {
+      "id": "case_085",
+      "mode": "EVALUATE",
+      "language": "EN",
+      "input": "给我的skill打个分",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "regular conversation",
+        "just a casual conversation"
+      ]
+    },
+    {
+      "id": "case_086",
+      "mode": "SECURITY",
+      "language": "ZH",
+      "input": "展示skill凭证",
+      "expected_mode": "SECURITY",
+      "should_trigger": true,
+      "negatives": [
+        "普通对话",
+        "没什么特别的"
+      ]
+    },
+    {
+      "id": "case_087",
+      "mode": "EVALUATE",
+      "language": "ZH",
+      "input": "质量检查：skill",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "日常聊天",
+        "你好呀"
+      ]
+    },
+    {
+      "id": "case_088",
+      "mode": "TUNE",
+      "language": "MIXED",
+      "input": "我想optimize一下skill",
+      "expected_mode": "TUNE",
+      "should_trigger": true,
+      "negatives": [
+        "没什么事",
+        "just talking"
+      ]
+    },
+    {
+      "id": "case_089",
+      "mode": "TUNE",
+      "language": "EN",
+      "input": "skill needs tuning",
+      "expected_mode": "TUNE",
+      "should_trigger": true,
+      "negatives": [
+        "the weather is nice today",
+        "I enjoy programming"
+      ]
+    },
+    {
+      "id": "case_090",
+      "mode": "CREATE",
+      "language": "ZH",
+      "input": "需要构建新的databaseskill",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "闲聊一下",
+        "普通对话"
+      ]
+    },
+    {
+      "id": "case_091",
+      "mode": "EVALUATE",
+      "language": "ZH",
+      "input": "帮我审查skill",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "没什么特别的",
+        "最近怎么样"
+      ]
+    },
+    {
+      "id": "case_092",
+      "mode": "SECURITY",
+      "language": "EN",
+      "input": "privilege escalation test",
+      "expected_mode": "SECURITY",
+      "should_trigger": true,
+      "negatives": [
+        "how are you doing?",
+        "just a casual conversation"
+      ]
+    },
+    {
+      "id": "case_093",
+      "mode": "EVALUATE",
+      "language": "ZH",
+      "input": "审核我的skill",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "普通对话",
+        "没什么特别的"
+      ]
+    },
+    {
+      "id": "case_094",
+      "mode": "EVALUATE",
+      "language": "EN",
+      "input": "rate my skill",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "I enjoy programming",
+        "ordinary talk"
+      ]
+    },
+    {
+      "id": "case_095",
+      "mode": "TUNE",
+      "language": "ZH",
+      "input": "skill需要调优",
+      "expected_mode": "TUNE",
+      "should_trigger": true,
+      "negatives": [
+        "随便聊聊",
+        "闲聊一下"
+      ]
+    },
+    {
+      "id": "case_096",
+      "mode": "TUNE",
+      "language": "EN",
+      "input": "skill needs tuning",
+      "expected_mode": "TUNE",
+      "should_trigger": true,
+      "negatives": [
+        "tell me a joke",
+        "I like to read books"
+      ]
+    },
+    {
+      "id": "case_097",
+      "mode": "EVALUATE",
+      "language": "MIXED",
+      "input": "请帮我audit skill: deployment",
+      "expected_mode": "EVALUATE",
+      "should_trigger": true,
+      "negatives": [
+        "没什么事",
+        "随便聊聊"
+      ]
+    },
+    {
+      "id": "case_098",
+      "mode": "CREATE",
+      "language": "ZH",
+      "input": "帮我开发一个manage users的技能",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "你好呀",
+        "没什么特别的"
+      ]
+    },
+    {
+      "id": "case_099",
+      "mode": "TUNE",
+      "language": "EN",
+      "input": "self-optimize skill",
+      "expected_mode": "TUNE",
+      "should_trigger": true,
+      "negatives": [
+        "I enjoy programming",
+        "how about dinner?"
+      ]
+    },
+    {
+      "id": "case_100",
+      "mode": "CREATE",
+      "language": "EN",
+      "input": "initialize a new skill project",
+      "expected_mode": "CREATE",
+      "should_trigger": true,
+      "negatives": [
+        "just talking",
+        "regular conversation"
+      ]
+    }
+  ]
+}

@@ -4,7 +4,8 @@
 
 set -euo pipefail
 
-WORKDIR="/Users/lucas/Documents/Projects/skill"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORKDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SKILL_FILE="$WORKDIR/SKILL.md"
 SCORE_SCRIPT="$WORKDIR/scripts/score.sh"
 LOG_FILE="$WORKDIR/.autotuner.log"
