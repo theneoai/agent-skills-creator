@@ -12,6 +12,7 @@ require_evolution rollback
 workflow_init() {
     local user_prompt="$1"
     local output_file="$2"
+    local parent_skill="${3:-}"
     
     state_set_prompt "$user_prompt"
     state_set_target_file "$output_file"
@@ -22,6 +23,10 @@ workflow_init() {
     
     mkdir -p "$(dirname "$TARGET_SKILL_FILE")"
     touch "$TARGET_SKILL_FILE"
+    
+    if [[ -n "$parent_skill" ]]; then
+        creator_init_skill_file "$TARGET_SKILL_FILE" "$(basename "$TARGET_SKILL_FILE" .md)" "$parent_skill"
+    fi
     
     echo "Workflow initialized: $TARGET_SKILL_FILE"
     echo "Target tier: $TARGET_TIER"

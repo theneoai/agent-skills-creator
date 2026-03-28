@@ -20,8 +20,22 @@ source "$(dirname "${BASH_SOURCE[0]}")/orchestrator/_parallel.sh"
 orchestrate() {
     local user_prompt="$1"
     local output_file="$2"
+    local parent_skill="${PARENT_SKILL:-}"
     
-    workflow_init "$user_prompt" "$output_file"
+    if [[ -n "$PARENT_SKILL" ]]; then
+        if [[ "$PARENT_SKILL" == *".md"* ]]; then
+            PARENT_SKILL_PATH="$PARENT_SKILL"
+        else
+            PARENT_SKILL_PATH="${PROJECT_ROOT}/${PARENT_SKILL}.md"
+        fi
+        
+        if [[ -f "$PARENT_SKILL_PATH" ]]; then
+            echo "Using parent skill: $PARENT_SKILL_PATH"
+            export PARENT_SKILL_PATH
+        fi
+    fi
+    
+    workflow_init "$user_prompt" "$output_file" "$parent_skill"
     workflow_run
 }
 
