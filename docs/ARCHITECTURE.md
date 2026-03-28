@@ -178,7 +178,7 @@ READ → ANALYZE → CURATION → PLAN → IMPLEMENT → VERIFY → HUMAN_REVIEW
 - **LOG**: Record to results.tsv
 - **COMMIT**: Git commit every 10 rounds
 
-### 4-Phase Evaluation
+### 4-Phase Evaluation (Full)
 
 | Phase | Focus | Score |
 |-------|-------|-------|
@@ -188,6 +188,34 @@ READ → ANALYZE → CURATION → PLAN → IMPLEMENT → VERIFY → HUMAN_REVIEW
 | 4. Certify | Tier, variance, security | 100pts |
 
 **Total: 1000pts**
+
+### Lean Evaluation (~0 seconds, $0)
+
+For fast feedback during development, lean evaluation uses heuristic scoring without LLM:
+
+```
+LEAN: fast_parse → text_score_heuristic → runtime_test_fast → CERTIFY
+```
+
+**Lean Scoring (500pts)**:
+
+| Phase | Focus | Max | Method |
+|-------|-------|-----|--------|
+| Parse | YAML, §1.x, triggers | 100 | Grep pattern matching |
+| Text | §1.x quality, domain, workflow | 350 | Keyword frequency |
+| Runtime | §2 trigger patterns, modes | 50 | Table/pattern detection |
+
+**Lean Thresholds**:
+
+| Tier | Total | Percentage |
+|------|-------|------------|
+| GOLD | 475+ | 95% |
+| SILVER | 425+ | 85% |
+| BRONZE | 350+ | 70% |
+
+**When to Use Lean vs Full**:
+- **Lean**: CI/CD, iterative development, quick checks
+- **Full**: Production certification, final validation
 
 ### Certification Tiers
 
@@ -209,7 +237,7 @@ User Input → create-skill.sh → orchestrator.sh
     → Final Skill File
 ```
 
-### Skill Evaluation
+### Skill Evaluation (Full)
 ```
 User Input → evaluate-skill.sh → eval/main.sh
     → parse_validate.sh (Phase 1)
@@ -217,6 +245,15 @@ User Input → evaluate-skill.sh → eval/main.sh
     → runtime_tester.sh (Phase 3)
     → certifier.sh (Phase 4)
     → JSON/HTML Report
+```
+
+### Lean Evaluation (~0 seconds)
+```
+User Input → lean-orchestrator.sh
+    → fast_parse (grep patterns)
+    → text_score_heuristic (keyword frequency)
+    → runtime_test_fast (trigger detection)
+    → CERTIFY
 ```
 
 ### Skill Optimization
