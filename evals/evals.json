@@ -1,7 +1,7 @@
 {
-  "skill_name": "agent-skills-creator",
+  "skill_name": "agent-skill-creator",
   "version": "1.6.0",
-  "description": "Agent Skills Creator 评估数据集 v1.6.0，包含多轮训练、多 Agent 协作、质量验证、模式检测等关键场景",
+  "description": "Agent Skill Creator 评估数据集 v1.6.0，包含多轮训练、多 Agent 协作、质量验证、模式检测等关键场景",
   "evals": [
     {
       "id": "create-new-skill",
@@ -10,7 +10,7 @@
       "turns": [
         {
           "role": "user",
-          "content": "使用 agent-skills-creator 创建一个 code-review Skill"
+          "content": "使用 agent-skill-creator 创建一个 code-review Skill"
         }
       ],
       "should_trigger": true,

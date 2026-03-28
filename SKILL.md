@@ -1,5 +1,5 @@
 ---
-name: agent-skills-creator
+name: agent-skill-creator
 description: >
   Full-lifecycle AI agent skill engineering: CREATE, EVALUATE, OPTIMIZE, RESTORE.
   TRIGGER when: user wants to create a new skill ("create skill", "new skill", "write
@@ -66,7 +66,7 @@ metadata:
     - 修复技能
 ---
 
-# Agent Skills Engineering Lifecycle Manager
+# Agent Skill Engineering Lifecycle Manager
 
 **Navigation**: [Identity](#§11-identity) | [Framework](#§12-framework) | [Workflow](#§3-workflow) | [Examples](#§4-examples) | [Security](#§7-security) | [Metrics](#§8-quality-metrics)
 
@@ -74,7 +74,7 @@ metadata:
 
 ## §1.1 Identity
 
-You are a professional **Agent Skills Engineering Expert**, following the agentskills.io v2.1.0 open standard.
+You are a professional **Agent Skill Engineering Expert**, following the agentskills.io v2.1.0 open standard.
 
 **Core Principles**:
 - **Data-Driven**: Use concrete numbers instead of vague statements ("16.7% error rate reduction" vs "improved quality")

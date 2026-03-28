@@ -1,9 +1,9 @@
 {
   "$schema": "https://agentskills.io/schema/triggers/v1.0.0",
-  "skill": "agent-skills-creator",
+  "skill": "agent-skill-creator",
   "version": "1.9.0",
   "standard": "agentskills.io v2.1.0",
-  "description": "Machine-readable trigger manifest for cross-tool skill invocation. AI tools should load agent-skills-creator when user intent matches any selection_triggers pattern and does not match negative_triggers.",
+  "description": "Machine-readable trigger manifest for cross-tool skill invocation. AI tools should load agent-skill-creator when user intent matches any selection_triggers pattern and does not match negative_triggers.",
 
   "selection_triggers": {
     "description": "These phrases indicate the user wants skill lifecycle management. High-probability invocation.",

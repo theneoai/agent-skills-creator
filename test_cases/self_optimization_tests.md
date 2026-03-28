@@ -1,6 +1,6 @@
 # Self-Optimization Loop Test Cases
 
-> Test suite for agent-skills-creator self-optimization feature
+> Test suite for agent-skill-creator self-optimization feature
 > Covers trigger detection, 6-step loop, multi-agent coordination, anti-patterns, and variance detection
 
 ---

@@ -4,7 +4,7 @@
 
 ### 1.1 Environment and Test Platform
 
-All experiments were conducted on macOS using bash scripts within the agent-skills-creator framework. The skill-manager skill served as both the target of optimization and the framework for conducting experiments. Testing occurred over a period spanning Rounds 22 through 28, with approximately 8 hours of total testing time invested in the evaluation pipeline.
+All experiments were conducted on macOS using bash scripts within the agent-skill-creator framework. The skill-manager skill served as both the target of optimization and the framework for conducting experiments. Testing occurred over a period spanning Rounds 22 through 28, with approximately 8 hours of total testing time invested in the evaluation pipeline.
 
 The experimental environment comprised a suite of validation and scoring scripts designed to assess skill quality across multiple dimensions. The primary scripts included `validate.sh` for frontmatter and structural compliance, `score.sh` for text-based quality assessment, `score-v2.sh` for enhanced scoring with consistency checks, `score-v3.sh` for runtime execution testing, and `stability-check.sh` for measuring scoring stability and idempotency.
 

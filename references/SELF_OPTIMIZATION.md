@@ -1,6 +1,6 @@
 # Agent-Skills-Creator Self-Optimization Capability Design
 
-This document defines how agent-skills-creator implements self-optimization, including the self-optimization loop, multi-agent coordination mechanisms, and integration with existing skill-manager scripts.
+This document defines how agent-skill-creator implements self-optimization, including the self-optimization loop, multi-agent coordination mechanisms, and integration with existing skill-manager scripts.
 
 ---
 
@@ -505,7 +505,7 @@ resolve_conflict() {
 
 ```bash
 # Use tune.sh for quick optimization
-./scripts/skill-manager/tune.sh agent-skills-creator/SKILL.md 20
+./scripts/skill-manager/tune.sh agent-skill-creator/SKILL.md 20
 
 # Output example:
 #   Initial: 7.5
@@ -519,16 +519,16 @@ resolve_conflict() {
 
 ```bash
 # 1. Validate current state
-./scripts/skill-manager/validate.sh agent-skills-creator/SKILL.md
+./scripts/skill-manager/validate.sh agent-skill-creator/SKILL.md
 
 # 2. Score current quality
-./scripts/skill-manager/score.sh agent-skills-creator/SKILL.md
+./scripts/skill-manager/score.sh agent-skill-creator/SKILL.md
 
 # 3. Runtime verification
-./scripts/skill-manager/runtime-validate.sh agent-skills-creator/SKILL.md
+./scripts/skill-manager/runtime-validate.sh agent-skill-creator/SKILL.md
 
 # 4. Run optimization loop (max 100 rounds)
-./scripts/skill-manager/tune.sh agent-skills-creator/SKILL.md 100
+./scripts/skill-manager/tune.sh agent-skill-creator/SKILL.md 100
 
 # 5. Edge case check
 ./scripts/skill-manager/edge-case-check.sh
@@ -537,14 +537,14 @@ resolve_conflict() {
 ./scripts/skill-manager/feedback.sh
 
 # 7. Final certification
-./scripts/skill-manager/certify.sh agent-skills-creator/SKILL.md
+./scripts/skill-manager/certify.sh agent-skill-creator/SKILL.md
 ```
 
 #### 3.2.3 Multi-Agent Mode
 
 ```bash
 # Start multi-agent parallel optimization
-./scripts/skill-manager/score-multi.sh agent-skills-creator/SKILL.md
+./scripts/skill-manager/score-multi.sh agent-skill-creator/SKILL.md
 
 # This script will:
 # 1. Start multiple scoring instances in parallel
@@ -595,10 +595,10 @@ self_optimize() {
 
 ```bash
 # cron scheduling example (run at 3 AM daily)
-# 0 3 * * * /path/to/scripts/skill-manager/tune.sh /Users/lucas/.agents/skills/agent-skills-creator/SKILL.md 20 >> /var/log/self-optimize.log 2>&1
+# 0 3 * * * /path/to/scripts/skill-manager/tune.sh /Users/lucas/.agents/skills/agent-skill-creator/SKILL.md 20 >> /var/log/self-optimize.log 2>&1
 
 # Or use launchd (macOS)
-# ~/Library/LaunchAgents/com.agent-skills-creator.optimize.plist
+# ~/Library/LaunchAgents/com.agent-skill-creator.optimize.plist
 ```
 
 ---
@@ -606,7 +606,7 @@ self_optimize() {
 ## 4. Key File Paths
 
 ```
-agent-skills-creator/
+agent-skill-creator/
 ├── SKILL.md                          # Main skill file
 ├── scripts/
 │   └── skill-manager/

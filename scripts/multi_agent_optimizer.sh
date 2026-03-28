@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # multi_agent_optimizer.sh — Multi-agent autonomous optimization loop
-# Runs multi-agent optimization for agent-skills-creator
+# Runs multi-agent optimization for agent-skill-creator
 
 set -euo pipefail
 

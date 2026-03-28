@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # self-optimize.sh — Trigger script for AI-driven skill optimization
 # Usage: echo "自优化 SKILL.md" | self-optimize.sh
-#        echo "self-optimize agent-skills-creator" | self-optimize.sh
+#        echo "self-optimize agent-skill-creator" | self-optimize.sh
 
 set -euo pipefail
 
@@ -24,6 +24,6 @@ if [[ "$input" =~ ^(自优化|self-optimize)\s+(.+)$ ]]; then
     bash "$TUNE_SCRIPT" "$skill_path" 10
 else
     echo "Usage: echo \"自优化 SKILL.md\" | $0"
-    echo "       echo \"self-optimize agent-skills-creator\" | $0"
+    echo "       echo \"self-optimize agent-skill-creator\" | $0"
     exit 1
 fi

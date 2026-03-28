@@ -1,4 +1,4 @@
-# Agent Skills Engineering
+# Agent Skill Engineering
 
 [📄 Paper (English)](paper/agent_skills_engineering.md) | [📄 论文 (中文)](paper/agent_skills_engineering_zh.md) | [📖 Methodology](paper/methodology.md) | [🔧 Scripts](scripts/skill-manager/)
 
@@ -11,7 +11,7 @@
 
 The proliferation of large language model (LLM)-based agents has created an urgent need for systematic engineering approaches to AI skill development. Unlike traditional software, agent skills encompass complex behavioral specifications that must exhibit consistent performance across diverse execution contexts.
 
-This repository presents **Agent Skills Engineering**, a comprehensive methodology for managing the complete lifecycle of AI agent skills, from initial specification through autonomous optimization to production certification. Our approach addresses four fundamental challenges: (1) the lack of standardized skill representation formats, (2) the absence of reliable evaluation frameworks capturing both textual quality and runtime effectiveness, (3) the need for autonomous optimization mechanisms, and (4) the critical capability to handle long-context documents.
+This repository presents **Agent Skill Engineering**, a comprehensive methodology for managing the complete lifecycle of AI agent skills, from initial specification through autonomous optimization to production certification. Our approach addresses four fundamental challenges: (1) the lack of standardized skill representation formats, (2) the absence of reliable evaluation frameworks capturing both textual quality and runtime effectiveness, (3) the need for autonomous optimization mechanisms, and (4) the critical capability to handle long-context documents.
 
 We introduce a **multi-agent optimization architecture** employing parallel evaluation across specialized agents—Security, Trigger, Runtime, Quality, and EdgeCase—operating under a deterministic improvement selection protocol. Our **9-step autonomous loop** achieves continuous skill improvement with measurable quality targets.
 
@@ -45,8 +45,8 @@ We introduce a **multi-agent optimization architecture** employing parallel eval
 
 ```bash
 # Clone the repository
-git clone https://github.com/theneoai/agent-skills-creator.git
-cd agent-skills-creator
+git clone https://github.com/theneoai/agent-skill-creator.git
+cd agent-skill-creator
 
 # Create a new skill
 opencode "create a code-review skill"
@@ -81,7 +81,7 @@ opencode "execute OWASP AST10 security review"
 ## Directory Structure
 
 ```
-agent-skills-creator/
+agent-skill-creator/
 ├── SKILL.md                      # Main skill definition
 ├── paper/
 │   ├── agent_skills_engineering.md    # English paper
@@ -103,7 +103,7 @@ agent-skills-creator/
 ```
 @article{neoai2026agent,
   author       = {neo.ai},
-  title        = {Agent Skills Engineering: A Systematic Approach to AI Skill Lifecycle Management and Autonomous Optimization},
+  title        = {Agent Skill Engineering: A Systematic Approach to AI Skill Lifecycle Management and Autonomous Optimization},
   journal      = {arXiv preprint},
   year         = {2026},
   eprint       = {arXiv:XXXX.XXXXX},
