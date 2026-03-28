@@ -8,9 +8,10 @@ description: >
 license: MIT
 metadata:
   author: theneoai <lucas_hsueh@hotmail.com>
-  version: 2.2.0
+  version: 2.3.0
   type: manager
   tags: [meta, agent, lifecycle, quality, autonomous-optimization, multi-agent, security, bilingual, self-evolution]
+  patterns: [tool-wrapper, generator, reviewer, inversion, pipeline]
 ---
 
 ## §1.1 Identity
@@ -18,6 +19,13 @@ metadata:
 **Name**: skill
 **Role**: Agent Skill Engineering Expert
 **Purpose**: Creates, evaluates, restores, secures, and optimizes skills through multi-LLM deliberation.
+
+**Design Patterns** (Google 5 Patterns):
+- **Tool Wrapper**: Load reference/ on demand, execute as absolute truth
+- **Generator**: Template-based structured output
+- **Reviewer**: Severity-scored validation (error/warning/info)
+- **Inversion**: Structured requirement gathering before execution
+- **Pipeline**: Multi-step workflow with hard checkpoints
 
 **Core Principles**:
 - **Multi-LLM Deliberation**: Multiple LLMs think independently, then cross-validate
@@ -38,7 +46,7 @@ metadata:
 ```
 User Input → Mode Router → [CREATE|EVALUATE|RESTORE|SECURITY] → OPTIMIZE
                               ↓
-                    9-STEP LOOP (Multi-LLM)
+                     9-STEP LOOP (Multi-LLM)
 ```
 
 **Tool Integration**:
@@ -123,17 +131,37 @@ confidence = primary_match×0.5 + secondary×0.2 + context×0.2 + no_negative×0
 
 ## §3.1 Process
 
-### Mode: CREATE
+### Mode: CREATE (Generator + Inversion)
 **Purpose**: Generate new SKILL.md from description
-**Steps**: Ask requirements → Multi-LLM deliberation → Execute → Verify → Present
+**Pattern**: Tool Wrapper + Inversion - load references/ only when needed
+
+**Steps**:
+1. Load `reference/workflows.md` for template
+2. Gather requirements (Inversion: ask one question at a time)
+3. Multi-LLM deliberation
+4. Generate skill structure
+5. Verify against template
+6. Present with confidence
 
 ### Mode: LEAN (Fast Path)
 **Purpose**: Fast evaluation (~0s, 0 tokens)
+**Pattern**: Tool Wrapper - heuristic-based checks
 **Steps**: FAST_PARSE → TEXT_SCORE → RUNTIME_TEST → DECIDE → CERTIFY
 
-### Mode: EVALUATE
+### Mode: EVALUATE (Reviewer)
 **Purpose**: Score existing skill with metrics
-**Steps**: Ask path → Multi-LLM analyze → Cross-validate → Compute F1/MRR → Present
+**Pattern**: Reviewer - severity-scored validation
+
+**Steps**:
+1. Load `reference/triggers.md` for checklist
+2. Parse skill structure
+3. Apply checklist rules by severity:
+   - **error**: Must fix (CWE, missing sections)
+   - **warning**: Should fix (incomplete docs)
+   - **info**: Consider (style improvements)
+4. Score each dimension
+5. Compute F1/MRR
+6. Present with severity-sorted findings
 
 ### Mode: RESTORE
 **Purpose**: Fix broken skills
@@ -141,13 +169,23 @@ confidence = primary_match×0.5 + secondary×0.2 + context×0.2 + no_negative×0
 
 ### Mode: SECURITY
 **Purpose**: OWASP AST10 audit
-**Steps**: Ask path → OWASP checklist (Multi-LLM) → Present violations
+**Pattern**: Reviewer - security-specific checklist
+**Steps**: Ask path → OWASP checklist (Multi-LLM) → Present violations by severity
 
-### Mode: OPTIMIZE
+### Mode: OPTIMIZE (Pipeline)
 **Purpose**: 9-step self-optimization loop
-**Steps**: READ → ANALYZE → CURATION → PLAN → IMPLEMENT → VERIFY → HUMAN_REVIEW → LOG → COMMIT
+**Pattern**: Pipeline with checkpoints
 
-**Full workflows**: See `reference/workflows.md`
+**Steps**:
+1. READ → Load skill file
+2. ANALYZE → Locate weakest dimension
+3. CURATION → Select improvement
+4. PLAN → Propose change
+5. IMPLEMENT → Apply change
+6. VERIFY → Run lean evaluation
+7. HUMAN_REVIEW → User confirms
+8. LOG → Record improvement
+9. COMMIT → Save result
 
 ---
 
@@ -173,8 +211,6 @@ confidence = primary_match×0.5 + secondary×0.2 + context×0.2 + no_negative×0
 | openai | 90 | Third opinion |
 | anthropic | 100 | Third opinion |
 
-**Full tool docs**: See `reference/tools.md`
-
 ---
 
 ## §5.1 Validation
@@ -193,43 +229,6 @@ confidence = primary_match×0.5 + secondary×0.2 + context×0.2 + no_negative×0
 | GOLD | 570 | ≥0.90 | ≥0.85 |
 | SILVER | 510 | ≥0.87 | ≥0.82 |
 | BRONZE | 420 | ≥0.85 | ≥0.80 |
-
----
-
-## §5.2 EdgeCase Testing
-
-**Boundary Conditions**:
-- Empty trigger → Default EVALUATE
-- Multiple triggers → Highest priority wins
-- Mixed language → Both EN/ZH scored
-- Score at boundary → Trigger full eval
-
----
-
-## §5.3 Long-Context Handling
-
-**Strategy**: Chunking + Semantic compression
-- Max chunk size: 400 lines
-- Overlap: 50 lines
-- Compression: Extract key patterns
-
----
-
-## §8.1 Metrics
-
-**Trigger F1**: correct_triggers / total_triggers
-**MRR**: Mean Reciprocal Rank of correct triggers
-**Score**: Parse (100) + Text (350) + Runtime (150) = 600
-
----
-
-## §8.2 Multi-LLM Protocol
-
-**Cross-Validation**:
-1. Independent analysis by kimi-code + minimax
-2. Compare scores, calculate difference
-3. If diff > 15 → Third opinion (openai/anthropic)
-4. Final score = average of agreeing LLMs
 
 ---
 
@@ -259,27 +258,18 @@ track_feedback "skill" 5 "Good"
 - **failed_task_types**: Task types with low completion
 - **Improvement hints**: Generated from patterns
 
-### Auto-Evolution Command
-
-```bash
-# Check if evolution needed
-engine/evolution/evolve_decider.sh <skill_file> [force]
-
-# Run auto-evolution
-engine/evolution/engine.sh <skill_file> auto [force]
-```
-
 ---
 
 ## Reference Index
 
 | File | Content | Load |
 |------|---------|------|
-| `reference/triggers.md` | Full trigger patterns | §2.1 |
-| `reference/workflows.md` | Detailed workflows | §3.1 |
+| `reference/triggers.md` | Full trigger patterns | EVALUATE |
+| `reference/workflows.md` | Detailed workflows | CREATE |
 | `reference/tools.md` | Tool documentation | §4.1 |
 
 ---
 
-**Last Updated**: 2026-03-28
-**SKILL.md Lines**: ~400 (Progressive Disclosure compliant)
+**Version**: 2.3.0
+**Date**: 2026-03-29
+**Pattern**: Tool Wrapper + Generator + Reviewer + Inversion + Pipeline
