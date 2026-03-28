@@ -85,7 +85,7 @@ extract_inherited_sections() {
     fi
     
     local redlines
-    redlines=$(awk '/\*\*Red Lines|严禁/{found=1} found{print} /^$/{if(found) exit}' "$parent_skill")
+    redlines=$(awk '/\*\*Red Lines|严禁/{found=1} found{print} /^## [^§]/{if(found) exit}' "$parent_skill")
     if [[ -n "$redlines" ]]; then
         content+="$redlines"$'\n'
     fi
