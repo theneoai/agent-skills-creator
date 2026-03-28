@@ -123,31 +123,70 @@ text_score_heuristic() {
     local quant_count
     quant_count=$(grep -cE '[0-9]+\.[0-9]+%|[0-9]+%|\$[0-9]+|NIST|OWASP|ISO|SECURITY|F1|MRR' "$skill_file" || true)
     log_lean "  Quant count: $quant_count"
-    [[ $quant_count -ge 10 ]] && ((domain_score+=70)) || \
-    [[ $quant_count -ge 5 ]] && ((domain_score+=50)) || \
-    [[ $quant_count -ge 1 ]] && ((domain_score+=30))
+    if [[ $quant_count -ge 10 ]]; then
+        ((domain_score+=70))
+    elif [[ $quant_count -ge 5 ]]; then
+        ((domain_score+=50))
+    elif [[ $quant_count -ge 1 ]]; then
+        ((domain_score+=30))
+    fi
     
     local phase_count
     phase_count=$(grep -cE '(Phase|Step|pipeline|流程|步骤)' "$skill_file" || true)
-    [[ $phase_count -ge 3 ]] && ((workflow_score+=40)) || \
-    [[ $phase_count -ge 1 ]] && ((workflow_score+=20))
+    if [[ $phase_count -ge 3 ]]; then
+        ((workflow_score+=40))
+    elif [[ $phase_count -ge 1 ]]; then
+        ((workflow_score+=20))
+    fi
     
     local fail_count
     fail_count=$(grep -cE '(failure|Fail|error|错误)' "$skill_file" || true)
-    [[ $fail_count -ge 3 ]] && ((error_score+=30)) || \
-    [[ $fail_count -ge 1 ]] && ((error_score+=15))
+    if [[ $fail_count -ge 3 ]]; then
+        ((error_score+=30))
+    elif [[ $fail_count -ge 1 ]]; then
+        ((error_score+=15))
+    fi
     
     local example_count
     example_count=$(grep -cE '(example|Example|示例|例子)' "$skill_file" || true)
-    [[ $example_count -ge 5 ]] && ((example_score+=35)) || \
-    [[ $example_count -ge 2 ]] && ((example_score+=20)) || \
-    [[ $example_count -ge 1 ]] && ((example_score+=10))
+    if [[ $example_count -ge 5 ]]; then
+        ((example_score+=35))
+    elif [[ $example_count -ge 2 ]]; then
+        ((example_score+=20))
+    elif [[ $example_count -ge 1 ]]; then
+        ((example_score+=10))
+    fi
     
     if grep -qE '^name:|^description:|^license:|^version:' "$skill_file"; then
         ((metadata_score+=20))
     fi
     
-    local total=$((system_score + domain_score + workflow_score + error_score + example_score + metadata_score))
+    local cross_ref_score=0
+    if grep -qE 'reference/triggers\.md' "$skill_file" && [[ -f "${PROJECT_ROOT}/reference/triggers.md" ]]; then
+        ((cross_ref_score+=25))
+    fi
+    if grep -qE 'reference/workflows\.md' "$skill_file" && [[ -f "${PROJECT_ROOT}/reference/workflows.md" ]]; then
+        ((cross_ref_score+=25))
+    fi
+    if grep -qE 'reference/tools\.md' "$skill_file" && [[ -f "${PROJECT_ROOT}/reference/tools.md" ]]; then
+        ((cross_ref_score+=25))
+    fi
+    if grep -qE 'Progressive Disclosure' "$skill_file" && grep -qE 'reference/' "$skill_file"; then
+        ((cross_ref_score+=25))
+    fi
+    
+    local evolution_score=0
+    if grep -qE '## §6\. Self-Evolution|§6 Self-Evolution' "$skill_file"; then
+        ((evolution_score+=25))
+    fi
+    if grep -qE 'usage_tracker|usage tracking|使用追踪' "$skill_file"; then
+        ((evolution_score+=15))
+    fi
+    if grep -qE 'evolve_decider|evolution trigger|进化触发' "$skill_file"; then
+        ((evolution_score+=15))
+    fi
+    
+    local total=$((system_score + domain_score + workflow_score + error_score + example_score + metadata_score + cross_ref_score + evolution_score))
     
     echo "$total"
     
