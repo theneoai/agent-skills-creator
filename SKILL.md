@@ -1,24 +1,25 @@
 ---
 name: agent-skill
 description: >
-  Full-lifecycle AI agent skill engineering: CREATE, EVALUATE, RESTORE, SECURITY, OPTIMIZE.
-  Triggers on: create/build/make skill, evaluate/test/score skill, restore/fix skill,
-  security audit/OWASP check, optimize/improve/evolve skill.
-  Multi-LLM deliberation and cross-validation for all self-optimization.
+  全生命周期AI技能工程系统：创建、评估、恢复、安全、优化。
+  支持中英双语触发：创建/评估/恢复/安全/优化技能。
+  特性：多LLM deliberation、交叉验证、自动进化、Lean评估(~0秒/$0)、OWASP AST10安全审计。
+  自我进化：阈值+定时+使用数据三重触发，使用分析提升触发准确率F1>=0.90。
 license: MIT
 metadata:
   author: theneoai <lucas_hsueh@hotmail.com>
-  version: 2.0.0
+  version: 2.1.0
   type: manager
-  tags: [meta, agent, lifecycle, quality, autonomous-optimization, multi-agent, security]
+  tags: [meta, agent, lifecycle, quality, autonomous-optimization, multi-agent, security, bilingual, self-evolution]
 ---
 
 # agent-skill
 
-> **Version**: 2.0.0
+> **Version**: 2.1.0
 > **Date**: 2026-03-28
 > **Status**: ACTIVE
-> **Capabilities**: CREATE, EVALUATE, RESTORE, SECURITY, OPTIMIZE
+> **Capabilities**: CREATE, EVALUATE, RESTORE, SECURITY, OPTIMIZE, AUTO-EVOLVE
+> **Features**: Bilingual Triggers (EN/ZH), Multi-LLM Cross-Validation, Lean Eval, Self-Evolution
 
 ---
 
@@ -124,35 +125,50 @@ User Input
 
 **Trigger Patterns** (Enhanced - v2.1):
 
-### Primary Triggers
+### Primary Triggers (中英双语)
 
-| Mode | Priority | Primary Keywords | Score Weight |
-|------|----------|-----------------|--------------|
-| CREATE | 1 | "create skill", "build skill", "make skill", "new skill", "develop skill", "add skill" | +3 |
-| EVALUATE | 2 | "evaluate skill", "test skill", "score skill", "review skill", "assess skill", "check skill", "validate skill" | +3 |
-| RESTORE | 3 | "restore skill", "fix skill", "repair skill", "recover skill", "undo", "rollback skill" | +3 |
-| SECURITY | 4 | "security audit", "OWASP", "vulnerability", "CWE", "security check", "penetration test", "security scan" | +3 |
-| OPTIMIZE | 5 | "optimize skill", "improve skill", "evolve skill", "enhance skill", "tune skill", "refine skill", "upgrade skill" | +3 |
+| Mode | Priority | English Keywords | 中文关键词 | Score Weight |
+|------|----------|-----------------|------------|--------------|
+| CREATE | 1 | "create skill", "build skill", "make skill", "new skill", "develop skill", "add skill" | "创建技能", "创建skill", "新建技能", "开发技能", "制作技能", "生成技能" | +3 |
+| EVALUATE | 2 | "evaluate skill", "test skill", "score skill", "review skill", "assess skill", "check skill", "validate skill" | "评估技能", "测试技能", "打分技能", "审查技能", "验证技能", "检查技能", "评分" | +3 |
+| RESTORE | 3 | "restore skill", "fix skill", "repair skill", "recover skill", "undo", "rollback skill" | "恢复技能", "修复技能", "还原技能", "补救技能", "撤销", "回滚" | +3 |
+| SECURITY | 4 | "security audit", "OWASP", "vulnerability", "CWE", "security check", "penetration test", "security scan" | "安全审计", "安全检查", "漏洞扫描", "渗透测试", "OWASP检查", "安全扫描" | +3 |
+| OPTIMIZE | 5 | "optimize skill", "improve skill", "evolve skill", "enhance skill", "tune skill", "refine skill", "upgrade skill" | "优化技能", "改进技能", "进化技能", "提升技能", "调优技能", "完善技能", "增强技能" | +3 |
 
-### Secondary Triggers (Context-Dependent)
+### Secondary Triggers (上下文触发 - Context-Dependent)
 
-| Mode | Context Keywords | Requires Primary |
-|------|------------------|-----------------|
-| CREATE | "generate", "scaffold", "template", "starter" | Context confirms skill creation |
-| EVALUATE | "benchmark", "compare", "grade", "rate", "measure" | Context confirms assessment |
-| RESTORE | "broken", "corrupt", "invalid", "error in" | Context confirms damage |
-| SECURITY | "injection", "XSS", "CSRF", "exploit", "breach" | Context confirms security |
-| OPTIMIZE | "performance", "speed", "efficiency", "clean up", "refactor" | Context confirms improvement |
+| Mode | English Context | 中文上下文 | Requires Primary |
+|------|----------------|------------|-----------------|
+| CREATE | "generate", "scaffold", "template", "starter", "boilerplate" | "生成", "脚手架", "模板", "起始", "框架" | Context confirms skill creation |
+| EVALUATE | "benchmark", "compare", "grade", "rate", "measure", "audit" | "基准测试", "比较", "评级", "打分", "衡量" | Context confirms assessment |
+| RESTORE | "broken", "corrupt", "invalid", "error in", "damage" | "损坏", "破坏", "失效", "错误", "崩溃" | Context confirms damage |
+| SECURITY | "injection", "XSS", "CSRF", "exploit", "breach", "hack" | "注入", "跨站", "漏洞", "攻击", "入侵" | Context confirms security |
+| OPTIMIZE | "performance", "speed", "efficiency", "clean up", "refactor", "DRY" | "性能", "速度", "效率", "清理", "重构" | Context confirms improvement |
 
-### Negative Patterns (Anti-Triggers)
+### Negative Patterns (反模式 - Anti-Triggers)
 
-| Mode | Negative Patterns | Reason |
-|------|-------------------|--------|
-| CREATE | "check if skill exists", "skill already exists", "don't create" | False positive prevention |
-| EVALUATE | "evaluate this code", "test my function" | Not about skills |
-| RESTORE | "restore my file", "recover data" | Not skill-related |
-| SECURITY | "secure my password", "make it secure" | Generic security |
-| OPTIMIZE | "optimize this algorithm", "improve performance" | Not about skills |
+| Mode | English Negative | 中文反模式 | Reason |
+|------|----------------|------------|--------|
+| CREATE | "check if skill exists", "skill already exists", "don't create" | "检查技能是否存在", "技能已存在", "不要创建" | False positive prevention |
+| EVALUATE | "evaluate this code", "test my function", "lint" | "评估这段代码", "测试我的函数", "检查代码" | Not about skills |
+| RESTORE | "restore my file", "recover data", "get back" | "恢复我的文件", "恢复数据", "找回" | Not skill-related |
+| SECURITY | "secure my password", "make it secure", "encrypt" | "加密我的密码", "保护我的密码", "加密" | Generic security |
+| OPTIMIZE | "optimize this algorithm", "improve performance", "speed up" | "优化这个算法", "提升性能", "加速" | Not about skills |
+
+### Language Detection (语言检测)
+
+```
+Rule 7: LANGUAGE SCORING
+  → Detect language of input (EN/ZH/Mixed)
+  → EN input: weight English keywords at 1.0, Chinese at 0.3
+  → ZH input: weight Chinese keywords at 1.0, English at 0.3
+  → Mixed: use both at full weight
+
+Rule 8: CROSS-LANGUAGE MATCHING
+  → "创建技能" → CREATE (zh_weight=1.0)
+  → "create skill" → CREATE (en_weight=1.0)
+  → "创建create skill" → CREATE (both match, highest confidence)
+```
 
 ### Disambiguation Rules
 
