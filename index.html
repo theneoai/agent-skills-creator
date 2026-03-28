@@ -97,6 +97,14 @@
             font-size: 0.9em;
             opacity: 0.9;
         }
+        .lean-badge {
+            background: #4CAF50;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
         .loop-diagram {
             background: #f6f8fa;
             padding: 20px;
@@ -149,6 +157,12 @@
             background: #f6f8fa;
             font-weight: 600;
         }
+        .comparison-table td:nth-child(2),
+        .comparison-table td:nth-child(3),
+        .comparison-table td:nth-child(4) {
+            text-align: center;
+            font-weight: bold;
+        }
         footer {
             text-align: center;
             padding: 40px;
@@ -165,6 +179,18 @@
             font-size: 0.8em;
             margin-right: 5px;
         }
+        .result-box {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .result-box .big {
+            font-size: 3em;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -173,9 +199,8 @@
             <h1>Agent Skills Engineering</h1>
             <p class="subtitle">A Systematic Approach to AI Skill Lifecycle Management and Autonomous Optimization</p>
             <div class="links">
-                <a href="paper/agent_skills_engineering.md">📄 Paper (English)</a>
-                <a href="paper/agent_skills_engineering_zh.md">📄 论文 (中文)</a>
-                <a href="paper/methodology.md">📖 Methodology</a>
+                <a href="docs/API.md">📖 API Docs</a>
+                <a href="docs/ARCHITECTURE.md">🏗️ Architecture</a>
                 <a href="https://github.com/theneoai/agent-skills-creator">🔗 GitHub</a>
             </div>
         </div>
@@ -185,27 +210,33 @@
         <section>
             <h2>Abstract</h2>
             <p>
-                The proliferation of large language model (LLM)-based agents has created an urgent need for systematic engineering approaches to AI skill development. Unlike traditional software, agent skills encompass complex behavioral specifications that must exhibit consistent performance across diverse execution contexts.
+                Agent Skill Engineering is a comprehensive methodology for managing the complete lifecycle of AI agent skills, from initial specification through autonomous optimization to production certification.
             </p>
             <p>
-                This work presents <strong>Agent Skills Engineering</strong>, a comprehensive methodology for managing the complete lifecycle of AI agent skills, from initial specification through autonomous optimization to production certification. Our approach addresses four fundamental challenges: (1) the lack of standardized skill representation formats, (2) the absence of reliable evaluation frameworks, (3) the need for autonomous optimization mechanisms, and (4) the critical capability to handle long-context documents.
+                <strong>Key Innovation</strong>: Lean evaluation mode enables <span class="lean-badge">~0 second</span> skill assessment at <strong>~$0 cost</strong>, with full evaluation available when needed.
             </p>
+            
+            <div class="result-box">
+                <div class="big">475/500</div>
+                <div>GOLD Tier in 0 seconds, $0 cost</div>
+            </div>
+            
             <div class="metrics">
                 <div class="metric">
-                    <div class="metric-value">≥8.0</div>
-                    <div class="metric-label">Text Score</div>
+                    <div class="metric-value">~0s</div>
+                    <div class="metric-label">Lean Eval Time</div>
                 </div>
                 <div class="metric">
-                    <div class="metric-value">≥8.0</div>
-                    <div class="metric-label">Runtime Score</div>
+                    <div class="metric-value">$0</div>
+                    <div class="metric-label">Lean Eval Cost</div>
                 </div>
                 <div class="metric">
-                    <div class="metric-value">&lt;2.0</div>
-                    <div class="metric-label">Variance</div>
+                    <div class="metric-value">~2min</div>
+                    <div class="metric-label">Full Eval Time</div>
                 </div>
                 <div class="metric">
-                    <div class="metric-value">≥0.90</div>
-                    <div class="metric-label">Trace Compliance</div>
+                    <div class="metric-value">~2min</div>
+                    <div class="metric-label">Full Eval Cost</div>
                 </div>
             </div>
         </section>
@@ -213,14 +244,74 @@
         <section>
             <h2>Key Features</h2>
             <ul class="feature-list">
+                <li><strong>6 Modes</strong>: CREATE, EVALUATE, LEAN, RESTORE, SECURITY, OPTIMIZE</li>
                 <li><strong>9-Step Autonomous Optimization Loop</strong>: READ → ANALYZE → CURATION → PLAN → IMPLEMENT → VERIFY → HUMAN_REVIEW → LOG → COMMIT</li>
-                <li><strong>Dual-Track Validation</strong>: Text quality scoring + Runtime effectiveness testing</li>
-                <li><strong>Multi-Agent Parallel Evaluation</strong>: Security, Trigger, Runtime, Quality, EdgeCase agents</li>
-                <li><strong>Trace Compliance Analysis</strong>: Behavioral rule extraction (inspired by AgentPex)</li>
-                <li><strong>Long-Context Handling</strong>: Chunking, RAG, cross-reference preservation (100K+ tokens)</li>
-                <li><strong>Human-Agent Collaboration</strong>: Expert review integration for plateau detection</li>
-                <li><strong>Domain-Specific Scoring</strong>: Code, Document, and Creative skill variants</li>
+                <li><strong>Multi-LLM Deliberation</strong>: Cross-validation with Anthropic, OpenAI, Kimi</li>
+                <li><strong>Lean Evaluation</strong>: Heuristic-based, ~0 seconds, ~$0 cost</li>
+                <li><strong>Dual-Track Validation</strong>: Text quality + Runtime effectiveness</li>
+                <li><strong>4-Tier Certification</strong>: GOLD ≥ 475 | SILVER ≥ 425 | BRONZE ≥ 350</li>
+                <li><strong>OWASP AST10 Security</strong>: 10-item security checklist</li>
             </ul>
+        </section>
+
+        <section>
+            <h2>Evaluation Modes</h2>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Mode</th>
+                        <th>Speed</th>
+                        <th>Cost</th>
+                        <th>Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>LEAN</strong></td>
+                        <td style="color: #4CAF50;">~0 seconds</td>
+                        <td style="color: #4CAF50;">$0</td>
+                        <td>CI/CD, quick checks, iterative development</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Full Eval</strong></td>
+                        <td>~2 minutes</td>
+                        <td>~$0.50</td>
+                        <td>Production, final certification</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Optimize</strong></td>
+                        <td>~5 minutes</td>
+                        <td>~$2.00</td>
+                        <td>Continuous improvement</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>Lean Evaluation Architecture</h2>
+            <div class="highlight-box">
+                <pre><code>LEAN: fast_parse → text_score_heuristic → runtime_test_fast → CERTIFY
+
+├── fast_parse (100pts)
+│   ├── YAML frontmatter: 30pts
+│   ├── §1.x sections: 30pts
+│   ├── Trigger patterns: 25pts
+│   └── No placeholders: 15pts
+│
+├── text_score_heuristic (350pts)
+│   ├── System Prompt: 20-30pts
+│   ├── Domain Knowledge: 30-70pts
+│   ├── Workflow: 20-40pts
+│   ├── Error Handling: 15-30pts
+│   ├── Examples: 10-35pts
+│   └── Metadata: 20pts
+│
+└── runtime_test_fast (50pts)
+    ├── §2 Invocation section: 20pts
+    ├── Mode table patterns: 5pts each
+    └── Workflow keywords: 5pts</code></pre>
+            </div>
         </section>
 
         <section>
@@ -237,15 +328,15 @@
           ▼
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │  1. READ       │────▶│  2. ANALYZE    │────▶│  3. CURATION   │
-│  - Run score.sh │     │  - Identify     │     │  - Consolidate  │
-│  - Get baseline │     │    weakest dim  │     │    knowledge    │
+│  - Locate weak  │     │  - Prioritize   │     │  - Consolidate  │
+│    dimension    │     │    strategy     │     │    knowledge    │
 └─────────────────┘     └─────────────────┘     └────────┬────────┘
-                                                         │
-                                                         ▼
+                                                          │
+                                                          ▼
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │  9. COMMIT     │◀────│  8. LOG         │◀────│  4. PLAN       │
-│  - Git commit   │     │  - Record       │     │  - Select       │
-│    every 10x   │     │    results.tsv  │     │    strategy     │
+│  - Git commit   │     │  - results.tsv  │     │  - Select       │
+│    every 10x   │     │                 │     │    strategy     │
 └─────────────────┘     └─────────────────┘     └────────┬────────┘
           │                                            │
           │         ┌─────────────────────────────────┘
@@ -253,80 +344,95 @@
           ▼         ▼
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │  7. HUMAN_     │────▶│  6. VERIFY      │────▶│  5. IMPLEMENT  │
-│  REVIEW (opt)   │     │  - Check        │     │  - Apply fix    │
-│  - Expert review│     │    variance     │     │  - Atomic       │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-            </div>
-            <p style="margin-top: 15px;">
-                <span class="badge">CURATION</span> Prevents context collapse (ACE Framework)
-                <span class="badge">HUMAN_REVIEW</span> Required when score &lt; 8.0 after 10 rounds (c-CRAB)
-            </p>
+│  REVIEW (opt)   │     │  - Multi-LLM    │     │  - Atomic fix   │
+│  - Score < 8.0 │     │    validation    │     │                 │
+└─────────────────┘     └─────────────────┘     └─────────────────┘</code></pre>
         </section>
 
         <section>
-            <h2>Certification Formula</h2>
-            <div class="highlight-box">
-                <pre><code>CERTIFIED = (Text ≥ 8.0) AND (Runtime ≥ 8.0) AND (Variance < 2.0) 
-            AND (TraceCompliance ≥ 0.90) AND (LongContextScore ≥ 8.0)
-            AND (HumanScore ≥ 7.0 OR Rounds > 10)</code></pre>
-            </div>
-        </section>
-
-        <section>
-            <h2>Quick Start</h2>
-            <pre><code># Clone the repository
-git clone https://github.com/theneoai/agent-skills-creator.git
-cd agent-skills-creator
-
-# Create a new skill
-opencode "create a code-review skill"
-
-# Evaluate a skill  
-opencode "evaluate the git-release skill"
-
-# Run self-optimization
-opencode "self-optimize"
-
-# Run security review
-opencode "execute OWASP AST10 security review"</code></pre>
-        </section>
-
-        <section>
-            <h2>Scripts Reference</h2>
+            <h2>Certification Tiers</h2>
             <table>
                 <thead>
                     <tr>
-                        <th>Script</th>
-                        <th>Purpose</th>
+                        <th>Tier</th>
+                        <th>Score</th>
+                        <th>F1</th>
+                        <th>MRR</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td><code>score.sh</code></td><td>7-dimension text quality scoring</td></tr>
-                    <tr><td><code>score-v3.sh</code></td><td>Runtime + Trace Compliance evaluation</td></tr>
-                    <tr><td><code>tune.sh</code></td><td>9-step autonomous optimization loop</td></tr>
-                    <tr><td><code>certify.sh</code></td><td>Full certification determination</td></tr>
-                    <tr><td><code>validate.sh</code></td><td>Format validation against agentskills.io</td></tr>
-                    <tr><td><code>runtime-validate.sh</code></td><td>Runtime effectiveness testing</td></tr>
-                    <tr><td><code>edge-case-check.sh</code></td><td>Adversarial testing scenarios</td></tr>
+                    <tr style="background: linear-gradient(135deg, #ffd700 0%, #ffb700 100%); color: #333;">
+                        <td><strong>GOLD</strong></td>
+                        <td>≥ 475 (95%)</td>
+                        <td>≥ 0.95</td>
+                        <td>≥ 0.90</td>
+                    </tr>
+                    <tr style="background: #c0c0c0; color: #333;">
+                        <td><strong>SILVER</strong></td>
+                        <td>≥ 425 (85%)</td>
+                        <td>≥ 0.92</td>
+                        <td>≥ 0.87</td>
+                    </tr>
+                    <tr style="background: #cd7f32; color: white;">
+                        <td><strong>BRONZE</strong></td>
+                        <td>≥ 350 (70%)</td>
+                        <td>≥ 0.90</td>
+                        <td>≥ 0.85</td>
+                    </tr>
                 </tbody>
             </table>
         </section>
 
         <section>
+            <h2>Quick Start</h2>
+            <pre><code># Fast evaluation (~0 seconds, $0)
+./scripts/lean-orchestrator.sh ./SKILL.md
+
+# Full evaluation (~2 minutes)
+./scripts/evaluate-skill.sh ./SKILL.md
+
+# Create a new skill
+./scripts/create-skill.sh "Create a code review skill"
+
+# Security audit
+./scripts/security-audit.sh ./code-review.md
+
+# Optimize
+./scripts/optimize-skill.sh ./code-review.md
+
+# Restore broken skill
+./scripts/restore-skill.sh ./broken-skill.md</code></pre>
+        </section>
+
+        <section>
             <h2>Directory Structure</h2>
-            <pre><code>agent-skills-creator/
-├── SKILL.md                      # Main skill definition
-├── paper/
-│   ├── agent_skills_engineering.md    # English paper
-│   ├── agent_skills_engineering_zh.md # Chinese paper
-│   ├── methodology.md                 # Methodology details
-│   └── figures/                      # Architecture diagrams
-├── scripts/
-│   └── skill-manager/              # Core skill management tools
-├── references/
-│   ├── SELF_OPTIMIZATION.md       # Self-optimization design
-│   └── skill-manager/             # Detailed guides
-└── test_cases/                    # Evaluation test cases</code></pre>
+            <pre><code>skill-system/
+├── SKILL.md                    # Self-describing skill manifest
+├── README.md                   # This file
+├── CHANGELOG.md               # Version history
+│
+├── scripts/                   # User-facing CLI tools
+│   ├── lean-orchestrator.sh   # Fast evaluation (~0s, $0)
+│   ├── create-skill.sh         # Create new skills
+│   ├── evaluate-skill.sh       # Full evaluation (~2min)
+│   ├── optimize-skill.sh       # Self-optimization
+│   ├── security-audit.sh      # OWASP AST10
+│   ├── restore-skill.sh       # Fix broken skills
+│   └── quick-score.sh         # Fast text scoring
+│
+├── engine/                    # Skill lifecycle management
+│   ├── agents/                # Creator, Evaluator, Restorer, Security
+│   ├── evolution/            # 9-step optimization loop
+│   └── lib/                   # Shared libraries
+│
+├── eval/                      # Quality assurance framework
+│   ├── scorer/               # Text & runtime scoring
+│   ├── analyzer/              # F1/MRR/variance
+│   └── corpus/                # Test data
+│
+├── tests/                     # Test suite
+├── docs/                      # Documentation
+└── .github/workflows/         # CI/CD</code></pre>
         </section>
 
         <section>
@@ -342,21 +448,10 @@ opencode "execute OWASP AST10 security review"</code></pre>
   primaryClass = {cs.AI}
 }</code></pre>
         </section>
-
-        <section>
-            <h2>References</h2>
-            <ul>
-                <li><a href="https://agentskills.io">agentskills.io Standard</a></li>
-                <li><a href="https://arxiv.org/abs/2603.23806">AgentPex (2026)</a> - Trace-Based Behavioral Evaluation</li>
-                <li><a href="https://arxiv.org/abs/2603.23448">c-CRAB (2026)</a> - Code Review Agent Benchmark</li>
-                <li><a href="https://github.com/QwenLM/Qwen-Agent">Qwen-Agent (2026)</a> - Agent Framework with MCP</li>
-                <li><a href="https://github.com/MiniMax-AI/skills">MiniMax/skills (2026)</a> - Professional AI Skills</li>
-            </ul>
-        </section>
     </div>
 
     <footer>
-        <p><strong>Agent Skills Engineering</strong> | Version 1.6.0</p>
+        <p><strong>Agent Skills Engineering</strong> | Version 2.0.0</p>
         <p>Built on <a href="https://agentskills.io">agentskills.io</a> open standard</p>
         <p>Licensed under MIT</p>
     </footer>
