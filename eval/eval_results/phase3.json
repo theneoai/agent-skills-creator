@@ -1,0 +1,21 @@
+{
+    "phase": "runtime_score",
+    "score": 383,
+    "max": 450,
+    "agent_evaluation": false,
+    "details": {
+        "identity_consistency": {"score": 80, "max": 80},
+        "framework_execution": {"score": 50, "max": 70},
+        "output_actionability": {"score": 70, "max": 70},
+        "knowledge_accuracy": {"score": 33, "max": 50},
+        "conversation_stability": {"score": 50, "max": 50},
+        "trace_compliance": {"score": 40, "max": 50},
+        "long_document": {"score": 20, "max": 30},
+        "multi_agent": {"score": 15, "max": 25},
+        "trigger_accuracy": {"score": 25, "max": 25}
+    },
+    "metrics": {
+        "f1_score": 1.0000,
+        "mode_accuracy": .9000
+    }
+}

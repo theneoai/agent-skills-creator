@@ -1,0 +1,17 @@
+{
+    "phase": "certification",
+    "score": 90,
+    "max": 100,
+    "total": 896,
+    "tier": "SILVER",
+    "variance": 15,
+    "p1_score": 75,
+    "text_score": 368,
+    "runtime_score": 383,
+    "details": {
+        "variance_control": {"score": 40, "max": 40},
+        "tier_determination": {"score": 20, "max": 20},
+        "report_completeness": {"score": 20, "max": 20},
+        "security_gates": {"score": 10, "max": 10}
+    }
+}

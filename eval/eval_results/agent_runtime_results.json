@@ -1,0 +1,35 @@
+{
+    "evaluation_type": "agent_based",
+    "provider": "kimi-code minimax",
+    "timestamp": "2026-03-28T16:19:30Z",
+    "trigger_tests": {
+        "true_positives": 10,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "accuracy": 1.0000,
+        "f1_score": 1.0000
+    },
+    "mode_routing": {
+        "correct": 9,
+        "total": 10,
+        "accuracy": .9000
+    },
+    "identity_consistency": {
+        "confused": 0,
+        "score": 80
+    },
+    "actionability": {
+        "score": 70,
+        "tests_passed": 3,
+        "total_tests": 3
+    },
+    "knowledge_accuracy": {
+        "correct": 2,
+        "total": 3,
+        "score": 33
+    },
+    "conversation_stability": {
+        "stable": 1,
+        "score": 50
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "phase": "parse_validate",
+    "score": 75,
+    "max": 100,
+    "details": {
+        "yaml_frontmatter": {"score": 30, "max": 30},
+        "three_sections": {"score": 30, "max": 30},
+        "trigger_list": {"score": 0, "max": 25},
+        "no_placeholders": {"score": 15, "max": 15}
+    },
+    "security_violation": 0
+}
