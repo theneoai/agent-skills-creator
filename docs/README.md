@@ -1,33 +1,30 @@
-# Skill Engineering - Documentation
+# Skill Engineering
 
-## Installation
+AI Skill Lifecycle Management 系统，用于创建、评估、优化 AI Agent 技能。
+
+## 功能特性
+
+| 特性 | 说明 |
+|------|------|
+| **6 Modes** | CREATE, EVALUATE, LEAN, RESTORE, SECURITY, OPTIMIZE |
+| **9-Step Loop** | READ → ANALYZE → CURATION → PLAN → IMPLEMENT → VERIFY → HUMAN_REVIEW → LOG → COMMIT |
+| **Multi-LLM** | Cross-validation with kimi-code, minimax, openai |
+| **Lean Eval** | ~0s, ~$0 (heuristic-based) |
+| **4-Tier Cert** | GOLD ≥ 475, SILVER ≥ 425, BRONZE ≥ 350 |
+
+## 安装
 
 ### OpenCode
 
-Add superpowers to the `plugin` array in your `opencode.json` (global or project-level):
-
-```json
-{
-  "plugin": ["superpowers@git+https://github.com/theneoai/skill.git"]
-}
+```bash
+Fetch and follow instructions from https://raw.githubusercontent.com/theneoai/skill/main/.opencode/INSTALL.md
 ```
-
-Restart OpenCode. The plugin auto-installs and registers all skills automatically.
 
 ### Codex
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/theneoai/skill.git ~/.codex/skill
-   ```
-
-2. **Create the skills symlink:**
-   ```bash
-   mkdir -p ~/.agents/skills
-   ln -s ~/.codex/skill/skills ~/.agents/skills/skill
-   ```
-
-3. **Restart Codex** to discover skills.
+```bash
+Fetch and follow instructions from https://raw.githubusercontent.com/theneoai/skill/main/.codex/INSTALL.md
+```
 
 ### Claude Code
 
@@ -42,33 +39,37 @@ Restart OpenCode. The plugin auto-installs and registers all skills automaticall
 /add-plugin superpowers
 ```
 
-Or search for "superpowers" in the plugin marketplace.
-
 ### Gemini CLI
 
 ```
 gemini extensions install https://github.com/theneoai/skill
 ```
 
-## Quick Start
+## 快速开始
 
 ```bash
-# Fast evaluation (~$0, ~0s)
+# Lean 评估 (~0s, ~$0)
 ./scripts/lean-orchestrator.sh ./SKILL.md
 
-# Full evaluation (~$0.50, ~2min)
+# 完整评估 (~2min, ~$0.50)
 ./scripts/evaluate-skill.sh ./SKILL.md
 
-# Create skill
+# 创建技能
 ./scripts/create-skill.sh "Create a code review skill"
 
-# Create with inheritance
+# 继承创建
 ./scripts/create-skill.sh "Create a code review skill" --extends skill
 ```
 
-## Documentation
+## 文档
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture
-- [WORKFLOWS.md](WORKFLOWS.md) - Workflow documentation
-- [DESIGN.md](DESIGN.md) - Design decisions
-- [technical/core/](technical/core/) - Core engine documentation
+| 文档 | 说明 |
+|------|------|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | 系统架构 |
+| [WORKFLOWS.md](WORKFLOWS.md) | 工作流文档 |
+| [technical/core/](technical/core/) | 核心引擎文档 |
+
+## 项目地址
+
+- GitHub: https://github.com/theneoai/skill
+- 源码: https://github.com/theneoai/skill/tree/main
