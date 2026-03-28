@@ -104,14 +104,15 @@ User Input
 7. PRESENT  → Display cross-validated results with confidence level
 ```
 
-**Decision Rules**:
-| Condition | Action | Verification |
-|-----------|--------|-------------|
-| User says create/build/make | → CREATE mode | Multi-LLM score validation |
-| User says evaluate/test/score | → EVALUATE mode | F1/MRR calculation |
-| User says restore/fix/repair | → RESTORE mode | Cross-validation of fix |
-| User says security/OWASP/CWE | → SECURITY mode | OWASP AST10 checklist |
-| User says optimize/improve/evolve | → OPTIMIZE mode | 9-step loop |
+**Decision Rules** (Enhanced - v2.1):
+| Condition | Action | Confidence Threshold |
+|-----------|--------|---------------------|
+| Primary keyword exact match | → Respective mode | ≥ 0.80 |
+| Keyword scoring + context | → Highest score mode | ≥ 0.60 |
+| Negative pattern detected | → Exclude mode, re-score | - |
+| Multiple modes tie | → Higher priority wins | - |
+| Confidence < 0.6 | → Ask user to clarify | < 0.60 |
+| Still ambiguous | → Default to EVALUATE | = 0.30 |
 | Score < 8.0 after 10 rounds | → HUMAN_REVIEW | Expert human required |
 | Score regression during OPTIMIZE | → Auto-rollback | Multi-LLM verified |
 
@@ -121,14 +122,98 @@ User Input
 
 **Activation**: When user wants to manage skills (create/evaluate/restore/secure/optimize)
 
-**Trigger Patterns**:
-| Mode | Keywords |
-|------|----------|
-| CREATE | "create skill", "build skill", "make new skill", "develop skill" |
-| EVALUATE | "evaluate skill", "test skill", "score skill", "review skill", "assess skill" |
-| RESTORE | "restore skill", "fix skill", "repair skill", "recover skill" |
-| SECURITY | "security audit", "OWASP check", "vulnerability scan", "CWE check" |
-| OPTIMIZE | "optimize skill", "improve skill", "evolve skill", "enhance skill", "tune skill" |
+**Trigger Patterns** (Enhanced - v2.1):
+
+### Primary Triggers
+
+| Mode | Priority | Primary Keywords | Score Weight |
+|------|----------|-----------------|--------------|
+| CREATE | 1 | "create skill", "build skill", "make skill", "new skill", "develop skill", "add skill" | +3 |
+| EVALUATE | 2 | "evaluate skill", "test skill", "score skill", "review skill", "assess skill", "check skill", "validate skill" | +3 |
+| RESTORE | 3 | "restore skill", "fix skill", "repair skill", "recover skill", "undo", "rollback skill" | +3 |
+| SECURITY | 4 | "security audit", "OWASP", "vulnerability", "CWE", "security check", "penetration test", "security scan" | +3 |
+| OPTIMIZE | 5 | "optimize skill", "improve skill", "evolve skill", "enhance skill", "tune skill", "refine skill", "upgrade skill" | +3 |
+
+### Secondary Triggers (Context-Dependent)
+
+| Mode | Context Keywords | Requires Primary |
+|------|------------------|-----------------|
+| CREATE | "generate", "scaffold", "template", "starter" | Context confirms skill creation |
+| EVALUATE | "benchmark", "compare", "grade", "rate", "measure" | Context confirms assessment |
+| RESTORE | "broken", "corrupt", "invalid", "error in" | Context confirms damage |
+| SECURITY | "injection", "XSS", "CSRF", "exploit", "breach" | Context confirms security |
+| OPTIMIZE | "performance", "speed", "efficiency", "clean up", "refactor" | Context confirms improvement |
+
+### Negative Patterns (Anti-Triggers)
+
+| Mode | Negative Patterns | Reason |
+|------|-------------------|--------|
+| CREATE | "check if skill exists", "skill already exists", "don't create" | False positive prevention |
+| EVALUATE | "evaluate this code", "test my function" | Not about skills |
+| RESTORE | "restore my file", "recover data" | Not skill-related |
+| SECURITY | "secure my password", "make it secure" | Generic security |
+| OPTIMIZE | "optimize this algorithm", "improve performance" | Not about skills |
+
+### Disambiguation Rules
+
+```
+Rule 1: EXACT MATCH FIRST
+  → If input exactly matches a primary keyword, use that mode
+  → Example: "create skill" → CREATE (confidence: 0.95)
+
+Rule 2: KEYWORD SCORING
+  → Count keyword matches per mode
+  → Highest score wins
+  → Tie-breaker: use higher priority mode
+  → Example: "create and optimize skill" → CREATE (score: create=2, optimize=1)
+
+Rule 3: CONTEXT ANALYSIS
+  → If scores tie, analyze surrounding context
+  → Check for secondary keywords
+  → Example: "build skill that evaluates code" → CREATE (build primary, evaluate is feature not mode)
+
+Rule 4: NEGATIVE FILTER
+  → If any negative pattern matches, exclude that mode
+  → Re-score remaining modes
+  → Example: "don't create skill, just check existing" → EVALUATE
+
+Rule 5: USER CLARIFICATION
+  → If confidence < 0.6 after rules 1-4, ask user
+  → Present top 2 candidates with reasoning
+  → Example: "help with skill" → Ask: "Did you want to CREATE, EVALUATE, or something else?"
+
+Rule 6: DEFAULT FALLBACK
+  → If still ambiguous, default to EVALUATE (safest)
+  → Confidence: 0.3
+```
+
+### Confidence Scoring
+
+```
+confidence = (
+  primary_match * 0.5 +
+  secondary_match * 0.2 +
+  context_match * 0.2 +
+  no_negative * 0.1
+)
+
+Where:
+- primary_match: 1 if exact primary keyword, 0.5 if partial, 0 otherwise
+- secondary_match: 1 if secondary keyword present, 0 otherwise
+- context_match: 1 if context supports, 0 otherwise
+- no_negative: 1 if no negative patterns, 0 otherwise
+```
+
+### Example Trigger Analysis
+
+| Input | Detected Mode | Confidence | Reasoning |
+|-------|---------------|------------|-----------|
+| "create a new skill" | CREATE | 0.95 | Exact primary match |
+| "optimize my skill" | OPTIMIZE | 0.85 | Primary + context |
+| "fix the broken skill" | RESTORE | 0.80 | Primary + secondary context |
+| "don't create skill, evaluate it" | EVALUATE | 0.70 | Negative filter applied |
+| "skill management" | EVALUATE | 0.60 | Default + context |
+| "help with skills" | EVALUATE | 0.30 | Low confidence, ask user |
 
 **Usage**:
 ```bash
@@ -141,10 +226,11 @@ User Input
 ## §2.2 Recognition
 
 **Intent Detection (Multi-LLM)**:
-1. Each LLM extracts keywords independently
-2. Cross-validate intent detection results
-3. If LLMs disagree, ask user to clarify
-4. Default to CREATE if still ambiguous
+1. Each LLM extracts keywords independently using scoring system above
+2. Cross-validate intent detection results (must agree on top 2)
+3. If LLMs disagree on top mode, use confidence-weighted selection
+4. If confidence < 0.6, ask user to clarify
+5. Default to EVALUATE if still ambiguous
 
 **Parameter Detection**:
 - Skill description: Free text after trigger keyword
