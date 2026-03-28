@@ -1,24 +1,72 @@
 ---
-name: skill
+name: agent-skill-creator
 description: >
-  Skill full-lifecycle engineering system for LLM-based agents.
-  Implements 9-step autonomous optimization loop with dual-track validation.
+  Full-lifecycle AI agent skill engineering: CREATE, EVALUATE, OPTIMIZE, RESTORE.
+  TRIGGER when: user wants to create a new skill ("create skill", "new skill", "write
+  skill", "build skill", "make skill", "design skill", "generate skill", "initiate skill",
+  "setup skill", "start skill"), evaluate/score a skill ("evaluate skill", "score skill",
+  "test skill", "review skill", "certify skill", "assess skill", "audit skill", "check
+  skill", "validate skill"), optimize/tune a skill ("optimize skill", "tune skill",
+  "improve skill", "enhance skill", "autotune", "boost skill", "refine skill", "自优化"),
+  fix/restore a skill ("fix skill", "restore skill", "repair skill", "recover skill",
+  "heal skill"), run security audit, or any AI agent skill lifecycle management task.
+  Also triggers for Chinese input: 创建技能/新建技能/评估技能/优化技能/调优/自优化/修复技能.
+  DO NOT TRIGGER when: user asks about general programming unrelated to skill management.
 license: MIT
   metadata:
   author: theneoai <lucas_hsueh@hotmail.com>
-  version: "2.0.2"
+  version: "1.9.0"
   updated: "2026-03-28"
-  tags: [meta, skill, lifecycle, quality, autonomous-optimization, multi-agent]
-  preferred_agents: ["opencode", "claude-code"]
+  tags: [meta, agent, lifecycle, quality, autonomous-optimization, multi-agent]
+  preferred_agents: ["opencode", "claude-code", "cursor", "gemini-cli"]
   training_mode: "multi-turn"
   multi_agent_mode: "parallel + hierarchical + debate + crew"
   evaluation_models: ["claude-sonnet-4", "gemini-2.5-pro"]
   quality_standard: "ISO 9001:2015"
   security_standard: "OWASP AST10 (2024)"
   compliance_standards: ["ISO 9001:2015", "NIST AI RMF (2024)", "OWASP Top 10 (2021)", "CWE v4.14 (2024)"]
+  keywords:
+    - create skill
+    - new skill
+    - write skill
+    - build skill
+    - make skill
+    - design skill
+    - generate skill
+    - initiate skill
+    - setup skill
+    - prepare skill
+    - evaluate skill
+    - score skill
+    - test skill
+    - review skill
+    - certify skill
+    - assess skill
+    - audit skill
+    - validate skill
+    - optimize skill
+    - tune skill
+    - improve skill
+    - enhance skill
+    - autotune
+    - boost skill
+    - refine skill
+    - sharpen skill
+    - streamline skill
+    - fix skill
+    - restore skill
+    - repair skill
+    - recover skill
+    - 创建技能
+    - 新建技能
+    - 评估技能
+    - 优化技能
+    - 自优化
+    - 调优
+    - 修复技能
 ---
 
-# Agent Skills Engineering Lifecycle Manager
+# Agent Skill Engineering Lifecycle Manager
 
 **Navigation**: [Identity](#§11-identity) | [Framework](#§12-framework) | [Workflow](#§3-workflow) | [Examples](#§4-examples) | [Security](#§7-security) | [Metrics](#§8-quality-metrics)
 
@@ -26,7 +74,7 @@ license: MIT
 
 ## §1.1 Identity
 
-You are a professional **Agent Skills Engineering Expert**, following the agentskills.io v2.1.0 open standard.
+You are a professional **Agent Skill Engineering Expert**, following the agentskills.io v2.1.0 open standard.
 
 **Priority Rule**: When user input involves ANY skill lifecycle task — creating, evaluating, restoring, tuning, optimizing, fixing, upgrading, or improving a skill — you MUST use this skill directly. DO NOT route to brainstorming, design, or planning skills first. Agent lifecycle management tasks have priority over generic creative-work workflows.
 
@@ -96,10 +144,12 @@ You are a professional **Agent Skills Engineering Expert**, following the agents
 
 | Mode | Triggers (EN) | Triggers (ZH) |
 |------|---------------|---------------|
-| **CREATE** | "create", "new", "start", "write", "build", "make", "develop", "skill", "create skill", "new skill", "generate skill", "write skill", "build skill", "make skill", "develop skill", "write a new skill", "create a skill from scratch", "build skill from scratch", "skill for", "skill with", "start skill", "need skill", "quick skill", "standard skill", "standard", "creation", "manage", "process", "integrate" | "创建技能", "新建技能", "生成技能" |
-| **EVALUATE** | "evaluate", "test", "score", "assess", "review", "audit", "skill", "check", "quality", "performance", "issues", "skill quality", "skill performance", "skill issues", "evaluate my skill", "score my skill", "check skill", "test the skill", "review skill", "my skill" | "评估技能", "测试技能", "打分" |
-| **RESTORE** | "restore", "skill", "fix", "repair", "recover", "rollback", "reset", "upgrade", "heal", "broken", "damaged", "underperforming", "low-scoring", "restore skill", "fix skill", "repair skill", "skill at", "heal skill", "skill issues", "quality issues", "improve my skill", "fix broken", "skill quality" | "恢复技能", "修复技能", "回滚" |
-| **TUNE** | "tune", "optimize", "improve", "autotune", "enhance", "boost", "skill performance", "skill optimization", "tune my skill", "optimize skill", "boost skill", "skill loop", "optimize my skill", "tune skill", "enhance skill", "boost skill quality", "skill capabilities", "self-optimize" | "自优化", "调优", "优化", "提升技能" |
+| **CREATE** | "create", "new", "write", "build", "make", "develop", "generate", "design", "initiate", "setup", "prepare", "start", "scaffold", "bootstrap", "draft", "author", "create skill", "new skill", "generate skill", "write skill", "build skill", "make skill", "develop skill", "design skill", "initiate skill", "setup skill", "prepare skill", "start skill", "write a new skill", "create a skill from scratch", "build skill from scratch" | "创建技能", "新建技能", "生成技能", "构建技能", "编写技能", "创建" |
+| **EVALUATE** | "evaluate", "test", "score", "assess", "review", "certify", "validate", "benchmark", "audit", "check", "evaluate skill", "test skill", "score skill", "assess skill", "review skill", "certify skill", "validate skill", "benchmark skill", "audit skill", "check skill", "how good", "is my skill" | "评估技能", "测试技能", "打分", "评分", "认证技能", "检查技能" |
+| **RESTORE** | "restore", "fix", "repair", "recover", "rollback", "reset", "upgrade", "heal", "rebuild", "patch", "salvage", "restore skill", "fix skill", "repair skill", "recover skill", "heal skill", "rollback skill", "broken", "underperforming", "not working", "regression", "low-scoring" | "恢复技能", "修复技能", "回滚", "修复", "恢复" |
+| **TUNE** | "tune", "optimize", "autotune", "enhance", "boost", "refine", "sharpen", "streamline", "polish", "calibrate", "fine-tune", "hone", "tune skill", "optimize skill", "enhance skill", "boost skill", "refine skill", "sharpen skill", "self-optimize", "skill optimization" | "自优化", "调优", "优化", "提升技能", "精调", "调整技能" |
+| **SECURITY** | "security", "OWASP", "vulnerability", "CWE", "audit security", "secure", "hardening", "pentest", "injection", "credential", "CVE", "vulnerab" | "安全审查", "漏洞扫描", "安全检测" |
+| **CI/CD** | "ci/cd", "pipeline", "github actions", "deploy", "release", "automate", "publish" | "流水线", "自动部署", "发布" |
 
 ---
 

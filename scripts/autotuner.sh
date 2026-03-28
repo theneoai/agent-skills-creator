@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# autotuner.sh - Agent Skills Creator 自优化引擎
+# autotuner.sh - Agent Skill Creator 自优化引擎
 # 执行 1000 轮自优化迭代
 
 set -euo pipefail
 
-WORKDIR="/Users/lucas/Documents/Projects/agent-skills-creator"
+WORKDIR="/Users/lucas/Documents/Projects/agent-skill-creator"
 SKILL_FILE="$WORKDIR/SKILL.md"
 SCORE_SCRIPT="$WORKDIR/scripts/score.sh"
 LOG_FILE="$WORKDIR/.autotuner.log"

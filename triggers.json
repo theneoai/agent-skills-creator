@@ -1,0 +1,259 @@
+{
+  "$schema": "https://agentskills.io/schema/triggers/v1.0.0",
+  "skill": "agent-skill-creator",
+  "version": "1.9.0",
+  "standard": "agentskills.io v2.1.0",
+  "description": "Machine-readable trigger manifest for cross-tool skill invocation. AI tools should load agent-skill-creator when user intent matches any selection_triggers pattern and does not match negative_triggers.",
+
+  "selection_triggers": {
+    "description": "These phrases indicate the user wants skill lifecycle management. High-probability invocation.",
+    "en": [
+      "create skill", "new skill", "write skill", "build skill", "make skill",
+      "design skill", "generate skill", "develop skill", "initiate skill",
+      "setup skill", "prepare skill", "scaffold skill", "draft skill",
+      "evaluate skill", "score skill", "test skill", "review skill",
+      "certify skill", "assess skill", "audit skill", "check skill",
+      "validate skill", "benchmark skill",
+      "optimize skill", "tune skill", "improve skill", "enhance skill",
+      "autotune skill", "boost skill", "refine skill", "sharpen skill",
+      "self-optimize", "autotune",
+      "fix skill", "restore skill", "repair skill", "recover skill",
+      "heal skill", "rollback skill",
+      "skill lifecycle", "skill engineering", "agent skill", "skill quality",
+      "skill performance", "skill certification"
+    ],
+    "zh": [
+      "创建技能", "新建技能", "生成技能", "构建技能", "编写技能",
+      "评估技能", "测试技能", "打分", "评分", "认证技能", "检查技能",
+      "优化技能", "调优", "自优化", "精调", "调整技能", "提升技能",
+      "修复技能", "恢复技能", "回滚", "修复",
+      "技能工程", "技能质量", "技能生命周期"
+    ]
+  },
+
+  "negative_triggers": {
+    "description": "These contexts indicate the request is NOT about skill management. Do NOT invoke.",
+    "en": [
+      "general programming",
+      "web development unrelated to skills",
+      "fix bug in application",
+      "deploy application",
+      "database migration"
+    ],
+    "zh": [
+      "普通编程",
+      "修复应用程序bug"
+    ]
+  },
+
+  "modes": {
+    "CREATE": {
+      "description": "Generate a new skill from scratch: SKILL.md + evals/ + scripts/ + references/",
+      "primary_keywords": ["create", "new", "write", "build", "make", "generate", "develop", "design"],
+      "extended_keywords": [
+        "initiate", "setup", "prepare", "scaffold", "bootstrap", "draft", "author",
+        "start", "begin", "construct", "produce", "forge", "compose", "assemble"
+      ],
+      "phrase_patterns": [
+        "create * skill", "new * skill", "write * skill", "build * skill",
+        "make * skill", "generate * skill", "develop * skill", "design * skill",
+        "skill for *", "skill that *", "skill to *", "skill with *",
+        "write a new skill", "create a skill from scratch", "build skill from scratch",
+        "I want to create", "I need a skill", "help me build a skill",
+        "can you create", "please write", "start a new skill"
+      ],
+      "zh_patterns": ["创建技能", "新建技能", "生成技能", "构建技能", "编写技能", "写一个技能"],
+      "context_signals": ["from scratch", "new project", "blank", "template", "starter"],
+      "done_criteria": "SKILL.md + evals/ + scripts/ + references/ all complete",
+      "test_inputs": [
+        "create a code-review skill",
+        "I want to write a new skill for data extraction",
+        "build skill for API integration",
+        "make skill for web scraping",
+        "develop a new skill from scratch",
+        "write skill for image processing",
+        "design a skill for content moderation",
+        "generate skill for document parsing",
+        "initiate skill project for NLP",
+        "setup skill for database operations",
+        "prepare skill for text analysis",
+        "scaffold a new skill",
+        "help me create an agent skill",
+        "新建技能",
+        "创建一个代码审查技能"
+      ]
+    },
+
+    "EVALUATE": {
+      "description": "Assess skill quality with 6-dimension scoring + certification",
+      "primary_keywords": ["evaluate", "score", "test", "assess", "review", "audit", "check", "certify"],
+      "extended_keywords": [
+        "validate", "benchmark", "inspect", "analyze", "measure", "rate", "grade",
+        "verify", "qualify", "examine", "scrutinize", "probe", "appraise"
+      ],
+      "phrase_patterns": [
+        "evaluate * skill", "score * skill", "test * skill", "assess * skill",
+        "review * skill", "audit * skill", "check * skill", "certify * skill",
+        "validate * skill", "benchmark * skill",
+        "skill quality", "skill score", "skill performance",
+        "how good is my skill", "rate my skill", "grade my skill",
+        "is my skill ready", "can you evaluate", "please review my skill"
+      ],
+      "zh_patterns": ["评估技能", "测试技能", "打分", "评分", "认证技能", "检查技能", "审查技能"],
+      "context_signals": ["quality", "score", "certification", "SILVER", "GOLD", "PLATINUM", "F1", "MRR"],
+      "done_criteria": "6-dimension score report + certification tier determined",
+      "test_inputs": [
+        "evaluate my skill at skills/data-proc",
+        "test the skill quality",
+        "score my skill",
+        "assess the skill performance",
+        "check skill for issues",
+        "review skill quality",
+        "certify my skill",
+        "audit skill for production",
+        "validate skill output",
+        "benchmark skill accuracy",
+        "how good is this skill",
+        "is my skill GOLD certified",
+        "评估技能",
+        "给我的技能打分"
+      ]
+    },
+
+    "RESTORE": {
+      "description": "Fix broken or underperforming skills; rollback to stable state",
+      "primary_keywords": ["restore", "fix", "repair", "recover", "rollback", "heal", "reset", "upgrade"],
+      "extended_keywords": [
+        "rebuild", "patch", "correct", "salvage", "rehabilitate", "revive",
+        "rescue", "mend", "reconstruct", "overhaul", "refresh", "reclaim"
+      ],
+      "phrase_patterns": [
+        "restore * skill", "fix * skill", "repair * skill", "recover * skill",
+        "heal * skill", "rollback * skill", "rebuild * skill",
+        "broken skill", "damaged skill", "underperforming skill",
+        "skill is broken", "skill not working", "skill has issues",
+        "low-scoring skill", "fix the skill", "restore to previous version"
+      ],
+      "zh_patterns": ["恢复技能", "修复技能", "回滚", "修复", "修复损坏的技能"],
+      "context_signals": ["broken", "damaged", "underperforming", "low score", "failing", "regression"],
+      "done_criteria": "Skill score improved ≥0.3 points from baseline",
+      "test_inputs": [
+        "restore the underperforming skill",
+        "fix skill at skills/broken",
+        "repair the broken skill",
+        "upgrade skill to version 2.0",
+        "improve my low-scoring skill",
+        "heal the damaged skill",
+        "fix skill quality issues",
+        "recover corrupted skill",
+        "rollback to previous version",
+        "reset skill to defaults",
+        "my skill is broken, please fix it",
+        "修复技能",
+        "恢复损坏的技能"
+      ]
+    },
+
+    "TUNE": {
+      "description": "Autonomous 9-step optimization loop to improve skill quality",
+      "primary_keywords": ["tune", "optimize", "improve", "enhance", "autotune", "boost", "self-optimize"],
+      "extended_keywords": [
+        "refine", "sharpen", "streamline", "polish", "perfect", "calibrate",
+        "fine-tune", "accelerate", "hone", "evolve", "elevate", "maximize",
+        "supercharge", "turbocharge", "tighten", "strengthen"
+      ],
+      "phrase_patterns": [
+        "tune * skill", "optimize * skill", "improve * skill", "enhance * skill",
+        "boost * skill", "refine * skill", "sharpen * skill", "self-optimize *",
+        "autotune * skill", "skill optimization", "skill performance loop",
+        "run optimization loop", "maximize skill score", "push skill to PLATINUM",
+        "fine-tune the skill", "can you optimize", "please improve my skill"
+      ],
+      "zh_patterns": ["自优化", "调优", "优化", "提升技能", "精调", "调整技能", "调优技能"],
+      "context_signals": ["PLATINUM", "9.5", "autonomous loop", "9-step", "PDCA", "optimization rounds"],
+      "done_criteria": "Text ≥9.5 OR 5 consecutive rounds without improvement",
+      "test_inputs": [
+        "optimize skill performance",
+        "tune the skill for better results",
+        "autotune my skill",
+        "boost skill quality",
+        "improve score for my skill",
+        "skill optimization loop",
+        "enhance skill capabilities",
+        "refine skill precision",
+        "sharpen skill accuracy",
+        "streamline skill workflow",
+        "polish the skill to PLATINUM",
+        "self-optimize",
+        "自优化",
+        "调优技能",
+        "优化我的技能"
+      ]
+    },
+
+    "SECURITY": {
+      "description": "OWASP AST10 security audit and vulnerability scanning",
+      "primary_keywords": ["security", "OWASP", "vulnerability", "CWE", "secure", "audit security"],
+      "extended_keywords": [
+        "hardening", "pentest", "injection", "credential", "CVE", "compliance",
+        "NIST", "exploit", "attack surface", "threat model", "risk"
+      ],
+      "phrase_patterns": [
+        "security * skill", "OWASP * skill", "vulnerability scan",
+        "audit security", "secure the skill", "security review",
+        "check for vulnerabilities", "CWE compliance", "NIST compliance"
+      ],
+      "zh_patterns": ["安全审查", "漏洞扫描", "安全检测", "安全合规"],
+      "done_criteria": "OWASP AST10 all 10 items green, 0 critical vulnerabilities",
+      "test_inputs": [
+        "run security review on skill",
+        "OWASP audit for my skill",
+        "check skill for vulnerabilities",
+        "security hardening review",
+        "scan for CWE violations"
+      ]
+    }
+  },
+
+  "tool_compatibility": {
+    "claude-code": {
+      "matching_field": "description",
+      "pattern": "TRIGGER when / DO NOT TRIGGER when",
+      "notes": "Claude Code uses semantic matching on description field. TRIGGER/DO NOT TRIGGER pattern increases precision."
+    },
+    "opencode": {
+      "matching_field": "description + keywords",
+      "notes": "OpenCode parses both description and metadata.keywords for trigger matching."
+    },
+    "cursor": {
+      "matching_field": "description",
+      "notes": "Cursor uses description-based matching similar to Claude Code."
+    },
+    "gemini-cli": {
+      "matching_field": "description + tags",
+      "notes": "Gemini CLI reads YAML frontmatter tags and description."
+    },
+    "generic": {
+      "matching_field": "description + metadata.keywords",
+      "notes": "Fallback: any tool can parse metadata.keywords list for exact-match triggering."
+    }
+  },
+
+  "trigger_coverage_targets": {
+    "skill_selection_precision": "≥ 95%",
+    "skill_selection_recall": "≥ 90%",
+    "mode_detection_accuracy": "≥ 95%",
+    "zh_trigger_coverage": "≥ 90%",
+    "ambiguous_input_handling": "prompt user for clarification"
+  },
+
+  "ambiguity_resolution": {
+    "description": "When input is ambiguous (e.g., 'improve my skill'), prefer TUNE mode. Ask user to clarify only when mode is truly indeterminate.",
+    "priority_order": ["SECURITY", "CREATE", "EVALUATE", "RESTORE", "TUNE"],
+    "examples": [
+      {"input": "improve my skill", "ambiguous": true, "default_mode": "TUNE", "rationale": "improve → TUNE is the primary meaning"},
+      {"input": "fix skill quality", "ambiguous": true, "default_mode": "RESTORE", "rationale": "fix → RESTORE (quality issues)"},
+      {"input": "review my skill", "ambiguous": false, "default_mode": "EVALUATE", "rationale": "review → clearly EVALUATE"}
+    ]
+  }
+}

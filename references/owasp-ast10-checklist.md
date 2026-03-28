@@ -50,7 +50,7 @@
 - [ ] Red Lines 中明确禁止自主偏离目标行为
 - [ ] 实现可审计日志和人工干预机制
 
-## 快速审查流程（推荐在 agent-skills-creator 中自动执行）
+## 快速审查流程（推荐在 agent-skill-creator 中自动执行）
 1. 检查 SKILL.md 是否包含清晰 Red Lines
 2. 验证 scripts/ 是否使用环境变量注入密钥
 3. 确认 MCP 工具调用使用全限定名 + 参数校验

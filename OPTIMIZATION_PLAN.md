@@ -1,4 +1,4 @@
-# agent-skills-creator 优化方案
+# agent-skill-creator 优化方案
 
 > 基于与 skill-manager (awesome-skills) 对比分析
 
@@ -23,7 +23,7 @@
 **目标**: SKILL.md 422 行 → ≤300 行
 
 ```
-agent-skills-creator/
+agent-skill-creator/
 ├── SKILL.md                 # ≤300 行 (当前 642)
 ├── references/              # 新增
 │   ├── create.md           # CREATE 详细流程
@@ -52,7 +52,7 @@ agent-skills-creator/
 
 **对比**: skill-manager 在 tune.sh 中有路径白名单限制
 
-**当前代码** (agent-skills-creator/scripts/skill-manager/tune.sh:16-21):
+**当前代码** (agent-skill-creator/scripts/skill-manager/tune.sh:16-21):
 ```bash
 REAL_PATH=$(realpath "$SKILL_FILE" 2>/dev/null || echo "$SKILL_FILE")
 SKILL_FILE="$REAL_PATH"  # 无路径验证！
@@ -100,7 +100,7 @@ SKILL_FILE="$REAL_PATH"
 
 ### 4. 评分系统统一
 
-**问题**: agent-skills-creator 有 9 维度，skill-manager 有 6 维度
+**问题**: agent-skill-creator 有 9 维度，skill-manager 有 6 维度
 
 **统一方案** (采用 skill-manager 6 维度):
 
