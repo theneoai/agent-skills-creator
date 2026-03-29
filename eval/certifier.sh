@@ -87,17 +87,23 @@ certify() {
     tier=$(determine_tier "$total" "$text_score" "$runtime_score" "$variance")
     
     local variance_points
-    local lt_10 lt_20 lt_30
-    lt_10=$(echo "$variance < 10" | bc -l)
-    lt_20=$(echo "$variance < 20" | bc -l)
+    local lt_30 lt_50 lt_70 lt_100 lt_150
     lt_30=$(echo "$variance < 30" | bc -l)
+    lt_50=$(echo "$variance < 50" | bc -l)
+    lt_70=$(echo "$variance < 70" | bc -l)
+    lt_100=$(echo "$variance < 100" | bc -l)
+    lt_150=$(echo "$variance < 150" | bc -l)
     
-    if [[ "$lt_10" -eq 1 ]]; then
+    if [[ "$lt_30" -eq 1 ]]; then
         variance_points=40
-    elif [[ "$lt_20" -eq 1 ]]; then
+    elif [[ "$lt_50" -eq 1 ]]; then
         variance_points=30
-    elif [[ "$lt_30" -eq 1 ]]; then
-        variance_points=15
+    elif [[ "$lt_70" -eq 1 ]]; then
+        variance_points=20
+    elif [[ "$lt_100" -eq 1 ]]; then
+        variance_points=10
+    elif [[ "$lt_150" -eq 1 ]]; then
+        variance_points=5
     else
         variance_points=0
     fi
@@ -137,6 +143,14 @@ certify() {
     fi
     
     if grep -E "$CWE_22_PATTERN" "$skill_file" >/dev/null 2>&1; then
+        security_violations=$((security_violations + 1))
+    fi
+    
+    if grep -E "$CWE_306_PATTERN" "$skill_file" >/dev/null 2>&1; then
+        security_violations=$((security_violations + 1))
+    fi
+    
+    if grep -E "$CWE_862_PATTERN" "$skill_file" >/dev/null 2>&1; then
         security_violations=$((security_violations + 1))
     fi
     

@@ -69,14 +69,14 @@ handle_error() {
         retry)
             local max_retries="${recovery%%:*}"
             max_retries="${max_retries#retry:}"
-            local delays="${recovery#*:}"
-            delays="${delays#*:}"
-            delays="${delays%:*}"
-            local delay_array=(${delays//,/ })
+            local delay_type="${recovery#*:}"
+            delay_type="${delay_type%%:*}"
+            local delays="${recovery##*:}"
+            IFS=',' read -ra delay_array <<< "$delays"
             
             local i
-            for i in 1 2 3; do
-                local delay="${delay_array[$((i-1))]:-1}"
+            for i in "${!delay_array[@]}"; do
+                local delay="${delay_array[$i]}"
                 sleep "$delay" 2>/dev/null || sleep 1
                 if "$@"; then
                     return 0

@@ -8,6 +8,14 @@ require integration
 
 agent_init
 
+sed_i() {
+    if [[ "$(uname)" == "Darwin" ]]; then
+        sed -i '' "$@"
+    else
+        sed -i "$@"
+    fi
+}
+
 restore_skill() {
     local skill_file="$1"
     
@@ -55,7 +63,7 @@ restore_skill() {
     local score_delta
     score_delta=$(echo "$new_score - $old_score" | bc)
     
-    if (( $(echo "$score_delta >= 0.5" | bc -l) )); then
+    if [[ "$(echo "$score_delta >= 0.5" | bc -l)" == "1" ]]; then
         cp "$temp_file" "$skill_file"
         rm -f "$temp_file"
         
@@ -151,36 +159,46 @@ cross_validate_issues() {
     local issues2="$2"
     local issues3="$3"
     
-    local all_issues="$issues1"
-    
     local count1 count2 count3
     count1=$(echo "$issues1" | jq 'length')
     count2=$(echo "$issues2" | jq 'length')
     count3=$(echo "$issues3" | jq 'length')
     
-    local max_count=$count1
-    [[ $count2 -gt $max_count ]] && max_count=$count2
-    [[ $count3 -gt $max_count ]] && max_count=$count3
-    
     local consensus_issues="[]"
+    local seen_types="{}"
     
-    for i in $(seq 0 $((max_count - 1))); do
-        local issue1 issue2 issue3
-        issue1=$(echo "$issues1" | jq ".[$i] // null")
-        issue2=$(echo "$issues2" | jq ".[$i] // null")
-        issue3=$(echo "$issues3" | jq ".[$i] // null")
+    local provider1_types provider2_types provider3_types
+    provider1_types=$(echo "$issues1" | jq '[.[] | .type]')
+    provider2_types=$(echo "$issues2" | jq '[.[] | .type]')
+    provider3_types=$(echo "$issues3" | jq '[.[] | .type]')
+    
+    local all_types
+    all_types=$(echo "[$provider1_types, $provider2_types, $provider3_types]" | jq 'flatten | unique')
+    
+    local type_count=${#all_types[@]}
+    for t in $(echo "$all_types" | jq -r '.[]'); do
+        local found_in=0
+        local matching_issue=""
         
-        if [[ "$issue1" != "null" ]] && [[ "$issue2" != "null" ]] && [[ "$issue3" != "null" ]]; then
-            local type1 type2 type3
-            type1=$(echo "$issue1" | jq -r '.type')
-            type2=$(echo "$issue2" | jq -r '.type')
-            type3=$(echo "$issue3" | jq -r '.type')
-            
-            if [[ "$type1" == "$type2" ]] || [[ "$type1" == "$type3" ]]; then
-                consensus_issues=$(echo "$consensus_issues" | jq ". + [$issue1]")
-            elif [[ "$type2" == "$type3" ]]; then
-                consensus_issues=$(echo "$consensus_issues" | jq ". + [$issue2]")
+        if echo "$provider1_types" | jq -e ". | index(\"$t\") != null" >/dev/null 2>&1; then
+            ((found_in++))
+            matching_issue=$(echo "$issues1" | jq "[.[] | select(.type == \"$t\")][0]")
+        fi
+        if echo "$provider2_types" | jq -e ". | index(\"$t\") != null" >/dev/null 2>&1; then
+            ((found_in++))
+            if [[ -z "$matching_issue" ]]; then
+                matching_issue=$(echo "$issues2" | jq "[.[] | select(.type == \"$t\")][0]")
             fi
+        fi
+        if echo "$provider3_types" | jq -e ". | index(\"$t\") != null" >/dev/null 2>&1; then
+            ((found_in++))
+            if [[ -z "$matching_issue" ]]; then
+                matching_issue=$(echo "$issues3" | jq "[.[] | select(.type == \"$t\")][0]")
+            fi
+        fi
+        
+        if [[ "$found_in" -ge 2 ]] && [[ "$matching_issue" != "null" ]]; then
+            consensus_issues=$(echo "$consensus_issues" | jq ". + [$matching_issue]")
         fi
     done
     
@@ -329,7 +347,7 @@ apply_fixes() {
                     section_content=$(echo "$section_content" | head -1)
                     
                     if [[ -n "$section_content" ]]; then
-                        sed -i '' "${line_num}s/.*/$new_content/" "$skill_file"
+                        sed_i "${line_num}s/.*/$new_content/" "$skill_file"
                     fi
                 fi
             fi

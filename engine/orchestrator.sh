@@ -22,6 +22,8 @@ orchestrate() {
     local output_file="$2"
     local parent_skill="${PARENT_SKILL:-}"
     
+    local parent_skill_path=""
+    
     if [[ -n "$PARENT_SKILL" ]]; then
         if [[ -z "$PROJECT_ROOT" ]]; then
             echo "ERROR: PROJECT_ROOT must be set" >&2
@@ -29,22 +31,21 @@ orchestrate() {
         fi
 
         if [[ "$PARENT_SKILL" == *".md"* ]]; then
-            PARENT_SKILL_PATH="$PARENT_SKILL"
+            parent_skill_path="$PARENT_SKILL"
         else
-            PARENT_SKILL_PATH="${PROJECT_ROOT}/${PARENT_SKILL}.md"
+            parent_skill_path="${PROJECT_ROOT}/${PARENT_SKILL}.md"
         fi
 
-        if [[ ! -f "$PARENT_SKILL_PATH" ]]; then
-            echo "ERROR: Parent skill not found: $PARENT_SKILL_PATH" >&2
+        if [[ ! -f "$parent_skill_path" ]]; then
+            echo "ERROR: Parent skill not found: $parent_skill_path" >&2
             return 1
         fi
 
-        echo "Using parent skill: $PARENT_SKILL_PATH"
-        export PARENT_SKILL_PATH
+        echo "Using parent skill: $parent_skill_path"
     fi
     
-    workflow_init "$user_prompt" "$output_file" "${PARENT_SKILL_PATH:-}"
-    workflow_run
+    workflow_init "$user_prompt" "$output_file" "$parent_skill_path" || return 1
+    workflow_run || return 1
 }
 
 # ============================================================================

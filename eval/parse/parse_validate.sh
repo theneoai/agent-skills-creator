@@ -62,10 +62,10 @@ parse_validate() {
     local restore_count=0
     local tune_count=0
     
-    create_count=$(echo "$content" | grep -oE '(?i)CREATE' | wc -l | tr -d ' ')
-    evaluate_count=$(echo "$content" | grep -oE '(?i)EVALUATE' | wc -l | tr -d ' ')
-    restore_count=$(echo "$content" | grep -oE '(?i)RESTORE' | wc -l | tr -d ' ')
-    tune_count=$(echo "$content" | grep -oE '(?i)TUNE' | wc -l | tr -d ' ')
+    create_count=$(echo "$content" | grep -oi 'CREATE' | wc -l | tr -d ' ' || true)
+    evaluate_count=$(echo "$content" | grep -oi 'EVALUATE' | wc -l | tr -d ' ' || true)
+    restore_count=$(echo "$content" | grep -oi 'RESTORE' | wc -l | tr -d ' ' || true)
+    tune_count=$(echo "$content" | grep -oi 'TUNE' | wc -l | tr -d ' ' || true)
     
     if [[ "$create_count" -ge 5 ]]; then
         ((TRIGGER_SCORE+=7))

@@ -13,21 +13,24 @@ create_snapshot() {
     local reason="${2:-auto}"
     local timestamp
     timestamp=$(date +%Y%m%d_%H%M%S)
-    local snapshot_file="${SNAPSHOT_DIR}/skill_${timestamp}_${reason}.md"
+    local snapshot_name="skill_${timestamp}_${reason}"
+    local snapshot_dir="${SNAPSHOT_DIR}/$(basename "$skill_file")"
+    local snapshot_file="${snapshot_dir}/${snapshot_name}.tar.gz"
     
     if [[ ! -f "$skill_file" ]]; then
         log_error "SNAPSHOT_ERROR" "Skill file not found: $skill_file" "create_snapshot"
         return 1
     fi
     
-    cp "$skill_file" "$snapshot_file"
+    mkdir -p "$snapshot_dir"
+    tar -czf "$snapshot_file" -C "$(dirname "$skill_file")" "$(basename "$skill_file")"
     cleanup_snapshots
     
     echo "$snapshot_file"
 }
 
 list_snapshots() {
-    ls -lt "${SNAPSHOT_DIR}"/skill_*.md 2>/dev/null | head -20
+    find "${SNAPSHOT_DIR}" -name "*.tar.gz" -type f 2>/dev/null | sort -r | head -20
 }
 
 rollback_to() {
@@ -39,14 +42,14 @@ rollback_to() {
         return 1
     fi
     
-    cp "$snapshot_file" "$skill_file"
+    tar -xzf "$snapshot_file" -C "$(dirname "$skill_file")"
     echo "Rolled back to: $snapshot_file"
 }
 
 rollback_to_latest() {
     local skill_file="${1:-$SKILL_FILE}"
     local latest
-    latest=$(ls -t "${SNAPSHOT_DIR}"/skill_*.md 2>/dev/null | head -1)
+    latest=$(find "${SNAPSHOT_DIR}" -name "*.tar.gz" -type f 2>/dev/null | head -1)
     
     if [[ -n "$latest" ]]; then
         rollback_to "$latest" "$skill_file"
@@ -60,7 +63,7 @@ rollback_to_date() {
     local date_str="$1"
     local skill_file="$2"
     local snapshot
-    snapshot=$(ls "${SNAPSHOT_DIR}"/skill_"${date_str}"_*.md 2>/dev/null | head -1)
+    snapshot=$(find "${SNAPSHOT_DIR}" -name "skill_${date_str}_*.tar.gz" -type f 2>/dev/null | head -1)
     
     if [[ -n "$snapshot" ]]; then
         rollback_to "$snapshot" "$skill_file"
@@ -72,10 +75,10 @@ rollback_to_date() {
 
 cleanup_snapshots() {
     local count
-    count=$(ls "${SNAPSHOT_DIR}"/skill_*.md 2>/dev/null | wc -l)
+    count=$(find "${SNAPSHOT_DIR}" -name "*.tar.gz" -type f 2>/dev/null | wc -l)
     
     if [[ $count -gt $MAX_SNAPSHOTS ]]; then
-        ls -t "${SNAPSHOT_DIR}"/skill_*.md 2>/dev/null | tail -n $((count - MAX_SNAPSHOTS)) | xargs rm -f 2>/dev/null
+        find "${SNAPSHOT_DIR}" -name "*.tar.gz" -type f 2>/dev/null | tail -n $((count - MAX_SNAPSHOTS)) | xargs rm -f 2>/dev/null
     fi
 }
 
@@ -91,9 +94,9 @@ check_auto_rollback() {
         return 0
     fi
     
-    local regression=$((previous_score - current_score))
+    local regression=$(echo "$previous_score - $current_score" | bc)
     
-    if [[ $regression -gt 20 ]]; then
+    if [[ "$(echo "$regression > 20" | bc -l)" == "1" ]]; then
         echo "AUTO_ROLLBACK: Score regression $regression points"
         rollback_to_latest "$skill_file"
         return 0

@@ -192,7 +192,7 @@ run_agent_runtime_eval() {
     
     local mode_accuracy=0
     if [[ $mode_total -gt 0 ]]; then
-        mode_accuracy=$(echo "scale=4; $mode_correct / $mode_total" | bc)
+        mode_accuracy=$(echo "scale=4; $mode_correct / $mode_total" | bc | sed 's/^\./0./')
     fi
     
     # Output results

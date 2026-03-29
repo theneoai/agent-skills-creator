@@ -5,6 +5,12 @@
 
 set -euo pipefail
 
+# Guard against re-sourcing
+if [[ -n "${_AGENT_EXECUTOR_SOURCED:-}" ]]; then
+    return 0
+fi
+export _AGENT_EXECUTOR_SOURCED=1
+
 # Load API keys
 OPENAI_API_KEY="${OPENAI_API_KEY:-}"
 ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}"

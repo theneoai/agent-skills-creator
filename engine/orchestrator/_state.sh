@@ -2,21 +2,30 @@
 # _state.sh - 状态管理
 
 # ============================================================================
-# 全局状态变量
+# Guard against re-sourcing
 # ============================================================================
 
-INITIAL_PROMPT=""
-TARGET_SKILL_FILE=""
-TARGET_TIER="${TARGET_TIER:-BRONZE}"
-MAX_ITERATIONS=20
-CURRENT_SECTION=0
-EVALUATION_COUNT=0
-LAST_SCORE=0
-ITERATION_COUNT=0
-CREATOR_SOURCED=0
-EVALUATOR_SOURCED=0
-DRY_RUN="${DRY_RUN:-0}"
-VERBOSE="${VERBOSE:-0}"
+if [[ -n "${_STATE_SOURCED:-}" ]]; then
+    return 0
+fi
+export _STATE_SOURCED=1
+
+# ============================================================================
+# 全局状态变量 (全部导出以便子进程访问)
+# ============================================================================
+
+export INITIAL_PROMPT=""
+export TARGET_SKILL_FILE=""
+export TARGET_TIER="${TARGET_TIER:-BRONZE}"
+export MAX_ITERATIONS=20
+export CURRENT_SECTION=0
+export EVALUATION_COUNT=0
+export LAST_SCORE=0
+export ITERATION_COUNT=0
+export CREATOR_SOURCED=0
+export EVALUATOR_SOURCED=0
+export DRY_RUN="${DRY_RUN:-0}"
+export VERBOSE="${VERBOSE:-0}"
 
 # ============================================================================
 # 状态函数
@@ -90,7 +99,3 @@ state_dump() {
     echo "ITERATION: $ITERATION_COUNT"
     echo "==========="
 }
-
-export INITIAL_PROMPT TARGET_SKILL_FILE TARGET_TIER
-export MAX_ITERATIONS CURRENT_SECTION EVALUATION_COUNT LAST_SCORE ITERATION_COUNT
-export CREATOR_SOURCED EVALUATOR_SOURCED DRY_RUN VERBOSE

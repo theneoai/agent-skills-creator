@@ -17,6 +17,56 @@ source "$(dirname "${BASH_SOURCE[0]}")/learner.sh"
 EVOLUTION_LOG="${LOG_DIR}/evolution.log"
 RESULTS_TSV="${LOG_DIR}/optimization_results.tsv"
 
+sed_i() {
+    if [[ "$(uname)" == "Darwin" ]]; then
+        sed -i '' "$@"
+    else
+        sed -i "$@"
+    fi
+}
+
+replace_section_content() {
+    local skill_file="$1"
+    local section_header="$2"
+    local new_content="$3"
+    
+    if [[ ! -f "$skill_file" ]]; then
+        echo "$new_content" > "$skill_file"
+        return 0
+    fi
+    
+    local section_pattern
+    section_pattern=$(echo "$section_header" | sed 's/[][.*\/^$]/\\&/g')
+    
+    if grep -q "^## $section_pattern" "$skill_file"; then
+        local start_line
+        start_line=$(grep -n "^## $section_pattern" "$skill_file" | head -1 | cut -d: -f1)
+        
+        local end_line
+        local remaining_lines
+        remaining_lines=$(tail -n +$((start_line + 1)) "$skill_file" | grep -n "^## ")
+        
+        if [[ -n "$remaining_lines" ]]; then
+            end_line=$(echo "$remaining_lines" | head -1 | cut -d: -f1)
+            end_line=$((start_line + end_line - 1))
+        else
+            end_line=$(wc -l < "$skill_file")
+        fi
+        
+        head -n $((start_line - 1)) "$skill_file" > "${skill_file}.tmp"
+        echo "## $section_header" >> "${skill_file}.tmp"
+        echo "" >> "${skill_file}.tmp"
+        echo "$new_content" >> "${skill_file}.tmp"
+        tail -n +$((end_line + 1)) "$skill_file" >> "${skill_file}.tmp" 2>/dev/null || true
+        mv "${skill_file}.tmp" "$skill_file"
+    else
+        echo "" >> "$skill_file"
+        echo "## $section_header" >> "$skill_file"
+        echo "" >> "$skill_file"
+        echo "$new_content" >> "$skill_file"
+    fi
+}
+
 DIMENSIONS=(
     "System Prompt:20"
     "Domain Knowledge:20"
@@ -50,6 +100,63 @@ log_evolution() {
         >> "$EVOLUTION_LOG" 2>/dev/null || true
 }
 
+calculate_variance() {
+    local scores=("$@")
+    local n=${#scores[@]}
+    if [[ $n -lt 2 ]]; then
+        echo "0"
+        return
+    fi
+    
+    local sum=0
+    for s in "${scores[@]}"; do
+        sum=$(echo "$sum + $s" | bc)
+    done
+    local mean=$(echo "scale=4; $sum / $n" | bc)
+    
+    local sq_diff_sum=0
+    for s in "${scores[@]}"; do
+        local diff=$(echo "$s - $mean" | bc)
+        sq_diff_sum=$(echo "$sq_diff_sum + $diff * $diff" | bc)
+    done
+    
+    echo "scale=4; sqrt($sq_diff_sum / $n)" | bc
+}
+
+diversify_strategy() {
+    local skill_name="$1"
+    local success_count=${#successful_dimensions[@]}
+    
+    if [[ $success_count -lt 3 ]]; then
+        return
+    fi
+    
+    local recent_window=$((success_count > POSITIVE_LEARNING_WINDOW ? POSITIVE_LEARNING_WINDOW : success_count))
+    local recent_successes=("${successful_dimensions[@]: -$recent_window}")
+    
+    declare -A dim_count
+    for d in "${recent_successes[@]}"; do
+        ((dim_count[$d]++))
+    done
+    
+    local most_common=""
+    local max_count=0
+    for d in "${!dim_count[@]}"; do
+        if [[ ${dim_count[$d]} -gt $max_count ]]; then
+            max_count=${dim_count[$d]}
+            most_common=$d
+        fi
+    done
+    
+    local success_rate=$(echo "scale=2; $max_count / $recent_window" | bc)
+    local meets_threshold=$(echo "$success_rate >= $MIN_SUCCESS_RATE" | bc -l)
+    
+    if [[ "$meets_threshold" == "1" ]]; then
+        log_evolution "$skill_name" "diversify" "Over-specialized in $most_common ($success_rate), trying different dimension"
+        echo "  🔄 Diversifying: focusing on non-$most_common dimensions"
+    fi
+}
+
 evolve_skill() {
     local skill_file="$1"
     local max_rounds="${2:-20}"
@@ -74,6 +181,8 @@ evolve_skill() {
     local current_round=0
     local stuck_count=0
     local last_delta=0
+    local recent_scores=()
+    local successful_dimensions=()
     
     while [[ $current_round -lt $max_rounds ]]; do
         ((current_round++))
@@ -103,7 +212,7 @@ evolve_skill() {
         
         echo "  Weakest: $weakest_dim (confidence: $confidence)"
         
-        if [[ "$confidence" < "0.6" ]]; then
+        if [[ "$(echo "$confidence < 0.6" | bc -l)" == "1" ]]; then
             echo "  ⚠ Low confidence, requesting HUMAN_REVIEW"
             request_human_review "$skill_file" "Low confidence in dimension analysis"
             continue
@@ -134,7 +243,11 @@ evolve_skill() {
         echo "=== STEP 5: IMPLEMENT - APPLY CHANGE (Multi-LLM) ==="
         create_snapshot "$skill_file" "pre_round_$current_round"
         
-        apply_improvement "$skill_file" "$plan"
+        if ! apply_improvement "$skill_file" "$plan"; then
+            echo "  ⚠ Implementation failed"
+            rollback_to_snapshot "$skill_file" "pre_round_$current_round"
+            continue
+        fi
         
         local impl_verified
         impl_verified=$(multi_llm_verify_implementation "$skill_file" "$plan")
@@ -155,6 +268,11 @@ evolve_skill() {
         
         echo "  Score: $old_score → $new_score (delta: $delta)"
         
+        recent_scores+=("$new_score")
+        if [[ ${#recent_scores[@]} -gt $CONVERGENCE_WINDOW ]]; then
+            recent_scores=("${recent_scores[@]: -$CONVERGENCE_WINDOW}")
+        fi
+        
         local verify_result
         verify_result=$(multi_llm_verify_score "$old_score" "$new_score" "$confidence")
         
@@ -166,11 +284,25 @@ evolve_skill() {
         else
             echo "  ✓ Score verified by multi-LLM"
             
-            if (( $(echo "$delta > 0" | bc -l) )); then
+            if [[ "$(echo "$delta > $MIN_IMPROVEMENT_DELTA" | bc -l)" == "1" ]]; then
                 ((stuck_count=0))
+                successful_dimensions+=("$weakest_dim")
+                echo "  ★ Positive learning: $weakest_dim improved by $delta"
             else
                 ((stuck_count++))
                 last_delta=$delta
+            fi
+        fi
+        
+        if (( ${#recent_scores[@]} >= $CONVERGENCE_WINDOW )); then
+            local variance
+            variance=$(calculate_variance "${recent_scores[@]}")
+            if [[ "$(echo "$variance < $CONVERGENCE_VARIANCE_THRESHOLD" | bc -l)" == "1" ]]; then
+                echo "  ⚡ Convergence detected (variance: $variance < $CONVERGENCE_VARIANCE_THRESHOLD)"
+                if [[ $stuck_count -ge 2 ]]; then
+                    echo "  ⚠ Converged and stuck, attempting diversification..."
+                    diversify_strategy "$skill_name"
+                fi
             fi
         fi
         
@@ -180,7 +312,7 @@ evolve_skill() {
             local current_score
             current_score=$(evaluate_skill "$skill_file" "fast" | jq -r '.total_score // 0')
             
-            if (( $(echo "$current_score < 800" | bc -l) )); then
+            if [[ "$(echo "$current_score < 800" | bc -l)" == "1" ]]; then
                 echo "  Score < 8.0, requesting HUMAN_REVIEW"
                 request_human_review "$skill_file" "Score below SILVER after 10 rounds"
             fi
@@ -189,13 +321,13 @@ evolve_skill() {
         echo ""
         echo "=== STEP 8: LOG - RECORD TO results.tsv ==="
         echo "$current_round\t$weakest_dim\t$old_score\t$new_score\t$delta\t$confidence\tYES" >> "$RESULTS_TSV"
-        track_task "$skill_name" "evolution_round" "$([ "$delta" > 0 ] && echo "true" || echo "false")" "$current_round"
+        track_task "$skill_name" "evolution_round" "$([ "$delta > $MIN_IMPROVEMENT_DELTA" ] && echo "true" || echo "false")" "$current_round"
         
         old_score=$new_score
         
-        if [[ $stuck_count -ge 5 ]]; then
+        if [[ $stuck_count -ge $STUCK_ROUNDS_THRESHOLD ]]; then
             echo ""
-            echo "  ⚠ Stuck for 5 rounds, stopping"
+            echo "  ⚠ Stuck for $STUCK_ROUNDS_THRESHOLD rounds, stopping"
             break
         fi
         
@@ -204,7 +336,7 @@ evolve_skill() {
     
     echo ""
     echo "=== STEP 9: COMMIT (If needed) ==="
-    if (( current_round % 10 == 0 )) || (( stuck_count >= 3 )); then
+    if (( current_round % 10 == 0 )) || (( stuck_count >= 2 )); then
         git_commit_optimization "$skill_name" "$current_round" "$last_delta"
     fi
     
@@ -421,24 +553,24 @@ apply_improvement() {
     specific_change=$(echo "$plan_json" | jq -r '.specific_change')
     
     if [[ "$target_section" == "null" ]] || [[ "$specific_change" == "null" ]]; then
+        echo "ERROR: Invalid plan JSON - missing target_section or specific_change" >&2
         return 1
     fi
     
-    local section_pattern
-    section_pattern=$(echo "$target_section" | sed 's/\./\\./g')
-    
-    if grep -q "## $section_pattern" "$skill_file"; then
-        local marker="## $target_section"
-        local line_num
-        line_num=$(grep -n "$marker" "$skill_file" | head -1 | cut -d: -f1)
-        
-        if [[ -n "$line_num" ]]; then
-            sed -i '' "${line_num}s/.*/$specific_change/" "$skill_file"
-            return 0
-        fi
+    if [[ ! -f "$skill_file" ]]; then
+        echo "ERROR: Skill file not found: $skill_file" >&2
+        return 1
     fi
     
-    return 1
+    local section_header
+    section_header=$(echo "$target_section" | sed 's/\./\\./g')
+    
+    if ! grep -q "^## $section_header" "$skill_file"; then
+        echo "ERROR: Section ## $section_header not found in $skill_file" >&2
+        return 1
+    fi
+    
+    replace_section_content "$skill_file" "$section_header" "$specific_change"
 }
 
 multi_llm_verify_implementation() {
@@ -505,7 +637,7 @@ multi_llm_verify_score() {
         local delta
         delta=$(echo "$new_score - $old_score" | bc)
         
-        if (( $(echo "$delta > -5" | bc -l) )) && [[ $(echo "$confidence > 0.7" | bc -l) == "1" ]]; then
+        if [[ "$(echo "$delta > -5" | bc -l)" == "1" ]] && [[ "$(echo "$confidence > 0.7" | bc -l)" == "1" ]]; then
             echo "approved"
         else
             echo "rollback"
@@ -543,9 +675,14 @@ git_commit_optimization() {
     local delta="$3"
     
     if [[ -d ".git" ]]; then
+        if git diff --cached --quiet && git diff --quiet; then
+            echo "  No changes to commit"
+            return 0
+        fi
         git add -A 2>/dev/null || true
-        git commit -m "Optimize: $skill_name, $rounds rounds, delta=$delta" 2>/dev/null || true
-        echo "  Committed optimization progress"
+        if git commit -m "Optimize: $skill_name, $rounds rounds, delta=$delta" 2>/dev/null; then
+            echo "  Committed optimization progress"
+        fi
     fi
 }
 
@@ -555,9 +692,14 @@ rollback_to_snapshot() {
     
     local snapshot_dir="${SNAPSHOT_DIR}/$(basename "$skill_file")"
     
-    if [[ -f "$snapshot_dir/${snapshot_name}.tar.gz" ]]; then
-        tar -xzf "$snapshot_dir/${snapshot_name}.tar.gz" -C "$(dirname "$skill_file")"
-        echo "  Rolled back to $snapshot_name"
+    local snapshot_file
+    snapshot_file=$(find "$snapshot_dir" -name "*_${snapshot_name}.tar.gz" -type f 2>/dev/null | head -1)
+    
+    if [[ -n "$snapshot_file" ]] && [[ -f "$snapshot_file" ]]; then
+        tar -xzf "$snapshot_file" -C "$(dirname "$skill_file")"
+        echo "  Rolled back to $snapshot_name (file: $(basename "$snapshot_file"))"
+    else
+        echo "  WARNING: Snapshot not found for $snapshot_name"
     fi
 }
 

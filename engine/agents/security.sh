@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# security.sh - Security Agent with OWASP AST10 Checklist
+# security.sh - Security Agent with CWE-based Security Checklist
 #
 # Multi-LLM cross-validation for security audit
-# 10 checklist items across credential, input, path, trigger security
+# 10 checklist items covering CWE-798, CWE-89, CWE-78, CWE-22, CWE-306, CWE-862
 
 source "$(dirname "${BASH_SOURCE[0]}")/base.sh"
 require integration
@@ -137,7 +137,7 @@ audit_security() {
                 ;;
             "Error Handling Security")
                 local error_result
-                error_result=$(multi_llm_error_handling("$content"))
+                error_result=$(multi_llm_error_handling "$content")
                 item_status=$(echo "$error_result" | jq -r '.status')
                 item_severity=$(echo "$error_result" | jq -r '.severity')
                 item_findings=$(echo "$error_result" | jq -r '.findings')

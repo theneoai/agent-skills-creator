@@ -11,11 +11,24 @@ workflow_get_next_action() {
     local score="$1"
     local tier="$2"
     
-    if [[ "$tier" == "GOLD" ]] || [[ "$tier" == "SILVER" ]] || [[ "$tier" == "BRONZE" ]]; then
-        if [[ $score -ge 800 ]]; then
-            echo "done"
-            return 0
-        fi
+    if [[ "$tier" == "PLATINUM" ]]; then
+        echo "done"
+        return 0
+    fi
+    
+    if [[ "$tier" == "GOLD" ]] && [[ "$(echo "$score >= 900" | bc -l)" == "1" ]]; then
+        echo "done"
+        return 0
+    fi
+    
+    if [[ "$tier" == "SILVER" ]] && [[ "$(echo "$score >= 800" | bc -l)" == "1" ]]; then
+        echo "done"
+        return 0
+    fi
+    
+    if [[ "$tier" == "BRONZE" ]] && [[ "$(echo "$score >= 700" | bc -l)" == "1" ]]; then
+        echo "done"
+        return 0
     fi
     
     if [[ $ITERATION_COUNT -ge $MAX_ITERATIONS ]]; then
@@ -23,7 +36,7 @@ workflow_get_next_action() {
         return 0
     fi
     
-    if [[ $score -gt $LAST_SCORE ]]; then
+    if [[ "$(echo "$score > $LAST_SCORE" | bc -l)" == "1" ]]; then
         echo "continue"
         return 0
     fi

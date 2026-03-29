@@ -54,10 +54,12 @@ readonly CERTIFY_REPORT=20
 readonly CERTIFY_SECURITY=10
 
 # Security CWE checks
-readonly CWE_798_PATTERN='(sk-|api[-_]?key|password|token|secret|credential)'
-readonly CWE_89_PATTERN='(eval\(|exec\(|system\()'
-readonly CWE_78_PATTERN='(^|[;&|])\s*(eval|exec|system|popen)\s*\(|`[^`]+`|\$\([^)]+\)'
-readonly CWE_22_PATTERN='(\.\.\/|\.\.\\|%00)'
+readonly CWE_798_PATTERN='(sk-[a-zA-Z0-9]{20,}|api[-_]?key|password|token|secret|credential|-----BEGIN.*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|\$\{?[A-Z_]+(_[A-Z]+)*\}?)'
+readonly CWE_89_PATTERN='(mysql|psql|sqlite3|mongosh|sqlcmd)\s+.*\$\{|sql\s*=.*\$\{|["'\''].*\$\w+|WHERE\s+\$\w+|SELECT\s+\$\w+|INSERT\s+INTO\s+\$\w+|UPDATE\s+\$\w+\s+SET|DELETE\s+FROM\s+\$\w+|--\s*\$\{|"\s*\.\s*\$\{|'\''\s*\.\s*\$\{)'
+readonly CWE_78_PATTERN='(eval\s*\$\{|\$\(\s*\$.*|exec\s+\$\{|system\s+\$\{|popen\s*\$\{|`[^`]*\$\{[^`]*`|\beval\s+\$\(|\bexec\s+\$\(|\bsystem\s+\$\(|\bsh\s+-c.*\$\{|\bbash\s+-c.*\$\{)'
+readonly CWE_22_PATTERN='(\.\.\/|\.\.\\|%00|/etc/passwd|/etc/shadow|\.\.\.\/|\.\.\\\.\\.)'
+readonly CWE_306_PATTERN='(if\s+\[\s*-z\s+\$\w+\s*\]\s*;?\s*then\s*return|if\s+\[\s*-z\s+\$\w+\s*\]\s*;?\s*then\s*exit|auth[_-]?check|is[_-]?auth[_-]?enticated|check[_-]?auth|verify[_-]?creds?|validate[_-]?token?|require[_-]?auth)'
+readonly CWE_862_PATTERN='(is[_-]?authorized|check[_-]?perm[_-]?s?|has[_-]?perm[_-]?s?|validate[_-]?role?|has[_-]?role?|require[_-]?role|check[_-]?ownership|is[_-]?owner)'
 
 # Evaluation timeouts (seconds)
 readonly FAST_TIMEOUT=180  # 3 minutes

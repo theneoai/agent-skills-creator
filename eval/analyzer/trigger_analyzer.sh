@@ -43,6 +43,7 @@ analyze_triggers() {
         rank=$(echo "$query_result" | jq -r '.rank // 0')
         
         if [[ -z "$expected_trigger" ]] || [[ "$expected_trigger" == "null" ]]; then
+            reciprocal_ranks_sum=$(echo "$reciprocal_ranks_sum + 0" | bc -l)
             continue
         fi
         
@@ -52,6 +53,7 @@ analyze_triggers() {
                 reciprocal_ranks_sum=$(echo "$reciprocal_ranks_sum + 1/$rank" | bc -l)
             fi
         else
+            reciprocal_ranks_sum=$(echo "$reciprocal_ranks_sum + 0" | bc -l)
             if [[ -n "$predicted_triggers" ]] && [[ "$predicted_triggers" != "null" ]] && [[ "$predicted_triggers" != "" ]]; then
                 false_positives=$((false_positives + 1))
             fi
@@ -72,7 +74,7 @@ analyze_triggers() {
         recall="0.0"
     fi
     
-    if [[ $(echo "$precision + $recall" | bc -l) > 0 ]]; then
+    if [[ $(echo "$precision + $recall > 0" | bc -l) -eq 1 ]]; then
         f1_score=$(echo "scale=4; 2 * $precision * $recall / ($precision + $recall)" | bc)
     else
         f1_score="0.0"
@@ -151,6 +153,7 @@ analyze_triggers_from_json() {
         rank=$(echo "$json_data" | jq -r ".[$i].rank // 0")
         
         if [[ -z "$expected_trigger" ]] || [[ "$expected_trigger" == "null" ]]; then
+            reciprocal_ranks_sum=$(echo "$reciprocal_ranks_sum + 0" | bc -l)
             continue
         fi
         
@@ -160,6 +163,7 @@ analyze_triggers_from_json() {
                 reciprocal_ranks_sum=$(echo "$reciprocal_ranks_sum + 1/$rank" | bc -l)
             fi
         else
+            reciprocal_ranks_sum=$(echo "$reciprocal_ranks_sum + 0" | bc -l)
             if [[ -n "$predicted_triggers" ]] && [[ "$predicted_triggers" != "null" ]] && [[ "$predicted_triggers" != "" ]]; then
                 false_positives=$((false_positives + 1))
             fi
@@ -180,7 +184,7 @@ analyze_triggers_from_json() {
         recall="0.0"
     fi
     
-    if [[ $(echo "$precision + $recall" | bc -l) > 0 ]]; then
+    if [[ $(echo "$precision + $recall > 0" | bc -l) -eq 1 ]]; then
         f1_score=$(echo "scale=4; 2 * $precision * $recall / ($precision + $recall)" | bc)
     else
         f1_score="0.0"

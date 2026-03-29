@@ -20,6 +20,40 @@ LOG_FILE="${LOG_DIR}/parallel-evolution.log"
 
 mkdir -p "$WORKER_STATE_DIR" "$LOG_DIR"
 
+# 跨平台 sed -i 兼容函数
+sed_i() {
+    if [[ "$(uname)" == "Darwin" ]]; then
+        sed -i '' "$@"
+    else
+        sed -i "$@"
+    fi
+}
+
+# 文件锁函数 (用于并发保护)
+acquire_file_lock() {
+    local lock_file="$1"
+    local timeout="${2:-10}"
+    local start_time
+    start_time=$(date +%s)
+    
+    while [[ -f "$lock_file" ]]; do
+        local elapsed
+        elapsed=$(($(date +%s) - start_time))
+        if [[ $elapsed -ge $timeout ]]; then
+            return 1
+        fi
+        sleep 0.1
+    done
+    
+    echo $$ > "$lock_file"
+    return 0
+}
+
+release_file_lock() {
+    local lock_file="$1"
+    rm -f "$lock_file"
+}
+
 # 动态阈值
 F1_THRESHOLD=0.90
 MRR_THRESHOLD=0.85
@@ -39,16 +73,27 @@ update_worker_state() {
     local score=$3
     local delta=$4
     
+    local MIN_DELTA=0.5
+    local STUCK_THRESHOLD=5
+    
     local prev_state
     prev_state=$(get_worker_state "$worker_id")
     local best_score=$(echo "$prev_state" | jq -r '.best_score')
     local stuck_count=$(echo "$prev_state" | jq -r '.stuck_count')
+    local recent_scores=$(echo "$prev_state" | jq -r '.recent_scores // []')
     
-    if (( $(echo "$score > $best_score" | bc -l) )); then
+    if [[ "$(echo "$delta > $MIN_DELTA" | bc -l)" == "1" ]]; then
         best_score=$score
         stuck_count=0
     else
         ((stuck_count++))
+    fi
+    
+    recent_scores=$(echo "$recent_scores" | jq --argjson s "$score" '. += [$s] | .[-10:]')
+    
+    local variance=0
+    if [[ $(echo "$recent_scores" | jq 'length') -ge 5 ]]; then
+        variance=$(echo "$recent_scores" | jq -s 'def variance: (map(add) | length) as $n | (map(add) / $n) as $mean | (map(. - $mean) | map(. * .) | add) / $n | sqrt; variance')
     fi
     
     jq -n \
@@ -56,7 +101,9 @@ update_worker_state() {
         --argjson best_score "$best_score" \
         --argjson stuck_count "$stuck_count" \
         --argjson delta "$delta" \
-        '{round: $round, best_score: $best_score, stuck_count: $stuck_count, delta: $delta}' \
+        --argjson variance "$variance" \
+        --jsonarrayargs "$recent_scores" \
+        '{round: $round, best_score: $best_score, stuck_count: $stuck_count, delta: $delta, variance: $variance, recent_scores: $jsonarrayargs}' \
         > "${WORKER_STATE_DIR}/worker_${worker_id}.json"
 }
 
@@ -71,10 +118,10 @@ apply_improvement() {
     
     case "$dimension" in
         1) # 增加量化指标
-            sed -i '' 's/F1 ≥ 0.90/F1 ≥ 0.92/g; s/MRR ≥ 0.85/MRR ≥ 0.87/g' "$skill_file" 2>/dev/null || true
+            sed_i 's/F1 ≥ 0.90/F1 ≥ 0.92/g; s/MRR ≥ 0.85/MRR ≥ 0.87/g' "$skill_file" 2>/dev/null || true
             ;;
         2) # 增加触发器关键词
-            sed -i '' '/| CREATE |/s/| 1 |/| 1 |+增强关键词/g' "$skill_file" 2>/dev/null || true
+            sed_i '/| CREATE |/s/| 1 |/| 1 |+增强关键词/g' "$skill_file" 2>/dev/null || true
             ;;
         3) # 增加示例
             if ! grep -q "Example:" "$skill_file"; then
@@ -88,7 +135,7 @@ apply_improvement() {
             ;;
         5) # 增加跨引用
             if ! grep -q "reference/" "$skill_file"; then
-                sed -i '' 's/## Reference Index/## Reference Index\n| `reference/new.md` | New reference | LOAD/g' "$skill_file" 2>/dev/null || true
+                sed_i 's/## Reference Index/## Reference Index\n| `reference/new.md` | New reference | LOAD/g' "$skill_file" 2>/dev/null || true
             fi
             ;;
     esac
@@ -111,22 +158,49 @@ run_worker() {
         
         local delta=0
         if [[ -n "$last_score" ]] && [[ "$last_score" != "0" ]]; then
-            if (( $(echo "$new_score > $last_score" | bc -l) )); then
+            if [[ "$(echo "$new_score > $last_score" | bc -l)" == "1" ]]; then
                 delta=$(echo "$new_score - $last_score" | bc)
             fi
         fi
         
         update_worker_state "$worker_id" "$current_round" "$new_score" "$delta"
         
-        # 尝试改进
+        # 尝试改进 (需要文件锁保护并发)
+        local skill_lock="${WORKER_STATE_DIR}/skill.lock"
+        if ! acquire_file_lock "$skill_lock" 30; then
+            log "WORKER $worker_id: Could not acquire lock, skipping round"
+            continue
+        fi
+        
+        # 保存当前文件内容用于回滚
+        local pre_improvement_content
+        pre_improvement_content=$(cat "${PROJECT_ROOT}/SKILL.md")
+        
         local dim=$((current_round % 5 + 1))
-        apply_improvement "${PROJECT_ROOT}/SKILL.md" "$dim"
+        local improvement_success=false
+        if apply_improvement "${PROJECT_ROOT}/SKILL.md" "$dim"; then
+            improvement_success=true
+        fi
         
         # 再次评分
         local improved_score
         improved_score=$(get_score "${PROJECT_ROOT}/SKILL.md")
         
-        if (( $(echo "$improved_score > $new_score" | bc -l) )); then
+        if [[ "$improvement_success" == "true" ]] && [[ "$(echo "$improved_score > $new_score" | bc -l)" == "1" ]]; then
+            new_score=$improved_score
+            log "WORKER $worker_id: Round $current_round - Improved! Score: $new_score"
+            update_worker_state "$worker_id" "$current_round" "$new_score" "$delta"
+        else
+            # 回滚到改进前的内容
+            echo "$pre_improvement_content" > "${PROJECT_ROOT}/SKILL.md"
+            log "WORKER $worker_id: Round $current_round - No improvement, rolled back"
+        fi
+        
+        release_file_lock "$skill_lock"
+        local improved_score
+        improved_score=$(get_score "${PROJECT_ROOT}/SKILL.md")
+        
+        if [[ "$(echo "$improved_score > $new_score" | bc -l)" == "1" ]]; then
             new_score=$improved_score
             log "WORKER $worker_id: Round $current_round - Improved! Score: $new_score"
             update_worker_state "$worker_id" "$current_round" "$new_score" "$delta"
@@ -158,13 +232,16 @@ aggregate_metrics() {
             total_score=$(echo "$total_score + $bs" | bc)
             ((count++))
             
-            if (( $(echo "$bs > $best_overall" | bc -l) )); then
+            if [[ "$(echo "$bs > $best_overall" | bc -l)" == "1" ]]; then
                 best_overall=$bs
             fi
         fi
     done
     
-    local avg_score=$(echo "scale=2; $total_score / $count" | bc)
+    local avg_score=0
+    if [[ $count -gt 0 ]]; then
+        avg_score=$(echo "scale=2; $total_score / $count" | bc)
+    fi
     
     jq -n \
         --argjson best "$best_overall" \
@@ -237,8 +314,12 @@ main() {
     
     # 提交
     cd "$PROJECT_ROOT"
-    git add -A
-    git commit -m "feat: 自我进化完成 - 最终评分 $(echo "$final_metrics" | jq -r '.best_score')" 2>/dev/null || true
+    if git diff --cached --quiet && git diff --quiet; then
+        log "  No changes to commit"
+    else
+        git add -A
+        git commit -m "feat: 自我进化完成 - 最终评分 $(echo "$final_metrics" | jq -r '.best_score')" 2>/dev/null || true
+    fi
 }
 
 trap 'log "Interrupted"; exit 1' INT TERM

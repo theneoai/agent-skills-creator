@@ -109,7 +109,7 @@ evolve_skill() {
     
     trap "release_lock 'evolution'" EXIT
     
-    evolve_skill "$skill_file"
+    engine/evolution/engine.sh "$skill_file"
 }
 
 main() {

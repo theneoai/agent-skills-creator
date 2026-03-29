@@ -11,19 +11,29 @@ parallel_execute() {
     local result_file1="${3:-}"
     local result_file2="${4:-}"
     
+    if [[ -z "$cmd1" ]] || [[ -z "$cmd2" ]]; then
+        echo "Error: Commands cannot be empty" >&2
+        return 1
+    fi
+    
+    if echo "$cmd1" | grep -qE '[;&|`$]' || echo "$cmd2" | grep -qE '[;&|`$]'; then
+        echo "Error: Dangerous characters in parallel commands" >&2
+        return 1
+    fi
+    
     local pid1 pid2 exit1 exit2
     
     if [[ -n "$result_file1" ]]; then
-        eval "$cmd1" > "$result_file1" &
+        bash -c "$cmd1" > "$result_file1" &
     else
-        eval "$cmd1" &
+        bash -c "$cmd1" &
     fi
     pid1=$!
     
     if [[ -n "$result_file2" ]]; then
-        eval "$cmd2" > "$result_file2" &
+        bash -c "$cmd2" > "$result_file2" &
     else
-        eval "$cmd2" &
+        bash -c "$cmd2" &
     fi
     pid2=$!
     

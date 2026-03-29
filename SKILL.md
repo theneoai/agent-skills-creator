@@ -3,7 +3,7 @@ name: skill
 description: >
   全生命周期AI技能工程系统：创建、评估、恢复、安全、优化。
   支持中英双语触发：创建/评估/恢复/安全/优化技能。
-  特性：多LLM deliberation、交叉验证、自动进化、Lean评估(~0秒/0 token)、OWASP AST10安全审计。
+  特性：多LLM deliberation、交叉验证、自动进化、Lean评估(~0秒/0 token)、CWE-based Security安全审计。
   自我进化：阈值+定时+使用数据三重触发，使用分析提升触发准确率F1>=0.90。
 license: MIT
 metadata:
@@ -55,7 +55,7 @@ User Input → Mode Router → [CREATE|EVALUATE|RESTORE|SECURITY] → OPTIMIZE
 | orchestrator | engine/orchestrator.sh | Main workflow |
 | evaluator | engine/agents/evaluator.sh | Skill evaluation |
 | evolution | engine/evolution/engine.sh | Self-optimization |
-| security | engine/agents/security.sh | OWASP AST10 audit |
+| security | engine/agents/security.sh | CWE-based Security audit |
 | restorer | engine/agents/restorer.sh | Skill repair |
 
 **Constraints**:
@@ -175,7 +175,7 @@ confidence = primary_match×0.5 + secondary×0.2 + context×0.2 + no_negative×0
 **Done criteria**: Score ≥ previous score with all P0 issues resolved
 
 ### Mode: SECURITY
-**Purpose**: OWASP AST10 audit
+**Purpose**: CWE-based Security audit
 **Pattern**: Reviewer - security-specific checklist
 **Steps**: Ask path → OWASP checklist (Multi-LLM) → Present violations by severity
 
@@ -230,7 +230,7 @@ confidence = primary_match×0.5 + secondary×0.2 + context×0.2 + no_negative×0
 | File exists | Test -f "$path" | "Skill not found" |
 | Valid structure | Header + § sections | "Invalid format" |
 | Tier match | Score ≥ threshold | Warning |
-| Security scan | OWASP AST10 pass | Block P0 |
+| Security scan | CWE-based Security pass | Block P0 |
 
 **Score Thresholds (Lean 600pts)**:
 | Tier | Min Score | F1 | MRR |

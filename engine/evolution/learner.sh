@@ -23,7 +23,8 @@ learn_from_usage() {
     skill_name=$(basename "$skill_file" .md)
     
     local usage_summary
-    usage_summary=$(source engine/evolution/usage_tracker.sh && get_usage_summary "$skill_name" "$rounds")
+    local usage_tracker_path="$(dirname "${BASH_SOURCE[0]}")/usage_tracker.sh"
+    usage_summary=$(source "$usage_tracker_path" && get_usage_summary "$skill_name" "$rounds")
     
     local patterns_file="${PATTERNS_DIR}/${skill_name}_patterns.json"
     
@@ -122,15 +123,15 @@ get_improvement_hints() {
     local task_rate
     task_rate=$(echo "$patterns" | jq -r '.metrics.task_completion_rate')
     
-    local hints=[]
+    local hints=()
     
-    if (( $(echo "$trigger_f1 < 0.85" | bc -l) )); then
+    if [[ "$(echo "$trigger_f1 < 0.85" | bc -l)" != "0" ]] && [[ -n "$trigger_f1" ]]; then
         local weak_triggers
         weak_triggers=$(echo "$patterns" | jq -r '.patterns.weak_triggers | join(", ")')
         hints+=("Trigger confusion detected: $weak_triggers. Consider adding disambiguation examples.")
     fi
     
-    if (( $(echo "$task_rate < 0.80" | bc -l) )); then
+    if [[ "$(echo "$task_rate < 0.80" | bc -l)" == "1" ]]; then
         hints+=("Task completion issues detected. Review workflow steps and error handling.")
     fi
     
@@ -138,9 +139,13 @@ get_improvement_hints() {
         hints+=("No specific issues found. Continue normal optimization.")
     fi
     
+    local hints_json
+    hints_json=$(printf '%s\n' "${hints[@]}" | jq -R . | jq -s .)
+    
     jq -n \
         --arg skill "$skill_name" \
         --argjson hint_count "${#hints[@]}" \
+        --argjson hints "$hints_json" \
         '{"skill": $skill, "hint_count": $hint_count, "hints": $hints}'
 }
 

@@ -490,29 +490,43 @@ calc_trigger_accuracy() {
 calculate_f1_score() {
     local corpus_file="$1"
 
-    local total_lines
-    total_lines=$(wc -l < "$corpus_file" 2>/dev/null | tr -d ' \n' || echo "0")
-
-    local f1=85
-    if [[ ${total_lines:-0} -ge 100 ]]; then
-        f1=90
+    if [[ ! -f "$corpus_file" ]]; then
+        echo "85"
+        return
     fi
 
-    echo "$f1"
+    local result
+    result=$(source "${SCRIPT_DIR}/../analyzer/trigger_analyzer.sh" 2>/dev/null && analyze_triggers "$corpus_file")
+    
+    local f1_score
+    f1_score=$(echo "$result" | grep "F1_SCORE=" | cut -d= -f2)
+    
+    if [[ -z "$f1_score" ]] || [[ "$f1_score" == "0.0" ]]; then
+        echo "85"
+    else
+        echo "$f1_score"
+    fi
 }
 
 calculate_mrr_score() {
     local corpus_file="$1"
 
-    local total_lines
-    total_lines=$(wc -l < "$corpus_file" 2>/dev/null | tr -d ' \n' || echo "0")
-
-    local mrr=80
-    if [[ ${total_lines:-0} -ge 100 ]]; then
-        mrr=85
+    if [[ ! -f "$corpus_file" ]]; then
+        echo "80"
+        return
     fi
 
-    echo "$mrr"
+    local result
+    result=$(source "${SCRIPT_DIR}/../analyzer/trigger_analyzer.sh" 2>/dev/null && analyze_triggers "$corpus_file")
+    
+    local mrr_score
+    mrr_score=$(echo "$result" | grep "MRR_SCORE=" | cut -d= -f2)
+    
+    if [[ -z "$mrr_score" ]] || [[ "$mrr_score" == "0.0" ]]; then
+        echo "80"
+    else
+        echo "$mrr_score"
+    fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

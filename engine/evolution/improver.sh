@@ -97,7 +97,7 @@ validate_improvement() {
     original_score=$(echo "$original_result" | jq -r '.total_score // 0')
     improved_score=$(echo "$improved_result" | jq -r '.total_score // 0')
     
-    local delta=$((improved_score - original_score))
+    local delta=$(echo "$improved_score - $original_score" | bc)
     
     jq -n \
         --arg original "$original_score" \

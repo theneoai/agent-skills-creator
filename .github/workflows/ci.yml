@@ -19,6 +19,10 @@ jobs:
           chmod +x ./tests/unit/*.sh
           chmod +x ./eval/**/*.sh
       
+      - name: Check version sync
+        run: |
+          bash ./scripts/sync_version.sh --check
+      
       - name: Run unit tests
         run: |
           bash tests/unit/run_tests.sh

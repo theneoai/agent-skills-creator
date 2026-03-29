@@ -29,7 +29,7 @@ should_evolve() {
     local current_score
     current_score=$(bash scripts/lean-orchestrator.sh "$skill_file" SILVER 2>/dev/null | jq -r '.total // 0')
     
-    if (( $(echo "$current_score < $GOLD_THRESHOLD" | bc -l) )); then
+    if [[ "$(echo "$current_score < $GOLD_THRESHOLD" | bc -l)" == "1" ]]; then
         local reason="score_below_gold"
         reason="${reason}_${current_score}"
         echo "{\"decision\": \"evolve\", \"reason\": \"$reason\", \"score\": $current_score}"
@@ -42,14 +42,15 @@ should_evolve() {
     fi
     
     local usage_summary
-    usage_summary=$(source engine/evolution/usage_tracker.sh && get_usage_summary "$skill_name" 7)
+    local usage_tracker_path="$(dirname "${BASH_SOURCE[0]}")/usage_tracker.sh"
+    usage_summary=$(source "$usage_tracker_path" && get_usage_summary "$skill_name" 7)
     
     local trigger_f1
     trigger_f1=$(echo "$usage_summary" | jq -r '.trigger_f1')
     local task_rate
     task_rate=$(echo "$usage_summary" | jq -r '.task_completion_rate')
     
-    if (( $(echo "$trigger_f1 < 0.85" | bc -l) )) || (( $(echo "$task_rate < 0.80" | bc -l) )); then
+    if [[ "$(echo "$trigger_f1 < 0.85" | bc -l)" == "1" ]] || [[ "$(echo "$task_rate < 0.80" | bc -l)" == "1" ]]; then
         echo "{\"decision\": \"evolve\", \"reason\": \"usage_metrics_low\", \"trigger_f1\": $trigger_f1, \"task_rate\": $task_rate, \"score\": $current_score}"
         return
     fi
@@ -84,7 +85,8 @@ get_evolution_recommendations() {
     skill_name=$(basename "$skill_file" .md)
     
     local usage_summary
-    usage_summary=$(source engine/evolution/usage_tracker.sh && get_usage_summary "$skill_name" 7)
+    local usage_tracker_path="$(dirname "${BASH_SOURCE[0]}")/usage_tracker.sh"
+    usage_summary=$(source "$usage_tracker_path" && get_usage_summary "$skill_name" 7)
     
     local trigger_f1
     trigger_f1=$(echo "$usage_summary" | jq -r '.trigger_f1')
@@ -95,15 +97,15 @@ get_evolution_recommendations() {
     
     local recommendations=()
     
-    if (( $(echo "$trigger_f1 < 0.90" | bc -l) )); then
+    if [[ "$(echo "$trigger_f1 < 0.90" | bc -l)" == "1" ]]; then
         recommendations+=("Improve trigger accuracy (current: $trigger_f1)")
     fi
     
-    if (( $(echo "$task_rate < 0.85" | bc -l) )); then
+    if [[ "$(echo "$task_rate < 0.85" | bc -l)" == "1" ]]; then
         recommendations+=("Improve task completion rate (current: $task_rate)")
     fi
     
-    if (( $(echo "$avg_feedback < 3.5" | bc -l) )) && (( $(echo "$avg_feedback > 0" | bc -l) )); then
+    if [[ "$(echo "$avg_feedback < 3.5" | bc -l)" == "1" ]] && [[ "$(echo "$avg_feedback > 0" | bc -l)" == "1" ]]; then
         recommendations+=("Address user feedback issues (avg: $avg_feedback)")
     fi
     
@@ -111,11 +113,15 @@ get_evolution_recommendations() {
         recommendations+=("All metrics look good, minor refinements only")
     fi
     
+    local recs_json
+    recs_json=$(printf '%s\n' "${recommendations[@]}" | jq -R . | jq -s .)
+    
     jq -n \
         --argjson trigger_f1 "$trigger_f1" \
         --argjson task_rate "$task_rate" \
         --argjson avg_feedback "$avg_feedback" \
         --argjson count "${#recommendations[@]}" \
+        --argjson recommendations "$recs_json" \
         '{"trigger_f1": $trigger_f1, "task_completion_rate": $task_rate, "avg_feedback": $avg_feedback, "recommendation_count": $count, "recommendations": $recommendations}'
 }
 

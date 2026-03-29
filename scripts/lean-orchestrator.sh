@@ -17,6 +17,8 @@ require constants concurrency errors integration
 
 source "${EVAL_DIR}/lib/agent_executor.sh"
 
+source "${EVAL_DIR}/lib/unified_scoring.sh"
+
 LEAN_LOG="${LOG_DIR}/lean.log"
 
 get_provider_strength() {
@@ -194,6 +196,51 @@ text_score_heuristic() {
 }
 
 # ============================================================================
+# SEMANTIC CHECK (Validate content consistency)
+# ============================================================================
+
+semantic_check() {
+    local skill_file="$1"
+    
+    log_lean "SEMANTIC CHECK: Validating content consistency"
+    
+    local issues=0
+    
+    if grep -qE '§1\.' "$skill_file"; then
+        if ! grep -qE '§1\.1|§1\.2|§1\.3' "$skill_file"; then
+            log_lean "  WARNING: §1.x exists but §1.1/§1.2/§1.3 missing"
+            ((issues++))
+        fi
+    fi
+    
+    if grep -qE 'trigger|trigger' "$skill_file"; then
+        local trigger_count
+        trigger_count=$(grep -ciE '(CREATE|EVALUATE|OPTIMIZE|RESTORE|SECURITY)' "$skill_file" || echo "0")
+        if [[ $trigger_count -lt 3 ]]; then
+            log_lean "  WARNING: Trigger keywords mentioned but few actual triggers"
+            ((issues++))
+        fi
+    fi
+    
+    if grep -qE 'error|fail|exception' "$skill_file"; then
+        if ! grep -qE '(retry|handle|recover|catch)' "$skill_file"; then
+            log_lean "  WARNING: Error mentions without handling"
+            ((issues++))
+        fi
+    fi
+    
+    if grep -qE 'example|示例' "$skill_file"; then
+        if ! grep -qE '```' "$skill_file"; then
+            log_lean "  WARNING: Examples mentioned but no code blocks"
+            ((issues++))
+        fi
+    fi
+    
+    log_lean "Semantic issues found: $issues"
+    echo "$issues"
+}
+
+# ============================================================================
 # PHASE 3: RUNTIME TEST (Fast - Check trigger patterns)
 # ============================================================================
 
@@ -282,7 +329,7 @@ llm_deliberate() {
     diff=$(echo "$kimi_score - $minimax_score" | bc 2>/dev/null || echo "0")
     diff=${diff#-}
     
-    if (( $(echo "$diff > 15" | bc -l) )); then
+    if [[ "$(echo "$diff > 15" | bc -l)" == "1" ]]; then
         log_lean "High disagreement ($diff), requesting third opinion"
         local third_result
         third_result=$(call_llm "You are an expert skill evaluator." "$prompt" "auto" "openai" 2>/dev/null || echo '{"score": 0}')
@@ -357,17 +404,20 @@ certify() {
     local runtime_score="$3"
     
     local total=$((parse_score + text_score + runtime_score))
+    local normalized_total=$(echo "scale=0; $total * $LEAN_TO_STANDARD / 1" | bc)
     
-    log_lean "CERTIFY: Total=$total"
+    log_lean "CERTIFY: Total=$total (normalized: $normalized_total)"
     
-    if [[ $total -ge 570 ]]; then
+    if [[ $normalized_total -ge $TIER_PLATINUM ]]; then
+        echo "PLATINUM"
+    elif [[ $normalized_total -ge $TIER_GOLD ]]; then
         echo "GOLD"
-    elif [[ $total -ge 510 ]]; then
+    elif [[ $normalized_total -ge $TIER_SILVER ]]; then
         echo "SILVER"
-    elif [[ $total -ge 420 ]]; then
+    elif [[ $normalized_total -ge $TIER_BRONZE ]]; then
         echo "BRONZE"
     else
-        echo "FAIL"
+        echo "NOT_CERTIFIED"
     fi
 }
 
@@ -406,10 +456,11 @@ main() {
     
     local min_score
     case "$target_tier" in
-        GOLD) min_score=450 ;;
-        SILVER) min_score=400 ;;
-        BRONZE) min_score=350 ;;
-        *) min_score=350 ;;
+        PLATINUM) min_score=950 ;;
+        GOLD) min_score=900 ;;
+        SILVER) min_score=800 ;;
+        BRONZE) min_score=700 ;;
+        *) min_score=700 ;;
     esac
     
     if [[ $total -ge $min_score ]]; then

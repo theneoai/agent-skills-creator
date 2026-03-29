@@ -460,23 +460,19 @@ run_phase4() {
     
     # Variance calculation using text vs runtime difference
     local variance
-    if [[ $text_score -gt $runtime_score ]]; then
-        variance=$((text_score - runtime_score))
-    else
-        variance=$((runtime_score - text_score))
-    fi
+    variance=$(echo "if ($text_score > $runtime_score) $text_score - $runtime_score else $runtime_score - $text_score" | bc)
     
     # Variance score (40pts max) - more lenient for real-world variation
     local variance_score=0
-    if [[ $variance -lt 30 ]]; then
+    if [[ "$(echo "$variance < 30" | bc -l)" == "1" ]]; then
         variance_score=40
-    elif [[ $variance -lt 50 ]]; then
+    elif [[ "$(echo "$variance < 50" | bc -l)" == "1" ]]; then
         variance_score=30
-    elif [[ $variance -lt 70 ]]; then
+    elif [[ "$(echo "$variance < 70" | bc -l)" == "1" ]]; then
         variance_score=20
-    elif [[ $variance -lt 100 ]]; then
+    elif [[ "$(echo "$variance < 100" | bc -l)" == "1" ]]; then
         variance_score=10
-    elif [[ $variance -lt 150 ]]; then
+    elif [[ "$(echo "$variance < 150" | bc -l)" == "1" ]]; then
         variance_score=5
     fi
     
@@ -527,6 +523,9 @@ generate_summary() {
     local p3="$5"
     local p4="$6"
     local tier="$7"
+    local f1_score="${8:-0.5}"
+    local mode_accuracy="${9:-0.5}"
+    local trigger_accuracy="${10:-$f1_score}"
     
     local timestamp
     timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -616,22 +615,34 @@ EOF
 HTMLEOF
     
     # Replace placeholders
+    local safe_skill_name=$(basename "$SKILL_PATH" | sed 's/[/&\\]/\\&/g')
+    local safe_tier=$(echo "$tier" | sed 's/[/&\\]/\\&/g')
+    local safe_total=$(echo "$total" | sed 's/[/&\\]/\\&/g')
+    local safe_p1=$(echo "$p1" | sed 's/[/&\\]/\\&/g')
+    local safe_p2=$(echo "$p2" | sed 's/[/&\\]/\\&/g')
+    local safe_p3=$(echo "$p3" | sed 's/[/&\\]/\\&/g')
+    local safe_p4=$(echo "$p4" | sed 's/[/&\\]/\\&/g')
+    local safe_f1=$(echo "$f1_score" | sed 's/[/&\\]/\\&/g')
+    local safe_mrr=$(echo "$mode_accuracy" | sed 's/[/&\\]/\\&/g')
+    local safe_ta=$(echo "$trigger_accuracy" | sed 's/[/&\\]/\\&/g')
+    local safe_ts=$(echo "$timestamp" | sed 's/[/&\\]/\\&/g')
+    
     sed -i.bak \
-        -e "s|%SKILL_NAME%|$(basename "$SKILL_PATH")|g" \
+        -e "s|%SKILL_NAME%|${safe_skill_name}|g" \
         -e "s|%DATE%|$(date +%Y-%m-%d)|g" \
-        -e "s|%TIER%|$tier|g" \
-        -e "s|%TOTAL%|$total|g" \
-        -e "s|%P1%|$p1|g" \
-        -e "s|%P2%|$p2|g" \
-        -e "s|%P3%|$p3|g" \
-        -e "s|%P4%|$p4|g" \
-        -e "s|%F1%|0.75|g" \
-        -e "s|%MRR%|0.70|g" \
-        -e "s|%TRIGGER_ACC%|0.72|g" \
-        -e "s|%F1_STATUS%|WARN|g" \
-        -e "s|%MRR_STATUS%|WARN|g" \
-        -e "s|%TA_STATUS%|WARN|g" \
-        -e "s|%TIMESTAMP%|$timestamp|g" \
+        -e "s|%TIER%|${safe_tier}|g" \
+        -e "s|%TOTAL%|${safe_total}|g" \
+        -e "s|%P1%|${safe_p1}|g" \
+        -e "s|%P2%|${safe_p2}|g" \
+        -e "s|%P3%|${safe_p3}|g" \
+        -e "s|%P4%|${safe_p4}|g" \
+        -e "s|%F1%|${safe_f1}|g" \
+        -e "s|%MRR%|${safe_mrr}|g" \
+        -e "s|%TRIGGER_ACC%|${safe_ta}|g" \
+        -e "s|%F1_STATUS%|$(echo "$f1_score >= 0.9" | bc -l | sed 's/1/PASS/g; s/0/FAIL/g')|g" \
+        -e "s|%MRR_STATUS%|$(echo "$mode_accuracy >= 0.85" | bc -l | sed 's/1/PASS/g; s/0/FAIL/g')|g" \
+        -e "s|%TA_STATUS%|$(echo "$trigger_accuracy >= 0.99" | bc -l | sed 's/1/PASS/g; s/0/FAIL/g')|g" \
+        -e "s|%TIMESTAMP%|${safe_ts}|g" \
         "$output/summary.html"
     rm -f "$output/summary.html.bak"
     
@@ -679,7 +690,7 @@ main() {
     # Run phases
     local p1_results p2_results p3_results p4_results
     local p1_score p2_score p3_score p4_score
-    local security_violation tier
+    local security_violation tier f1_score mode_accuracy trigger_accuracy
     
     p1_results=$(run_phase1 "$SKILL_PATH" "$OUTPUT_DIR")
     p1_score=$(echo "$p1_results" | cut -d: -f1)
@@ -690,6 +701,9 @@ main() {
     
     p3_results=$(run_phase3 "$SKILL_PATH" "$corpus" "$OUTPUT_DIR" "$USE_AGENT")
     p3_score=$(echo "$p3_results" | cut -d: -f1)
+    f1_score=$(echo "$p3_results" | cut -d: -f11)
+    mode_accuracy=$(echo "$p3_results" | cut -d: -f12)
+    trigger_accuracy=$(echo "$p3_results" | cut -d: -f10)
     
     p4_results=$(run_phase4 "$OUTPUT_DIR" "$p2_score" "$p3_score" "$security_violation" "$p1_score")
     p4_base_score=$(echo "$p4_results" | cut -d: -f1)
@@ -706,18 +720,18 @@ main() {
     local tier_score=0
     if [[ $security_violation -eq 1 ]]; then
         tier="REJECTED"
-    elif [[ $grand_total -ge 950 ]] && [[ $actual_variance -lt 20 ]]; then
+    elif [[ "$(echo "$grand_total >= 950" | bc -l)" == "1" ]] && [[ "$(echo "$actual_variance < 20" | bc -l)" == "1" ]]; then
         tier="PLATINUM"
-        tier_score=20
-    elif [[ $grand_total -ge 900 ]] && [[ $actual_variance -lt 50 ]]; then
+        tier_score=30
+    elif [[ "$(echo "$grand_total >= 900" | bc -l)" == "1" ]] && [[ "$(echo "$actual_variance < 50" | bc -l)" == "1" ]]; then
         tier="GOLD"
-        tier_score=20
-    elif [[ $grand_total -ge 800 ]] && [[ $actual_variance -lt 80 ]]; then
+        tier_score=25
+    elif [[ "$(echo "$grand_total >= 800" | bc -l)" == "1" ]] && [[ "$(echo "$actual_variance < 80" | bc -l)" == "1" ]]; then
         tier="SILVER"
         tier_score=20
-    elif [[ $grand_total -ge 700 ]] && [[ $actual_variance -lt 150 ]]; then
+    elif [[ "$(echo "$grand_total >= 700" | bc -l)" == "1" ]] && [[ "$(echo "$actual_variance < 150" | bc -l)" == "1" ]]; then
         tier="BRONZE"
-        tier_score=20
+        tier_score=15
     fi
     
     # Final p4 score includes tier_score
@@ -732,7 +746,8 @@ main() {
     "phase": "certification",
     "score": $p4_score,
     "max": 100,
-    "total": $grand_total,
+    "grand_total": $grand_total,
+    "total": $total,
     "tier": "$tier",
     "variance": $actual_variance,
     "p1_score": $p1_score,
@@ -756,7 +771,7 @@ EOF
     echo -e "${GREEN}TIER: $tier${NC}"
     echo "=========================================="
     
-    generate_summary "$OUTPUT_DIR" "$total" "$p1_score" "$p2_score" "$p3_score" "$p4_score" "$tier"
+    generate_summary "$OUTPUT_DIR" "$total" "$p1_score" "$p2_score" "$p3_score" "$p4_score" "$tier" "$f1_score" "$mode_accuracy" "$trigger_accuracy"
     
     cat "$OUTPUT_DIR/summary.json"
     

@@ -56,7 +56,13 @@ with_lock() {
         return 1
     }
     
-    trap "release_lock '$lock_name'" EXIT
+    local lock_depth_file="${LOCK_DIR}/${lock_name}.depth"
+    local depth=${LOCK_DEPTH:-0}
+    ((depth++))
+    LOCK_DEPTH=$depth
+    echo "$depth" > "$lock_depth_file" 2>/dev/null || true
+    
+    trap "release_lock '$lock_name'; rm -f '$lock_depth_file' 2>/dev/null" EXIT
     
     "$@"
 }

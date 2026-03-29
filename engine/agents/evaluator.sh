@@ -74,7 +74,10 @@ evaluator_generate_suggestions() {
     local system_prompt
     system_prompt=$(agent_load_system_prompt "evaluator")
     
-    local prompt="Based on the current SKILL.md content and a score of ${current_score}/1000, generate specific improvement suggestions.
+    local normalized_score
+    normalized_score=$(echo "scale=0; $current_score * 1000 / 1155 / 1" | bc)
+    
+    local prompt="Based on the current SKILL.md content and a score of ${current_score} (normalized: ${normalized_score}/1000), generate specific improvement suggestions.
 
 Current section being developed: §${section_num}
 
@@ -86,7 +89,7 @@ Read the SKILL.md file and identify:
 5. Quality issues in existing content
 
 Provide 3-5 concrete, actionable suggestions. Each suggestion should:
-- Be specific (not \"improve the documentation\")
+- Be specific (not "improve the documentation")
 - Include what to add or change
 - Explain why it matters
 
@@ -148,7 +151,7 @@ evaluator_compare_versions() {
     old_score=$(echo "$old_result" | jq -r '.total_score // 0')
     new_score=$(echo "$new_result" | jq -r '.total_score // 0')
     
-    local delta=$((new_score - old_score))
+    local delta=$(echo "$new_score - $old_score" | bc)
     
     jq -n \
         --arg old_score "$old_score" \

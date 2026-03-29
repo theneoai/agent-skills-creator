@@ -17,13 +17,14 @@ evaluate_skill() {
         return 1
     fi
     
-    cd "$EVAL_DIR"
+    local original_dir="$(pwd)"
+    cd "$EVAL_DIR" || return 1
     
     local result
     result=$(./main.sh --skill "$skill_file" --${mode} 2>/dev/null)
     local exit_code=$?
     
-    cd - >/dev/null
+    cd "$original_dir" || return 1
     
     if [[ $exit_code -ne 0 ]]; then
         return 1
