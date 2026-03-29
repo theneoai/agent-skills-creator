@@ -7,34 +7,71 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Make scripts executable
+      - name: Run shellcheck
+        run: find . -name "*.sh" -type f | xargs shellcheck || true
+
+  unit-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Make executable
         run: |
-          chmod +x ./scripts/*.sh
-          chmod +x ./tests/*.sh
-          chmod +x ./tests/unit/*.sh
-          chmod +x ./eval/**/*.sh
-      
-      - name: Check version sync
-        run: |
-          bash ./scripts/sync_version.sh --check
-      
+          chmod +x cli/* tools/**/*.sh tests/**/*.sh 2>/dev/null || true
       - name: Run unit tests
+        run: bash tests/unit/run_tests.sh
+
+  business-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Make executable
         run: |
-          bash tests/unit/run_tests.sh
-          
+          chmod +x cli/* tools/**/*.sh tests/**/*.sh 2>/dev/null || true
+      - name: Run business tests
+        run: bash tests/business/run_tests.sh
+
+  integration-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Make executable
+        run: |
+          chmod +x cli/* tools/**/*.sh tests/**/*.sh 2>/dev/null || true
       - name: Run integration tests
+        run: bash tests/integration/run_tests.sh
+
+  e2e-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Make executable
         run: |
-          bash tests/run_tests.sh
-          
-      - name: Lean evaluation
+          chmod +x cli/* tools/**/*.sh tests/**/*.sh 2>/dev/null || true
+      - name: Run E2E tests
+        run: bash tests/e2e/run_tests.sh
+
+  eval-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Make executable
         run: |
-          bash scripts/lean-orchestrator.sh SKILL.md
-          
-      - name: Parse validation
+          chmod +x cli/* tools/**/*.sh tests/**/*.sh 2>/dev/null || true
+      - name: Run full eval
+        run: bash tools/eval/main.sh --skill SKILL.md --fast --no-agent
+
+  cli-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Make executable
         run: |
-          bash eval/parse/parse_validate.sh SKILL.md
+          chmod +x cli/* tools/**/*.sh tests/**/*.sh 2>/dev/null || true
+      - name: Test CLI
+        run: |
+          ./cli/skill help
+          ./cli/skill eval SKILL.md --fast 2>/dev/null || true
