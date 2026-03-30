@@ -12,7 +12,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run shellcheck
-        run: find . -name "*.sh" -type f | xargs shellcheck || true
+        run: |
+          # Exclude third-party and generated files; fail on real issues
+          find . -name "*.sh" -type f \
+            ! -path "./.git/*" \
+            | xargs shellcheck --severity=error
 
   unit-test:
     runs-on: ubuntu-latest
@@ -51,7 +55,9 @@ jobs:
       - name: Make executable
         run: |
           chmod +x cli/* tools/**/*.sh tests/**/*.sh 2>/dev/null || true
-      - name: Run E2E tests
+      - name: Run E2E tests (LLM mock playback - no real API calls)
+        env:
+          LLM_MOCK_MODE: playback
         run: bash tests/e2e/run_tests.sh
 
   eval-test:

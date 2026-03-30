@@ -47,12 +47,13 @@ text_score() {
             score=$((score + 5))
         fi
         
+        # BUG-S001 fix: raised from 10→20 so DK max = 20+20+15+15 = 70 (matches declared max)
         if [[ $framework_count -ge 4 ]]; then
-            score=$((score + 10))
+            score=$((score + 20))
         elif [[ $framework_count -ge 2 ]]; then
-            score=$((score + 5))
+            score=$((score + 10))
         elif [[ $framework_count -ge 1 ]]; then
-            score=$((score + 3))
+            score=$((score + 5))
         fi
         
         if [[ $benchmark_count -ge 3 ]]; then

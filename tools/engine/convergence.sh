@@ -150,7 +150,7 @@ check_plateau() {
     local improving
     improving=$(echo "$total_delta > 0" | bc -l)
     
-    if [[ "$plateau_ratio" > "0.7" ]] && [[ "$improving" != "1" ]]; then
+    if [[ "$(echo "$plateau_ratio > 0.7" | bc -l)" == "1" ]] && [[ "$improving" != "1" ]]; then
         echo "CONVERGED"
     else
         echo "ACTIVE(delta=$total_delta, plateau_ratio=$plateau_ratio)"

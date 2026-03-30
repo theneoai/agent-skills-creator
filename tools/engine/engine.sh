@@ -279,7 +279,9 @@ evolve_skill() {
         echo ""
         echo "=== STEP 8: LOG - RECORD TO results.tsv ==="
         echo "$current_round\t$weakest_dim\t$old_score\t$new_score\t$delta\t$confidence\tYES" >> "$RESULTS_TSV"
-        track_task "$skill_name" "evolution_round" "$([ "$delta > $MIN_IMPROVEMENT_DELTA" ] && echo "true" || echo "false")" "$current_round"
+        local _improved
+        _improved=$(echo "$delta > $MIN_IMPROVEMENT_DELTA" | bc -l)
+        track_task "$skill_name" "evolution_round" "$([[ "$_improved" == "1" ]] && echo "true" || echo "false")" "$current_round"
         
         old_score=$new_score
         
@@ -644,7 +646,7 @@ git_commit_optimization() {
             echo "  No changes to commit"
             return 0
         fi
-        git add -A 2>/dev/null || true
+        git add "$skill_file" 2>/dev/null || true
         if git commit -m "Optimize: $skill_name, $rounds rounds, delta=$delta" 2>/dev/null; then
             echo "  Committed optimization progress"
         fi

@@ -1,4 +1,15 @@
 #!/usr/bin/env bash
+# runtime_tester.sh — Phase 3 heuristic scorer
+#
+# IMPORTANT: Despite the name, this module does NOT perform real runtime execution.
+# All scores are derived from keyword-frequency heuristics on the skill document.
+# This is intentional for the fast/no-LLM evaluation path.
+#
+# For real runtime evaluation, use: tools/eval/scorer/runtime_agent_tester.sh
+# which invokes LLM API calls to simulate actual skill behavior.
+#
+# BUG-S006 (tracked in docs/SCORING-REVIEW.md): Phase 3 should be renamed
+# to "Structural Heuristics" and a separate true runtime phase added.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -201,8 +212,10 @@ check_memory_access() {
     fi
 
     if $has_memory; then
+        # BUG-S006 partial fix: avoid matching bare "read"/"write" (too common in English).
+        # Require more specific memory operation phrases.
         local memory_patterns
-        memory_patterns=$(grep -cE "read|write|store|retrieve|读取|写入" "$skill_file" 2>/dev/null | tr -d ' \n' || echo "0")
+        memory_patterns=$(grep -cE "memory\.read|memory\.write|store\s+to|retrieve\s+from|读取记忆|写入记忆|memory\s+store|memory\s+retrieve" "$skill_file" 2>/dev/null | tr -d ' \n' || echo "0")
         if [[ ${memory_patterns:-0} -ge 2 ]]; then
             score=24
         elif [[ ${memory_patterns:-0} -ge 1 ]]; then

@@ -54,7 +54,10 @@ readonly CERTIFY_REPORT=20
 readonly CERTIFY_SECURITY=10
 
 # Security CWE checks
-readonly CWE_798_PATTERN='(sk-[a-zA-Z0-9]{20,}|api[-_]?key|password|token|secret|credential|-----BEGIN.*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|\$\{?[A-Z_]+(_[A-Z]+)*\}?)'
+# CWE-798: Hardcoded credentials - match real credential patterns only.
+# Deliberately excludes generic uppercase env-var references like $HOME/$PATH
+# which caused high false-positive rates. Only matches known credential shapes.
+readonly CWE_798_PATTERN='(sk-[a-zA-Z0-9]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----|ghp_[a-zA-Z0-9]{36}|xox[baprs]-[0-9A-Za-z\-]{10,}|(api[-_]key|password|passwd|secret|credential)\s*=\s*["\x27][^"${\x27]{6,}["\x27])'
 readonly CWE_89_PATTERN='(mysql|psql|sqlite3|mongosh|sqlcmd)\s+.*\$\{|sql\s*=.*\$\{|["'\''].*\$\w+|WHERE\s+\$\w+|SELECT\s+\$\w+|INSERT\s+INTO\s+\$\w+|UPDATE\s+\$\w+\s+SET|DELETE\s+FROM\s+\$\w+|--\s*\$\{|"\s*\.\s*\$\{|'\''\s*\.\s*\$\{)'
 readonly CWE_78_PATTERN='(eval\s*\$\{|\$\(\s*\$.*|exec\s+\$\{|system\s+\$\{|popen\s*\$\{|`[^`]*\$\{[^`]*`|\beval\s+\$\(|\bexec\s+\$\(|\bsystem\s+\$\(|\bsh\s+-c.*\$\{|\bbash\s+-c.*\$\{)'
 readonly CWE_22_PATTERN='(\.\.\/|\.\.\\|%00|/etc/passwd|/etc/shadow|\.\.\.\/|\.\.\\\.\\.)'
