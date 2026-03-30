@@ -50,3 +50,4 @@ skill/.mypy_cache/
 skill/.pytest_cache/
 skill/.ruff_cache/
 skill/eval_results/
+eval_results/
