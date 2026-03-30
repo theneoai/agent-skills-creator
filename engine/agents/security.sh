@@ -1,1 +1,0 @@
-../../tools/agents/security.sh

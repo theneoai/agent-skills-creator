@@ -270,10 +270,10 @@ test_cli_interface() {
         record_bug "CLI" "cli_help" "cli/skill --help未显示帮助" "HIGH" "应该显示使用说明"
     fi
     
-    # 测试2: engine/main.sh帮助
-    echo "[测试 2] engine/main.sh --help..."
-    if ! bash "$PROJECT_ROOT/engine/main.sh" --help 2>&1 | grep -q "Usage\|用法"; then
-        record_bug "CLI" "engine_help" "engine/main.sh --help未显示帮助" "HIGH" "应该显示使用说明"
+    # 测试2: scripts/main.sh帮助
+    echo "[测试 2] scripts/main.sh --help..."
+    if ! bash "$PROJECT_ROOT/scripts/main.sh" --help 2>&1 | grep -q "Usage\|用法"; then
+        record_bug "CLI" "engine_help" "scripts/main.sh --help未显示帮助" "HIGH" "应该显示使用说明"
     fi
 }
 

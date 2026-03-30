@@ -1,1 +1,0 @@
-../../tools/engine/resource_manager.sh

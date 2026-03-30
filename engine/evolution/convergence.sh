@@ -1,1 +1,0 @@
-../../tools/engine/convergence.sh
