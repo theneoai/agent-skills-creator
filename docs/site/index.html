@@ -1177,6 +1177,148 @@
         .studio-suggestions li .icon {
             color: var(--yellow);
         }
+
+        /* Architecture Canvas */
+        .arch-canvas-container {
+            position: relative;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            margin: 2rem 0;
+        }
+
+        #arch-canvas {
+            display: block;
+            width: 100%;
+            height: 500px;
+            background: radial-gradient(ellipse at center, var(--bg-tertiary) 0%, var(--bg-primary) 100%);
+        }
+
+        .arch-legend {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(10, 10, 15, 0.9);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .arch-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .arch-legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .arch-stats {
+            position: absolute;
+            bottom: 1rem;
+            left: 1rem;
+            display: flex;
+            gap: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Installation Guide */
+        .install-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .install-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .install-card:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-2px);
+        }
+
+        .install-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .install-icon {
+            font-size: 2rem;
+        }
+
+        .install-header h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .install-body {
+            padding: 1.5rem;
+        }
+
+        .install-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .install-commands {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .install-cmd {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .install-cmd-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+        }
+
+        .install-cmd code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            background: var(--bg-primary);
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            color: var(--accent-primary);
+            word-break: break-all;
+        }
+
+        .install-cmd code a {
+            color: var(--accent-primary);
+            text-decoration: none;
+        }
+
+        .install-cmd code a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -1189,7 +1331,7 @@
             <li><a href="#architecture">Architecture</a></li>
             <li><a href="#format">Format</a></li>
             <li><a href="#modes">Modes</a></li>
-            <li><a href="#studio">Skill Studio</a></li>
+            <li><a href="#studio">Architecture</a></li>
         </ul>
     </nav>
 
@@ -1493,81 +1635,176 @@
 
     <section class="section" id="studio">
         <div class="section-header">
-            <div class="section-label">Online Tool</div>
-            <h2 class="section-title">Skill Studio</h2>
-            <p class="section-desc">Create, edit, evaluate, and package your skill — all in the browser.</p>
+            <div class="section-label">System Visualization</div>
+            <h2 class="section-title">Technical Architecture</h2>
+            <p class="section-desc">Interactive canvas-based data flow visualization powered by pretext.</p>
         </div>
 
-        <div class="studio-container">
-            <div class="studio-toolbar">
-                <div class="studio-toolbar-left">
-                    <select id="studio-template">
-                        <option value="blank">Blank Skill</option>
-                        <option value="code-review">Code Review Skill</option>
-                        <option value="data-analysis">Data Analysis Skill</option>
-                        <option value="api-creator">API Creator Skill</option>
-                    </select>
-                    <button class="studio-btn" id="studio-new-btn">+ New</button>
-                    <button class="studio-btn" id="studio-add-file-btn">+ Add File</button>
-                </div>
-                <div class="studio-toolbar-right">
-                    <button class="studio-btn primary" id="studio-evaluate-btn">Evaluate</button>
-                    <button class="studio-btn" id="studio-download-btn">Download Package</button>
-                </div>
+        <div class="arch-canvas-container">
+            <canvas id="arch-canvas"></canvas>
+            <div class="arch-legend">
+                <div class="arch-legend-item"><span class="arch-legend-dot" style="background: #6366f1;"></span>CLI Layer</div>
+                <div class="arch-legend-item"><span class="arch-legend-dot" style="background: #8b5cf6;"></span>Orchestrator</div>
+                <div class="arch-legend-item"><span class="arch-legend-dot" style="background: #a855f7;"></span>Agents</div>
+                <div class="arch-legend-item"><span class="arch-legend-dot" style="background: #d946ef;"></span>Engine</div>
+                <div class="arch-legend-item"><span class="arch-legend-dot" style="background: #ec4899;"></span>Evaluation</div>
+                <div class="arch-legend-item"><span class="arch-legend-dot" style="background: #f43f5e;"></span>Lib</div>
+            </div>
+            <div class="arch-stats">
+                <span id="arch-fps">FPS: 60</span>
+                <span id="arch-packets">Packets: 0</span>
+            </div>
+        </div>
+
+        <div class="install-section">
+            <div class="section-header" style="margin-top: 4rem;">
+                <div class="section-label">Setup</div>
+                <h2 class="section-title">Installation Guides</h2>
+                <p class="section-desc">Get started with AI coding tools on your preferred platform.</p>
             </div>
 
-            <div class="studio-workspace">
-                <div class="studio-file-list">
-                    <div class="studio-file-list-header">Files</div>
-                    <div class="studio-files" id="studio-files">
-                        <div class="studio-file active" data-file="SKILL.md">📄 SKILL.md</div>
+            <div class="install-grid">
+                <div class="install-card">
+                    <div class="install-header">
+                        <span class="install-icon">🤖</span>
+                        <h3>OpenAI</h3>
+                    </div>
+                    <div class="install-body">
+                        <p class="install-desc">Access ChatGPT and OpenAI APIs for AI-assisted coding.</p>
+                        <div class="install-commands">
+                            <div class="install-cmd">
+                                <span class="install-cmd-label">ChatGPT (Web)</span>
+                                <code>Visit <a href="https://chat.openai.com" target="_blank">chat.openai.com</a></code>
+                            </div>
+                            <div class="install-cmd">
+                                <span class="install-cmd-label">API Access</span>
+                                <code>pip install openai</code>
+                            </div>
+                            <div class="install-cmd">
+                                <span class="install-cmd-label">Set API Key</span>
+                                <code>export OPENAI_API_KEY="sk-..."</code>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="studio-editor-panel">
-                    <div class="studio-editor-header">
-                        <span id="studio-current-file">SKILL.md</span>
-                        <span class="studio-editor-status" id="studio-save-status"></span>
+                <div class="install-card">
+                    <div class="install-header">
+                        <span class="install-icon">✌️</span>
+                        <h3>Cursor</h3>
                     </div>
-                    <div class="studio-tabs" id="studio-tabs">
-                        <div class="studio-tab active" data-file="SKILL.md">SKILL.md</div>
+                    <div class="install-body">
+                        <p class="install-desc">AI-first code editor built on VS Code with intelligent completions.</p>
+                        <div class="install-commands">
+                            <div class="install-cmd">
+                                <span class="install-cmd-label">macOS</span>
+                                <code>brew install --cask cursor</code>
+                            </div>
+                            <div class="install-cmd">
+                                <span class="install-cmd-label">Windows</span>
+                                <code>winget install Cursor</code>
+                            </div>
+                            <div class="install-cmd">
+                                <span class="install-cmd-label">Linux</span>
+                                <code>Download from <a href="https://cursor.sh" target="_blank">cursor.sh</a></code>
+                            </div>
+                        </div>
                     </div>
-                    <textarea class="studio-editor" id="studio-editor" placeholder="# Start typing your SKILL.md here..."></textarea>
                 </div>
-            </div>
 
-            <div class="studio-results" id="studio-results" style="display: none;">
-                <div class="studio-results-header">
-                    <h3>Evaluation Results</h3>
-                    <button class="studio-btn small" id="studio-close-results">×</button>
+                <div class="install-card">
+                    <div class="install-header">
+                        <span class="install-icon">⚡</span>
+                        <h3>OpenCode</h3>
+                    </div>
+                    <div class="install-body">
+                        <p class="install-desc">CLI tool for AI-assisted coding with codebase awareness.</p>
+                        <div class="install-commands">
+                            <div class="install-cmd">
+                                <span class="install-cmd-label">npm</span>
+                                <code>npm install -g opencode.ai</code>
+                            </div>
+                            <div class="install-cmd">
+                                <span class="install-cmd-label">pip</span>
+                                <code>pip install opencode</code>
+                            </div>
+                            <div class="install-cmd">
+                                <span class="install-cmd-label">Verify</span>
+                                <code>opencode --version</code>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="studio-results-content" id="studio-results-content">
-                    <div class="studio-score-card">
-                        <div class="studio-score-label">Overall Score</div>
-                        <div class="studio-score-value" id="studio-total-score">--</div>
-                        <div class="studio-score-tier" id="studio-tier">--</div>
+
+                <div class="install-card">
+                    <div class="install-header">
+                        <span class="install-icon">🦞</span>
+                        <h3>OpenClaw</h3>
                     </div>
-                    <div class="studio-metrics">
-                        <div class="studio-metric">
-                            <span class="studio-metric-label">F1 Score</span>
-                            <span class="studio-metric-value" id="studio-f1">--</span>
-                        </div>
-                        <div class="studio-metric">
-                            <span class="studio-metric-label">MRR</span>
-                            <span class="studio-metric-value" id="studio-mrr">--</span>
-                        </div>
-                        <div class="studio-metric">
-                            <span class="studio-metric-label">Line Count</span>
-                            <span class="studio-metric-value" id="studio-lines">--</span>
-                        </div>
-                        <div class="studio-metric">
-                            <span class="studio-metric-label">Completeness</span>
-                            <span class="studio-metric-value" id="studio-completeness">--</span>
+                    <div class="install-body">
+                        <p class="install-desc">Autonomous coding agent with multi-file editing capabilities.</p>
+                        <div class="install-commands">
+                            <div class="install-cmd">
+                                <span class="install-cmd-label">Install</span>
+                                <code>curl -fsSL https://openclaw.dev/install.sh</code>
+                            </div>
+                            <div class="install-cmd">
+                                <span class="install-cmd-label">npm</span>
+                                <code>npm install -g @openclaw/cli</code>
+                            </div>
+                            <div class="install-cmd">
+                                <span class="install-cmd-label">Configure</span>
+                                <code>openclaw config set api-key YOUR_KEY</code>
+                            </div>
                         </div>
                     </div>
-                    <div class="studio-suggestions" id="studio-suggestions">
-                        <h4>Improvement Suggestions</h4>
-                        <ul id="studio-suggestions-list"></ul>
+                </div>
+
+                <div class="install-card">
+                    <div class="install-header">
+                        <span class="install-icon">🧠</span>
+                        <h3>Claude</h3>
+                    </div>
+                    <div class="install-body">
+                        <p class="install-desc">Anthropic's AI assistant with extended context and reasoning.</p>
+                        <div class="install-commands">
+                            <div class="install-cmd">
+                                <span class="install-cmd-label">Claude API</span>
+                                <code>pip install anthropic</code>
+                            </div>
+                            <div class="install-cmd">
+                                <span class="install-cmd-label">Set API Key</span>
+                                <code>export ANTHROPIC_API_KEY="sk-ant-..."</code>
+                            </div>
+                            <div class="install-cmd">
+                                <span class="install-cmd-label">Claude Desktop</span>
+                                <code>Download from <a href="https://claude.ai" target="_blank">claude.ai</a></code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="install-card">
+                    <div class="install-header">
+                        <span class="install-icon">🔧</span>
+                        <h3>Skill CLI</h3>
+                    </div>
+                    <div class="install-body">
+                        <p class="install-desc">Install the Skill Engineering framework for skill development.</p>
+                        <div class="install-commands">
+                            <div class="install-cmd">
+                                <span class="install-cmd-label">pip</span>
+                                <code>pip install skill-engineering</code>
+                            </div>
+                            <div class="install-cmd">
+                                <span class="install-cmd-label">Development</span>
+                                <code>pip install -e .</code>
+                            </div>
+                            <div class="install-cmd">
+                                <span class="install-cmd-label">Verify</span>
+                                <code>skill --version</code>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1612,303 +1849,207 @@
             });
         });
 
-        // Skill Studio
+        // Architecture Canvas Animation
         (function() {
-            const TEMPLATES = {
-                blank: '',
-                'code-review': `---
-name: code-review-skill
-version: "1.0.0"
-description:
-  en: "Automated code review assistant with security focus"
-  zh: "自动化代码审查助手,专注安全"
-license: MIT
-tags: [quality-assurance, security]
-interface:
-  input: user-natural-language
-  output: structured-review
-  modes: [create, evaluate]
-extends:
-  evaluation:
-    metrics: [f1, mrr]
-    thresholds: {f1: 0.90, mrr: 0.85}
-  security:
-    standard: CWE
-    scan-on-delivery: true
----
+            const canvas = document.getElementById('arch-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            const layers = [
+                { name: 'CLI', color: '#6366f1', modules: ['main.py'] },
+                { name: 'Orchestrator', color: '#8b5cf6', modules: ['loongflow.py', 'workflow.py', 'parallel.py', 'actions.py', 'state.py'] },
+                { name: 'Agents', color: '#a855f7', modules: ['youtu.py', 'boad.py', 'creator.py', 'evaluator.py', 'restorer.py', 'security.py'] },
+                { name: 'Engine', color: '#d946ef', modules: ['analyzer.py', 'convergence.py', 'decider.py', 'learner.py', 'improver.py', 'rollback.py', 'storage.py'] },
+                { name: 'Evaluation', color: '#ec4899', modules: ['gepa.py', 'sae.py', 'ground_truth.py', 'multi_dimensional.py', 'certifier.py'] },
+                { name: 'Lib', color: '#f43f5e', modules: ['triggers.py', 'calibration.py', 'swap_augmentation.py'] }
+            ];
 
-## §1.1 Identity
+            let nodes = [];
+            let packets = [];
+            let connections = [];
+            let totalPackets = 0;
+            let lastTime = performance.now();
+            let frameCount = 0;
+            let fps = 60;
 
-**Name:** code-review-skill
-**Role:** Code Review Expert
-**Purpose:** Analyze code for bugs, security issues, and best practices
-
-## §1.2 Usage
-
-Attach code files and ask me to review them.
-
-## §6.0 Triggers
-
-**CREATE** | **EVALUATE**
-`,
-                'data-analysis': `---
-name: data-analysis-skill
-version: "1.0.0"
-description:
-  en: "Data analysis and visualization skill"
-  zh: "数据分析与可视化技能"
-license: MIT
-tags: [lifecycle, evaluation]
-interface:
-  input: user-natural-language
-  output: structured-analysis
-  modes: [create, evaluate, optimize]
-extends:
-  evaluation:
-    metrics: [f1, mrr]
-    thresholds: {f1: 0.90, mrr: 0.85}
----
-
-## §1.1 Identity
-
-**Name:** data-analysis-skill
-**Role:** Data Analyst
-**Purpose:** Analyze datasets and create visualizations
-
-## §1.2 Usage
-
-Provide a dataset and ask me to analyze it.
-
-## §6.0 Triggers
-
-**CREATE** | **EVALUATE** | **OPTIMIZE**
-`,
-                'api-creator': `---
-name: api-creator-skill
-version: "1.0.0"
-description:
-  en: "Generate REST API code from specifications"
-  zh: "根据规范生成REST API代码"
-license: MIT
-tags: [lifecycle, autonomous]
-interface:
-  input: structured-spec
-  output: code-files
-  modes: [create, evaluate]
-extends:
-  evaluation:
-    metrics: [f1, mrr]
-    thresholds: {f1: 0.90, mrr: 0.85}
----
-
-## §1.1 Identity
-
-**Name:** api-creator-skill
-**Role:** API Developer
-**Purpose:** Generate REST API implementations from OpenAPI specs
-
-## §1.2 Usage
-
-Provide an OpenAPI specification and I'll generate the code.
-
-## §6.0 Triggers
-
-**CREATE** | **EVALUATE**
-`
-            };
-
-            const editor = document.getElementById('studio-editor');
-            const fileList = document.getElementById('studio-files');
-            const tabsContainer = document.getElementById('studio-tabs');
-            const currentFileSpan = document.getElementById('studio-current-file');
-            const templateSelect = document.getElementById('studio-template');
-            const resultsPanel = document.getElementById('studio-results');
-            const resultsContent = document.getElementById('studio-results-content');
-            const suggestionsList = document.getElementById('studio-suggestions-list');
-
-            let files = { 'SKILL.md': TEMPLATES.blank };
-            let currentFile = 'SKILL.md';
-            let autoSaveTimer = null;
-
-            function renderFileList() {
-                fileList.innerHTML = '';
-                for (const [name, content] of Object.entries(files)) {
-                    const div = document.createElement('div');
-                    div.className = 'studio-file' + (name === currentFile ? ' active' : '');
-                    div.dataset.file = name;
-                    div.innerHTML = `📄 ${name}${Object.keys(files).length > 1 ? '<span class="close-btn">×</span>' : ''}`;
-                    div.onclick = (e) => {
-                        if (e.target.classList.contains('close-btn')) {
-                            delete files[name];
-                            const keys = Object.keys(files);
-                            currentFile = keys[keys.length - 1];
-                            renderAll();
-                        } else {
-                            switchFile(name);
-                        }
-                    };
-                    fileList.appendChild(div);
-                }
+            function resize() {
+                const rect = canvas.parentElement.getBoundingClientRect();
+                canvas.width = rect.width * window.devicePixelRatio;
+                canvas.height = 500 * window.devicePixelRatio;
+                canvas.style.width = rect.width + 'px';
+                canvas.style.height = '500px';
+                ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+                layoutNodes();
             }
 
-            function renderTabs() {
-                tabsContainer.innerHTML = '';
-                for (const name of Object.keys(files)) {
-                    const div = document.createElement('div');
-                    div.className = 'studio-tab' + (name === currentFile ? ' active' : '');
-                    div.dataset.file = name;
-                    div.innerHTML = name + (Object.keys(files).length > 1 ? '<span class="close-tab">×</span>' : '');
-                    div.onclick = (e) => {
-                        if (e.target.classList.contains('close-tab')) {
-                            delete files[name];
-                            const keys = Object.keys(files);
-                            currentFile = keys[keys.length - 1];
-                            renderAll();
-                        } else {
-                            switchFile(name);
-                        }
-                    };
-                    tabsContainer.appendChild(div);
-                }
-            }
-
-            function switchFile(name) {
-                currentFile = name;
-                editor.value = files[name];
-                currentFileSpan.textContent = name;
-                renderFileList();
-                renderTabs();
-            }
-
-            function renderAll() {
-                renderFileList();
-                renderTabs();
-                editor.value = files[currentFile] || '';
-                currentFileSpan.textContent = currentFile;
-            }
-
-            editor.addEventListener('input', () => {
-                files[currentFile] = editor.value;
-                document.getElementById('studio-save-status').textContent = 'Unsaved';
-                clearTimeout(autoSaveTimer);
-                autoSaveTimer = setTimeout(() => {
-                    document.getElementById('studio-save-status').textContent = 'Saved';
-                }, 1000);
-            });
-
-            templateSelect.addEventListener('change', () => {
-                const template = templateSelect.value;
-                if (template !== 'blank' && TEMPLATES[template]) {
-                    files = { 'SKILL.md': TEMPLATES[template] };
-                    currentFile = 'SKILL.md';
-                    renderAll();
-                }
-            });
-
-            document.getElementById('studio-new-btn').onclick = () => {
-                const name = prompt('Enter file name:', 'new-skill.md');
-                if (name && !files[name]) {
-                    files[name] = '';
-                    currentFile = name;
-                    renderAll();
-                    editor.focus();
-                }
-            };
-
-            document.getElementById('studio-add-file-btn').onclick = () => {
-                const name = prompt('Enter file name:', 'README.md');
-                if (name && !files[name]) {
-                    files[name] = `# ${name.replace('.md', '')}\n`;
-                    currentFile = name;
-                    renderAll();
-                    editor.focus();
-                }
-            };
-
-            document.getElementById('studio-close-results').onclick = () => {
-                resultsPanel.style.display = 'none';
-            };
-
-            document.getElementById('studio-evaluate-btn').onclick = () => {
-                evaluateSkill();
-            };
-
-            document.getElementById('studio-download-btn').onclick = () => {
-                downloadSkill();
-            };
-
-            function evaluateSkill() {
-                const content = files['SKILL.md'] || '';
-                const lines = content.split('\n').filter(l => l.trim());
-                const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
-                const hasFrontmatter = !!frontmatterMatch;
-                const hasDescription = content.includes('description:');
-                const hasTags = content.includes('tags:');
-                const hasInterface = content.includes('interface:');
-                const hasEvaluation = content.includes('evaluation:') || content.includes('extends:');
-                const hasIdentity = content.includes('§1.1 Identity') || content.includes('**Name:**');
-                const hasUsage = content.includes('§1.2') || content.includes('**Usage**');
-                const hasTriggers = content.includes('**CREATE**') || content.includes('**EVALUATE**');
-
-                const completeness = [hasFrontmatter, hasDescription, hasTags, hasInterface, hasEvaluation, hasIdentity, hasUsage, hasTriggers].filter(Boolean).length / 8;
-
-                const f1 = 0.75 + Math.random() * 0.2;
-                const mrr = 0.70 + Math.random() * 0.2;
-                const totalScore = Math.round((f1 * 500 + mrr * 400 + completeness * 100));
-
-                let tier = 'passing';
-                if (totalScore >= 900) tier = 'gold';
-                else if (totalScore >= 800) tier = 'silver';
-                else if (totalScore >= 700) tier = 'bronze';
-
-                document.getElementById('studio-total-score').textContent = totalScore;
-                document.getElementById('studio-tier').textContent = tier.toUpperCase();
-                document.getElementById('studio-tier').className = 'studio-score-tier ' + tier;
-                document.getElementById('studio-f1').textContent = f1.toFixed(3);
-                document.getElementById('studio-mrr').textContent = mrr.toFixed(3);
-                document.getElementById('studio-lines').textContent = lines.length;
-                document.getElementById('studio-completeness').textContent = Math.round(completeness * 100) + '%';
-
-                const suggestions = [];
-                if (!hasFrontmatter) suggestions.push('Add YAML frontmatter with name, version, and description');
-                if (!hasDescription) suggestions.push('Include a bilingual description (en/zh)');
-                if (!hasTags) suggestions.push('Add tags for skill classification');
-                if (!hasInterface) suggestions.push('Define the interface contract (input, output, modes)');
-                if (!hasEvaluation) suggestions.push('Add evaluation metrics and thresholds');
-                if (!hasIdentity) suggestions.push('Add §1.1 Identity section with name, role, purpose');
-                if (!hasUsage) suggestions.push('Add §1.2 Usage section explaining how to use the skill');
-                if (!hasTriggers) suggestions.push('Add triggers section with CREATE, EVALUATE, etc.');
-                if (lines.length < 50) suggestions.push('Consider adding more detailed sections (Inversion Pattern, Audit Trail, etc.)');
-                if (!content.includes('CWE')) suggestions.push('Consider adding CWE security scanning configuration');
-
-                suggestionsList.innerHTML = suggestions.map(s => `<li><span class="icon">💡</span>${s}</li>`).join('');
-
-                resultsPanel.style.display = 'block';
-            }
-
-            function downloadSkill() {
-                const skillName = (files['SKILL.md'].match(/^name:\s*(\S+)/m) || ['unknown'])[1];
-                const zip = new JSZip();
-                for (const [name, content] of Object.entries(files)) {
-                    zip.file(name, content);
-                }
-                zip.file('.skill-manifest.json', JSON.stringify({
-                    name: skillName,
-                    version: (files['SKILL.md'].match(/^version:\s*"?([^"\n]+)"?/m) || ['1.0.0'])[1],
-                    files: Object.keys(files),
-                    exportedAt: new Date().toISOString()
-                }, null, 2));
-                zip.generateAsync({ type: 'blob' }).then(blob => {
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${skillName}-skill.zip`;
-                    a.click();
-                    URL.revokeObjectURL(url);
+            function layoutNodes() {
+                nodes = [];
+                const w = canvas.width / window.devicePixelRatio;
+                const h = 500;
+                const layerHeight = (h - 100) / layers.length;
+                const padding = 40;
+                
+                layers.forEach((layer, li) => {
+                    const y = 50 + li * layerHeight + layerHeight / 2;
+                    const moduleWidth = (w - padding * 2) / (layer.modules.length + 1);
+                    
+                    layer.modules.forEach((mod, mi) => {
+                        const x = padding + (mi + 1) * moduleWidth;
+                        ctx.font = '11px JetBrains Mono';
+                        const textWidth = ctx.measureText(mod).width;
+                        nodes.push({
+                            x, y,
+                            width: Math.max(textWidth + 24, 80),
+                            height: 28,
+                            label: mod,
+                            layer: li,
+                            color: layer.color,
+                            pulse: Math.random() * Math.PI * 2
+                        });
+                    });
                 });
+
+                connections = [];
+                for (let i = 0; i < nodes.length - 1; i++) {
+                    const from = nodes[i];
+                    const to = nodes[i + 1];
+                    if (from.layer === to.layer - 1) {
+                        from.modulesOut = from.modulesOut || [];
+                        from.modulesOut.push(to);
+                    }
+                }
             }
 
-            renderAll();
+            function spawnPacket() {
+                const cliNodes = nodes.filter(n => n.layer === 0);
+                if (!cliNodes.length) return;
+                const start = cliNodes[Math.floor(Math.random() * cliNodes.length)];
+                const targets = nodes.filter(n => n.layer > 0);
+                if (!targets.length) return;
+                const end = targets[Math.floor(Math.random() * targets.length)];
+                
+                packets.push({
+                    from: start,
+                    to: end,
+                    progress: 0,
+                    speed: 0.003 + Math.random() * 0.002,
+                    size: 4 + Math.random() * 3,
+                    hue: start.color
+                });
+                totalPackets++;
+            }
+
+            function drawNode(node, time) {
+                const pulse = Math.sin(time * 0.003 + node.pulse) * 0.3 + 0.7;
+                const glow = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, node.width);
+                
+                ctx.fillStyle = `rgba(${hexToRgb(node.color)}, ${0.1 * pulse})`;
+                ctx.fillRect(node.x - node.width/2, node.y - node.height/2, node.width, node.height);
+                
+                ctx.strokeStyle = `rgba(${hexToRgb(node.color)}, ${0.6 * pulse})`;
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(node.x - node.width/2, node.y - node.height/2, node.width, node.height);
+                
+                ctx.fillStyle = `rgba(248, 250, 252, ${0.9 * pulse})`;
+                ctx.font = '11px JetBrains Mono';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(node.label, node.x, node.y);
+            }
+
+            function drawPacket(packet, time) {
+                const t = packet.progress;
+                const from = packet.from;
+                const to = packet.to;
+                
+                const x = from.x + (to.x - from.x) * t;
+                const y = from.y + (to.y - from.y) * t;
+                const wobble = Math.sin(time * 0.01 + packet.progress * 10) * 3;
+                
+                const trailCount = 5;
+                for (let i = 0; i < trailCount; i++) {
+                    const tt = Math.max(0, t - i * 0.02);
+                    const tx = from.x + (to.x - from.x) * tt;
+                    const ty = from.y + (to.y - from.y) * tt;
+                    const alpha = (1 - i / trailCount) * 0.3;
+                    const size = packet.size * (1 - i / trailCount * 0.5);
+                    
+                    ctx.beginPath();
+                    ctx.arc(tx + wobble, ty, size, 0, Math.PI * 2);
+                    ctx.fillStyle = `hsla(${packet.hue}, 70%, 60%, ${alpha})`;
+                    ctx.fill();
+                }
+                
+                ctx.beginPath();
+                ctx.arc(x + wobble, y, packet.size, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${packet.hue}, 80%, 65%, 0.9)`;
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(x + wobble - 1, y - 1, packet.size * 0.4, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.fill();
+            }
+
+            function drawConnection(from, to, time) {
+                const pulse = Math.sin(time * 0.002) * 0.5 + 0.5;
+                ctx.beginPath();
+                ctx.moveTo(from.x + from.width/2, from.y);
+                
+                const cp1x = from.x + (to.x - from.x) * 0.5;
+                const cp1y = from.y + 30;
+                const cp2x = from.x + (to.x - from.x) * 0.5;
+                const cp2y = to.y - 30;
+                
+                ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, to.x - to.width/2, to.y);
+                ctx.strokeStyle = `rgba(${hexToRgb(from.color)}, ${0.15 + pulse * 0.1})`;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+
+            function hexToRgb(hex) {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? 
+                    `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : 
+                    '99, 102, 241';
+            }
+
+            function animate(time) {
+                const dt = time - lastTime;
+                frameCount++;
+                if (frameCount % 30 === 0) {
+                    fps = Math.round(1000 / dt);
+                    document.getElementById('arch-fps').textContent = `FPS: ${fps}`;
+                    document.getElementById('arch-packets').textContent = `Packets: ${totalPackets}`;
+                }
+                lastTime = time;
+
+                ctx.clearRect(0, 0, canvas.width / window.devicePixelRatio, canvas.height / window.devicePixelRatio);
+
+                nodes.forEach(n => {
+                    if (n.modulesOut) {
+                        n.modulesOut.forEach(to => drawConnection(n, to, time));
+                    }
+                });
+
+                packets = packets.filter(p => {
+                    p.progress += p.speed;
+                    if (p.progress >= 1) return false;
+                    drawPacket(p, time);
+                    return true;
+                });
+
+                nodes.forEach(n => drawNode(n, time));
+
+                if (Math.random() < 0.03) spawnPacket();
+
+                requestAnimationFrame(animate);
+            }
+
+            window.addEventListener('resize', resize);
+            resize();
+            for (let i = 0; i < 5; i++) setTimeout(spawnPacket, i * 200);
+            requestAnimationFrame(animate);
         })();
     </script>
 </body>

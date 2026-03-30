@@ -2,10 +2,163 @@
 
 from __future__ import annotations
 
+import json
+import math
+import os
 import re
+from pathlib import Path
 
 
-TRIGGER_VERSION = "1.0"
+TRIGGER_VERSION = "1.1"
+
+_WEIGHT_FILE = os.environ.get(
+    "SKILL_TRIGGERS_WEIGHTS", str(Path.home() / ".skill" / "trigger_weights.json")
+)
+
+_LEARNED_WEIGHTS: dict[str, dict[str, float]] = {}
+
+_MODE_PATTERNS: dict[str, list[tuple[str, float]]] = {
+    "CREATE": [
+        (r"create.*skill|build.*skill|make.*skill", 3.0),
+        (r"new.*skill|develop.*skill|add.*skill", 2.0),
+        (r"generate.*skill|scaffold.*skill", 1.0),
+        (r"创建|新建", 3.0),
+        (r"开发|制作|生成", 2.0),
+        (r"脚手架", 1.0),
+    ],
+    "EVALUATE": [
+        (r"evaluate.*skill|test.*skill|score.*skill", 3.0),
+        (r"review.*skill|assess.*skill|check.*skill", 2.0),
+        (r"validate.*skill|benchmark.*skill", 1.0),
+        (r"评估|测试|打分", 3.0),
+        (r"审查|验证|检查", 2.0),
+        (r"评分|基准", 1.0),
+    ],
+    "RESTORE": [
+        (r"restore.*skill|fix.*skill|repair.*skill", 3.0),
+        (r"recover.*skill|undo|rollback.*skill", 2.0),
+        (r"broken.*skill|corrupt.*skill", 1.0),
+        (r"恢复|修复|还原", 3.0),
+        (r"补救|撤销|回滚", 2.0),
+        (r"损坏|失效|破坏", 1.0),
+    ],
+    "SECURITY": [
+        (r"security audit|owasp|vulnerability", 3.0),
+        (r"cwe|security check|penetration test", 2.0),
+        (r"security scan|exploit check", 1.0),
+        (r"安全审计|漏洞扫描|owasp", 3.0),
+        (r"安全检查|渗透测试", 2.0),
+        (r"入侵|攻击", 1.0),
+    ],
+    "OPTIMIZE": [
+        (r"optimize.*skill|improve.*skill|evolve.*skill", 3.0),
+        (r"enhance.*skill|tune.*skill|refine.*skill", 2.0),
+        (r"upgrade.*skill|performance", 1.0),
+        (r"优化|改进|进化", 3.0),
+        (r"提升|调优|完善", 2.0),
+        (r"增强|性能", 1.0),
+    ],
+}
+
+_SECONDARY_PATTERNS: dict[str, list[tuple[str, float]]] = {
+    "CREATE": [
+        (r'"generate"|"template"|"starter"|"boilerplate"', 1.0),
+        (r"模板|起始框架|脚手架", 1.0),
+    ],
+    "EVALUATE": [
+        (r'"compare"|"grade"|"rate"|"measure"', 1.0),
+        (r"比较|评级|打分", 1.0),
+    ],
+    "RESTORE": [
+        (r'"broken"|"corrupt"|"invalid"|"damage"', 1.0),
+        (r"损坏|破坏|崩溃", 1.0),
+    ],
+    "SECURITY": [
+        (r'"injection"|"xss"|"csrf"|"breach"', 1.0),
+        (r"注入|跨站|攻击", 1.0),
+    ],
+    "OPTIMIZE": [
+        (r'"speed"|"efficiency"|"refactor"|"dry"', 1.0),
+        (r"速度|效率|重构", 1.0),
+    ],
+}
+
+_NEGATIVE_PATTERNS: dict[str, list[str]] = {
+    "CREATE": [
+        r"don\'t create|skill exists|check if exists",
+        r"不要创建|技能已存在",
+    ],
+    "EVALUATE": [
+        r"evaluate code|test function|lint",
+        r"评估代码|测试函数",
+    ],
+    "RESTORE": [
+        r"restore file|recover data",
+        r"恢复文件|恢复数据",
+    ],
+    "SECURITY": [
+        r"secure password|encrypt data",
+        r"加密密码|保护数据",
+    ],
+    "OPTIMIZE": [
+        r"optimize algorithm|speed up",
+        r"优化算法|加速",
+    ],
+}
+
+
+def _load_weights() -> dict[str, dict[str, float]]:
+    """Load learned weights from file."""
+    global _LEARNED_WEIGHTS
+    if _LEARNED_WEIGHTS:
+        return _LEARNED_WEIGHTS
+    if os.path.exists(_WEIGHT_FILE):
+        try:
+            with open(_WEIGHT_FILE) as f:
+                _LEARNED_WEIGHTS = json.load(f)
+        except (json.JSONDecodeError, IOError):
+            _LEARNED_WEIGHTS = {}
+    return _LEARNED_WEIGHTS
+
+
+def _save_weights() -> None:
+    """Save learned weights to file."""
+    os.makedirs(os.path.dirname(_WEIGHT_FILE), exist_ok=True)
+    with open(_WEIGHT_FILE, "w") as f:
+        json.dump(_LEARNED_WEIGHTS, f)
+
+
+def record_feedback(mode: str, pattern_key: str, success: bool) -> None:
+    """Record feedback for a pattern to enable weight learning.
+
+    Args:
+        mode: Intent mode (CREATE/EVALUATE/RESTORE/SECURITY/OPTIMIZE)
+        pattern_key: Unique key identifying the pattern used
+        success: Whether the intent detection was correct
+    """
+    weights = _load_weights()
+    if mode not in weights:
+        weights[mode] = {}
+    current = weights[mode].get(pattern_key, 1.0)
+    delta = 0.1 if success else -0.1
+    weights[mode][pattern_key] = max(0.1, min(5.0, current + delta))
+    global _LEARNED_WEIGHTS
+    _LEARNED_WEIGHTS = weights
+    _save_weights()
+
+
+def get_learned_weight(mode: str, pattern_key: str) -> float:
+    """Get learned weight for a pattern, returns 1.0 if no learning recorded."""
+    weights = _load_weights()
+    return weights.get(mode, {}).get(pattern_key, 1.0)
+
+
+def clear_weights() -> None:
+    """Clear all learned weights."""
+    global _LEARNED_WEIGHTS
+    _LEARNED_WEIGHTS = {}
+    if os.path.exists(_WEIGHT_FILE):
+        os.remove(_WEIGHT_FILE)
 
 
 def detect_language(input_text: str) -> str:
@@ -24,8 +177,8 @@ def detect_language(input_text: str) -> str:
         return "MIXED"
 
 
-def score_primary_keywords(input_text: str, lang: str, mode: str) -> int:
-    """Score primary keywords for intent detection.
+def score_primary_keywords(input_text: str, lang: str, mode: str) -> float:
+    """Score primary keywords for intent detection with learned weights.
 
     Args:
         input_text: User input
@@ -33,124 +186,30 @@ def score_primary_keywords(input_text: str, lang: str, mode: str) -> int:
         mode: Intent mode (CREATE/EVALUATE/RESTORE/SECURITY/OPTIMIZE)
 
     Returns:
-        Score based on keyword matches
+        Score based on keyword matches (weighted by learned history)
     """
     input_lower = input_text.lower()
-    score = 0
 
-    if mode == "CREATE":
-        if lang in ("EN", "MIXED"):
-            if re.search(r"create.*skill|build.*skill|make.*skill", input_lower):
-                score += 3
-            elif re.search(r"new.*skill|develop.*skill|add.*skill", input_lower):
-                score += 2
-            elif re.search(r"generate.*skill|scaffold.*skill", input_lower):
-                score += 1
-        if lang in ("ZH", "MIXED"):
-            if re.search(r"创建|新建", input_lower):
-                score += 3
-            elif re.search(r"开发|制作|生成", input_lower):
-                score += 2
-            elif re.search(r"脚手架", input_lower):
-                score += 1
+    patterns = _MODE_PATTERNS.get(mode, [])
+    for pattern, base_weight in patterns:
+        if re.search(pattern, input_lower):
+            pattern_key = f"primary:{pattern}"
+            return get_learned_weight(mode, pattern_key) * base_weight
 
-    elif mode == "EVALUATE":
-        if lang in ("EN", "MIXED"):
-            if re.search(r"evaluate.*skill|test.*skill|score.*skill", input_lower):
-                score += 3
-            elif re.search(r"review.*skill|assess.*skill|check.*skill", input_lower):
-                score += 2
-            elif re.search(r"validate.*skill|benchmark.*skill", input_lower):
-                score += 1
-        if lang in ("ZH", "MIXED"):
-            if re.search(r"评估|测试|打分", input_lower):
-                score += 3
-            elif re.search(r"审查|验证|检查", input_lower):
-                score += 2
-            elif re.search(r"评分|基准", input_lower):
-                score += 1
-
-    elif mode == "RESTORE":
-        if lang in ("EN", "MIXED"):
-            if re.search(r"restore.*skill|fix.*skill|repair.*skill", input_lower):
-                score += 3
-            elif re.search(r"recover.*skill|undo|rollback.*skill", input_lower):
-                score += 2
-            elif re.search(r"broken.*skill|corrupt.*skill", input_lower):
-                score += 1
-        if lang in ("ZH", "MIXED"):
-            if re.search(r"恢复|修复|还原", input_lower):
-                score += 3
-            elif re.search(r"补救|撤销|回滚", input_lower):
-                score += 2
-            elif re.search(r"损坏|失效|破坏", input_lower):
-                score += 1
-
-    elif mode == "SECURITY":
-        if lang in ("EN", "MIXED"):
-            if re.search(r"security audit|owasp|vulnerability", input_lower):
-                score += 3
-            elif re.search(r"cwe|security check|penetration test", input_lower):
-                score += 2
-            elif re.search(r"security scan|exploit check", input_lower):
-                score += 1
-        if lang in ("ZH", "MIXED"):
-            if re.search(r"安全审计|漏洞扫描|owasp", input_lower):
-                score += 3
-            elif re.search(r"安全检查|渗透测试", input_lower):
-                score += 2
-            elif re.search(r"入侵|攻击", input_lower):
-                score += 1
-
-    elif mode == "OPTIMIZE":
-        if lang in ("EN", "MIXED"):
-            if re.search(r"optimize.*skill|improve.*skill|evolve.*skill", input_lower):
-                score += 3
-            elif re.search(r"enhance.*skill|tune.*skill|refine.*skill", input_lower):
-                score += 2
-            elif re.search(r"upgrade.*skill|performance", input_lower):
-                score += 1
-        if lang in ("ZH", "MIXED"):
-            if re.search(r"优化|改进|进化", input_lower):
-                score += 3
-            elif re.search(r"提升|调优|完善", input_lower):
-                score += 2
-            elif re.search(r"增强|性能", input_lower):
-                score += 1
-
-    return score
+    return 0.0
 
 
-def score_secondary_keywords(input_text: str, lang: str, mode: str) -> int:
-    """Score secondary/context keywords for intent detection."""
+def score_secondary_keywords(input_text: str, lang: str, mode: str) -> float:
+    """Score secondary/context keywords for intent detection with learned weights."""
     input_lower = input_text.lower()
-    score = 0
+    score = 0.0
 
-    if mode == "CREATE":
-        if re.search(r'"generate"|"template"|"starter"|"boilerplate"', input_lower):
-            score += 1
-        if re.search(r"模板|起始框架|脚手架", input_lower):
-            score += 1
-    elif mode == "EVALUATE":
-        if re.search(r'"compare"|"grade"|"rate"|"measure"', input_lower):
-            score += 1
-        if re.search(r"比较|评级|打分", input_lower):
-            score += 1
-    elif mode == "RESTORE":
-        if re.search(r'"broken"|"corrupt"|"invalid"|"damage"', input_lower):
-            score += 1
-        if re.search(r"损坏|破坏|崩溃", input_lower):
-            score += 1
-    elif mode == "SECURITY":
-        if re.search(r'"injection"|"xss"|"csrf"|"breach"', input_lower):
-            score += 1
-        if re.search(r"注入|跨站|攻击", input_lower):
-            score += 1
-    elif mode == "OPTIMIZE":
-        if re.search(r'"speed"|"efficiency"|"refactor"|"dry"', input_lower):
-            score += 1
-        if re.search(r"速度|效率|重构", input_lower):
-            score += 1
+    patterns = _SECONDARY_PATTERNS.get(mode, [])
+    for pattern, base_weight in patterns:
+        if re.search(pattern, input_lower):
+            pattern_key = f"secondary:{pattern}"
+            weight = get_learned_weight(mode, pattern_key) * base_weight
+            score += weight
 
     return score
 
@@ -162,35 +221,11 @@ def check_negative_patterns(input_text: str, lang: str, mode: str) -> int:
         1 if negative pattern found, 0 otherwise
     """
     input_lower = input_text.lower()
-    is_negative = 0
-
-    if mode == "CREATE":
-        if re.search(r"don\'t create|skill exists|check if exists", input_lower):
-            is_negative = 1
-        if re.search(r"不要创建|技能已存在", input_lower):
-            is_negative = 1
-    elif mode == "EVALUATE":
-        if re.search(r"evaluate code|test function|lint", input_lower):
-            is_negative = 1
-        if re.search(r"评估代码|测试函数", input_lower):
-            is_negative = 1
-    elif mode == "RESTORE":
-        if re.search(r"restore file|recover data", input_lower):
-            is_negative = 1
-        if re.search(r"恢复文件|恢复数据", input_lower):
-            is_negative = 1
-    elif mode == "SECURITY":
-        if re.search(r"secure password|encrypt data", input_lower):
-            is_negative = 1
-        if re.search(r"加密密码|保护数据", input_lower):
-            is_negative = 1
-    elif mode == "OPTIMIZE":
-        if re.search(r"optimize algorithm|speed up", input_lower):
-            is_negative = 1
-        if re.search(r"优化算法|加速", input_lower):
-            is_negative = 1
-
-    return is_negative
+    patterns = _NEGATIVE_PATTERNS.get(mode, [])
+    for pattern in patterns:
+        if re.search(pattern, input_lower):
+            return 1
+    return 0
 
 
 def calculate_confidence(

@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
-import fcntl
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any
+
+if sys.platform == "win32":
+    import msvcrt
+else:
+    import fcntl
 
 
 USAGE_LOG = os.environ.get("USAGE_LOG", "/tmp/usage.jsonl")
@@ -86,11 +91,18 @@ def storage_log_usage(
         "iterations": iterations,
     }
     with open(USAGE_LOG, "a") as f:
-        fcntl.flock(f, fcntl.LOCK_EX)
-        try:
-            f.write(json.dumps(entry) + "\n")
-        finally:
-            fcntl.flock(f, fcntl.LOCK_UN)
+        if sys.platform == "win32":
+            msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 1)
+            try:
+                f.write(json.dumps(entry) + "\n")
+            finally:
+                msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            fcntl.flock(f, fcntl.LOCK_EX)
+            try:
+                f.write(json.dumps(entry) + "\n")
+            finally:
+                fcntl.flock(f, fcntl.LOCK_UN)
 
 
 def storage_calculate_threshold(eval_count: int) -> int:

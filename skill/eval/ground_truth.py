@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import json
+import os
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Literal
 
 GPQA_QUESTIONS: dict[str, dict] = {
@@ -120,6 +123,109 @@ class Instruction:
     prompt: str | None = None
 
 
+def load_gpqa_from_jsonl(file_path: str | Path) -> dict[str, dict]:
+    """Load GPQA questions from a JSONL file.
+
+    Expected format per line: {"id": "q001", "question": "...", "answer": "C", "options": [...], "subset": "..."}
+
+    Args:
+        file_path: Path to JSONL file.
+
+    Returns:
+        Dictionary mapping question IDs to question data.
+    """
+    questions = {}
+    with open(file_path) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            data = json.loads(line)
+            qid = data.get("id", f"gpqa_{len(questions) + 1:03d}")
+            questions[qid] = {
+                "question": data.get("question", ""),
+                "options": data.get("options", []),
+                "answer": data.get("answer", ""),
+                "subset": data.get("subset", "general"),
+            }
+    return questions
+
+
+def load_ifeval_from_jsonl(file_path: str | Path) -> list[dict]:
+    """Load IFEval instructions from a JSONL file.
+
+    Expected format per line: {"id": "inst_001", "instruction": "...", "level": "strict", "prompt": "..."}
+
+    Args:
+        file_path: Path to JSONL file.
+
+    Returns:
+        List of instruction dictionaries.
+    """
+    instructions = []
+    with open(file_path) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            data = json.loads(line)
+            instructions.append(
+                {
+                    "id": data.get("id", f"ife_{len(instructions) + 1:03d}"),
+                    "instruction": data.get("instruction", ""),
+                    "level": data.get("level", "relaxed"),
+                    "prompt": data.get("prompt"),
+                }
+            )
+    return instructions
+
+
+def load_from_huggingface(
+    dataset_name: str, split: str = "train"
+) -> tuple[dict[str, dict], list[dict]]:
+    """Load GPQA and IFEval data from HuggingFace datasets.
+
+    Attempts to load 'parasaurolophus/GPQA' or 'google/IFEval' datasets.
+
+    Args:
+        dataset_name: HuggingFace dataset name or path.
+        split: Dataset split to load.
+
+    Returns:
+        Tuple of (gpqa_questions dict, ifeval_instructions list).
+    """
+    try:
+        from datasets import load_dataset
+    except ImportError:
+        raise ImportError("HuggingFace datasets not installed. Run: pip install datasets")
+
+    dataset = load_dataset(dataset_name, split=split)
+    gpqa_questions = {}
+    ifeval_instructions = []
+
+    if "gpqa" in dataset_name.lower():
+        for i, row in enumerate(dataset):
+            qid = row.get("id", f"gpqa_{i + 1:03d}")
+            gpqa_questions[qid] = {
+                "question": row.get("question", ""),
+                "options": row.get("options", []),
+                "answer": row.get("answer", ""),
+                "subset": row.get("subset", "general"),
+            }
+    elif "ifeval" in dataset_name.lower():
+        for i, row in enumerate(dataset):
+            ifeval_instructions.append(
+                {
+                    "id": row.get("id", f"ife_{i + 1:03d}"),
+                    "instruction": row.get("instruction", ""),
+                    "level": row.get("level", "relaxed"),
+                    "prompt": row.get("prompt"),
+                }
+            )
+
+    return gpqa_questions, ifeval_instructions
+
+
 class GPQAEvaluator:
     """GPQA (General Purpose Question Answering) evaluator.
 
@@ -127,14 +233,27 @@ class GPQAEvaluator:
     Supports multiple choice questions with expert verification.
     """
 
-    def __init__(self, subset: str | None = None) -> None:
+    def __init__(
+        self,
+        subset: str | None = None,
+        jsonl_path: str | Path | None = None,
+        hf_dataset: str | None = None,
+    ) -> None:
         """Initialize GPQA evaluator.
 
         Args:
             subset: Optional subset of GPQA to use (e.g., 'biology', 'chemistry').
+            jsonl_path: Optional path to JSONL file to load questions from.
+            hf_dataset: Optional HuggingFace dataset name to load from.
         """
         self.subset = subset
-        self._questions = GPQA_QUESTIONS
+        if jsonl_path:
+            self._questions = load_gpqa_from_jsonl(jsonl_path)
+        elif hf_dataset:
+            gpqa_data, _ = load_from_huggingface(hf_dataset)
+            self._questions = gpqa_data
+        else:
+            self._questions = GPQA_QUESTIONS
 
     def evaluate(self, model_response: str, question_id: str) -> GPQAResult:
         """Evaluate a model response for a GPQA question.
@@ -191,14 +310,27 @@ class IFEvalEvaluator:
     Supports both 'relaxed' and 'strict' evaluation levels.
     """
 
-    def __init__(self, level: Literal["relaxed", "strict"] = "relaxed") -> None:
+    def __init__(
+        self,
+        level: Literal["relaxed", "strict"] = "relaxed",
+        jsonl_path: str | Path | None = None,
+        hf_dataset: str | None = None,
+    ) -> None:
         """Initialize IFEval evaluator.
 
         Args:
             level: Strictness level ('relaxed' or 'strict').
+            jsonl_path: Optional path to JSONL file to load instructions from.
+            hf_dataset: Optional HuggingFace dataset name to load from.
         """
         self.level = level
-        self._instructions = IFEVAL_INSTRUCTIONS
+        if jsonl_path:
+            self._instructions = load_ifeval_from_jsonl(jsonl_path)
+        elif hf_dataset:
+            _, ifeval_data = load_from_huggingface(hf_dataset)
+            self._instructions = ifeval_data
+        else:
+            self._instructions = IFEVAL_INSTRUCTIONS
 
     def evaluate(self, model_response: str, instruction: str) -> IFEvalResult:
         """Evaluate if model response follows the instruction.

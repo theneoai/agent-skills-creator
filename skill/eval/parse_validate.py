@@ -184,7 +184,7 @@ def check_security(content: str) -> tuple[bool, dict]:
         "has_path_traversal": False,
     }
 
-    secret_pattern = r"sk-[a-zA-Z0-9]{20,}|api_key|password[[:space:]]*=|token[[:space:]]*="
+    secret_pattern = r"sk-[a-zA-Z0-9]{20,}|api_key|password\s*=|\btoken\s*="
     if re.search(secret_pattern, content):
         details["has_hardcoded_secret"] = True
         return True, details
