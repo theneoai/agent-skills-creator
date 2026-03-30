@@ -28,5 +28,5 @@ class EvolutionMemory:
             if e.task_type == task_type and e.outcome == "success"
         ]
 
-    def get_similar(self, task: str, k: int = 5) -> list[MemoryEntry]:
-        return [e for e in self._entries if e.task_type == task][:k]
+    def get_similar(self, task_type: str, k: int = 5) -> list[MemoryEntry]:
+        return [e for e in self._entries if e.task_type == task_type][:k]
