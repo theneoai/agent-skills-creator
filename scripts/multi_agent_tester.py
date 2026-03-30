@@ -9,6 +9,27 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional
 import requests
+import time
+from functools import wraps
+
+
+def retry_on_failure(max_retries=3, delay=1):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    if attempt == max_retries - 1:
+                        raise
+                    print(f"Attempt {attempt + 1} failed: {e}, retrying...")
+                    time.sleep(delay)
+            return None
+
+        return wrapper
+
+    return decorator
 
 
 @dataclass
@@ -32,6 +53,19 @@ class MinimaxAgent:
     def __init__(self, config: AgentConfig):
         self.config = config
 
+    @retry_on_failure(max_retries=3, delay=2)
+    def _call_api(self, prompt: str, endpoint: str) -> str:
+        response = requests.post(
+            endpoint,
+            headers={
+                "Authorization": f"Bearer {self.config.api_key}",
+                "Content-Type": "application/json",
+            },
+            json={"model": self.config.model, "messages": [{"role": "user", "content": prompt}]},
+        )
+        response.raise_for_status()
+        return response.json()["choices"][0]["message"]["content"]
+
     def create_evaluation_skill(self, round_num: int) -> str:
         prompt = f"""创建一个 evaluation skill，用于评估其他 skill 的质量。
         
@@ -43,19 +77,7 @@ class MinimaxAgent:
 
 只返回完整的 SKILL.md 内容。"""
 
-        response = requests.post(
-            f"{self.config.api_base}/text/chatcompletion_v2",
-            headers={
-                "Authorization": f"Bearer {self.config.api_key}",
-                "Content-Type": "application/json",
-            },
-            json={"model": self.config.model, "messages": [{"role": "user", "content": prompt}]},
-        )
-
-        try:
-            content = response.json()["choices"][0]["message"]["content"]
-        except (KeyError, IndexError):
-            return "# Minimax Evaluator Skill\n\nError: API call failed"
+        content = self._call_api(prompt, f"{self.config.api_base}/text/chatcompletion_v2")
         return self._extract_skill_md(content)
 
     def _extract_skill_md(self, text: str) -> str:
@@ -73,6 +95,22 @@ class KimiAgent:
         self.config.api_base = "https://api.moonshot.cn/v1"
         self.config.model = "moonshot-v1-8k"
 
+    @retry_on_failure(max_retries=3, delay=2)
+    def _call_api(self, prompt: str, endpoint: str) -> str:
+        response = requests.post(
+            endpoint,
+            headers={
+                "Authorization": f"Bearer {self.config.api_key}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": self.config.model,
+                "messages": [{"role": "user", "content": prompt}]
+            }
+        )
+        response.raise_for_status()
+        return response.json()["choices"][0]["message"]["content"]
+
     def create_optimization_skill(self, round_num: int) -> str:
         prompt = f"""创建一个 optimization skill，用于优化其他 skill 的质量。
         
@@ -84,19 +122,7 @@ class KimiAgent:
 
 只返回完整的 SKILL.md 内容。"""
 
-        response = requests.post(
-            f"{self.config.api_base}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {self.config.api_key}",
-                "Content-Type": "application/json",
-            },
-            json={"model": self.config.model, "messages": [{"role": "user", "content": prompt}]},
-        )
-
-        try:
-            content = response.json()["choices"][0]["message"]["content"]
-        except (KeyError, IndexError):
-            return "# Kimi Optimizer Skill\n\nError: API call failed"
+        content = self._call_api(prompt, f"{self.config.api_base}/chat/completions")
         return self._extract_skill_md(content)
 
     def _extract_skill_md(self, text: str) -> str:
@@ -116,15 +142,25 @@ class SkillTester:
 
     def run_skill_evaluate(self, skill_path: str) -> dict:
         result = subprocess.run(
-            ["skill", "evaluate", skill_path, "--output", "/tmp/eval_result.json"],
+            ["skill", "evaluate", skill_path],
             capture_output=True,
             text=True,
+            timeout=60
         )
+        if result.returncode != 0:
+            return {
+                "error": result.stderr,
+                "stdout": result.stdout,
+                "returncode": result.returncode
+            }
         try:
-            with open("/tmp/eval_result.json") as f:
-                return json.load(f)
+            lines = result.stdout.strip().split("\n")
+            for line in lines:
+                if line.startswith("{"):
+                    return json.loads(line)
         except:
-            return {"error": result.stderr or result.stdout}
+            pass
+        return {"raw_output": result.stdout}
 
     def execute_round(self) -> RoundResult:
         self.round_num += 1
