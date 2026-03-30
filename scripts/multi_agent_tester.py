@@ -273,6 +273,44 @@ class SkillTester:
         with open(round_dir / "issues.json", "w") as f:
             json.dump(issues, f, indent=2)
 
+    def generate_report(self, output_dir: Path):
+        report_path = output_dir / "report.html"
+
+        with open(report_path, "w") as f:
+            f.write("""<!DOCTYPE html>
+<html>
+<head>
+    <title>Multi-Agent Skill Tester Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .issue { padding: 10px; margin: 5px 0; border-radius: 5px; }
+        .CRITICAL { background: #ffcccc; }
+        .HIGH { background: #ffe0cc; }
+        .MEDIUM { background: #fff3cc; }
+        .LOW { background: #e6ffcc; }
+    </style>
+</head>
+<body>
+    <h1>Multi-Agent Skill Tester Report</h1>
+""")
+
+            rounds = sorted(output_dir.glob("round_*"))
+            for round_dir in rounds:
+                issues_file = round_dir / "issues.json"
+                if issues_file.exists():
+                    with open(issues_file) as f_issues:
+                        issues = json.load(f_issues)
+                    f.write(f"<h2>Round {round_dir.name}</h2>")
+                    for issue in issues:
+                        severity = issue.get("severity", "LOW")
+                        f.write(
+                            f'<div class="issue {severity}">{severity}: {issue.get("message", "")}</div>'
+                        )
+
+            f.write("</body></html>")
+
+        return report_path
+
 
 def main():
     parser = argparse.ArgumentParser(description="Multi-Agent Skill Tester")
@@ -314,6 +352,10 @@ def main():
     }
     with open(output_dir / "summary.json", "w") as f:
         json.dump(summary, f, indent=2)
+
+    print("Generating report...")
+    report_path = tester.generate_report(output_dir)
+    print(f"Report saved to: {report_path}")
 
     print("Done!")
 
