@@ -64,7 +64,10 @@ test_api_connection() {
             response=$(curl -s --max-time "$timeout" "https://api.openai.com/v1/models" \
                 -H "Authorization: Bearer $OPENAI_API_KEY" 2>/dev/null)
             [[ -z "$response" ]] && return 1
-            echo "$response" | jq -e '.data' >/dev/null 2>&1 && return 0
+            echo "$response" | jq -e '.data' >/dev/null 2>&1 || return 1
+            if echo "$response" | jq -e '.data[] | select(.id == "gpt-4o-mini")' >/dev/null 2>&1; then
+                return 0
+            fi
             return 1
             ;;
         anthropic)
@@ -81,11 +84,23 @@ test_api_connection() {
             ;;
         minimax)
             if [[ -z "${MINIMAX_API_KEY:-}" ]]; then return 1; fi
-            return 0
+            response=$(curl -s --max-time "$timeout" "https://api.minimaxi.com/v1/text/chatcompletion_v2" \
+                -H "Authorization: Bearer $MINIMAX_API_KEY" \
+                -H "Content-Type: application/json" \
+                -d '{"model":"MiniMax-M2.7-highspeed","messages":[{"role":"user","content":"hi"}],"max_tokens":10}' 2>/dev/null)
+            [[ -z "$response" ]] && return 1
+            echo "$response" | jq -e '.id' >/dev/null 2>&1 && return 0
+            return 1
             ;;
         kimi)
             if [[ -z "${KIMI_API_KEY:-}" ]]; then return 1; fi
-            return 0
+            response=$(curl -s --max-time "$timeout" "https://api.moonshot.cn/v1/chat/completions" \
+                -H "Authorization: Bearer $KIMI_API_KEY" \
+                -H "Content-Type: application/json" \
+                -d '{"model":"moonshot-v1-8k","messages":[{"role":"user","content":"hi"}],"max_tokens":10}' 2>/dev/null)
+            [[ -z "$response" ]] && return 1
+            echo "$response" | jq -e '.id' >/dev/null 2>&1 && return 0
+            return 1
             ;;
         *)
             return 1
@@ -239,12 +254,40 @@ call_openai() {
             --arg user "$user" \
             '{model: $model, messages: [{role: "system", content: $system}, {role: "user", content: $user}], temperature: 0.3}')" 2>/dev/null)
     
-    if [[ -z "$response" ]] || echo "$response" | jq -e '.error // empty' >/dev/null 2>&1; then
-        echo '{"status": "FAIL", "severity": "UNKNOWN", "findings": "OpenAI API call failed"}'
+    if [[ -z "$response" ]]; then
+        echo '{"status": "FAIL", "severity": "CRITICAL", "findings": "OpenAI API: empty response (network error or timeout)"}'
         return 1
     fi
     
-    echo "$response" | jq -r '.choices[0].message.content' 2>/dev/null || return 1
+    if echo "$response" | jq -e '.error' >/dev/null 2>&1; then
+        local error_type error_message
+        error_type=$(echo "$response" | jq -r '.error.type' 2>/dev/null)
+        error_message=$(echo "$response" | jq -r '.error.message' 2>/dev/null)
+        
+        case "$error_type" in
+           .insufficient_quota|"insufficient_quota")
+                echo "{\"status\": \"FAIL\", \"severity\": \"CRITICAL\", \"findings\": \"OpenAI API: INSUFFICIENT QUOTA - $error_message\"}"
+                return 1
+                ;;
+            .invalid_api_key|"invalid_api_key")
+                echo "{\"status\": \"FAIL\", \"severity\": \"CRITICAL\", \"findings\": \"OpenAI API: INVALID API KEY\"}"
+                return 1
+                ;;
+            .rate_limit_exceeded|"rate_limit_exceeded")
+                echo "{\"status\": \"FAIL\", \"severity\": \"WARNING\", \"findings\": \"OpenAI API: RATE LIMIT EXCEEDED\"}"
+                return 1
+                ;;
+            *)
+                echo "{\"status\": \"FAIL\", \"severity\": \"ERROR\", \"findings\": \"OpenAI API error ($error_type): $error_message\"}"
+                return 1
+                ;;
+        esac
+    fi
+    
+    echo "$response" | jq -r '.choices[0].message.content' 2>/dev/null || {
+        echo '{"status": "FAIL", "severity": "ERROR", "findings": "OpenAI API: failed to parse response"}'
+        return 1
+    }
 }
 
 # Anthropic API
@@ -265,9 +308,30 @@ call_anthropic() {
             --arg user "$user" \
             '{model: $model, max_tokens: $max_tokens, system: $system, messages: [{role: "user", content: $user}]}')" 2>/dev/null)
     
-    if [[ -z "$response" ]] || echo "$response" | jq -e '.error // empty' >/dev/null 2>&1; then
-        echo '{"status": "FAIL", "severity": "UNKNOWN", "findings": "Anthropic API call failed"}'
+    if [[ -z "$response" ]]; then
+        echo '{"status": "FAIL", "severity": "CRITICAL", "findings": "Anthropic API: empty response (network error or timeout)"}'
         return 1
+    fi
+    
+    if echo "$response" | jq -e '.error' >/dev/null 2>&1; then
+        local error_type error_message
+        error_type=$(echo "$response" | jq -r '.error.type' 2>/dev/null)
+        error_message=$(echo "$response" | jq -r '.error.message' 2>/dev/null)
+        
+        case "$error_type" in
+            .insufficient_quota|"insufficient_quota"|.invalid_api_key|"invalid_api_key")
+                echo "{\"status\": \"FAIL\", \"severity\": \"CRITICAL\", \"findings\": \"Anthropic API: QUOTA OR KEY ERROR - $error_message\"}"
+                return 1
+                ;;
+            .rate_limit_exceeded|"rate_limit_exceeded")
+                echo "{\"status\": \"FAIL\", \"severity\": \"WARNING\", \"findings\": \"Anthropic API: RATE LIMIT EXCEEDED\"}"
+                return 1
+                ;;
+            *)
+                echo "{\"status\": \"FAIL\", \"severity\": \"ERROR\", \"findings\": \"Anthropic API error ($error_type): $error_message\"}"
+                return 1
+                ;;
+        esac
     fi
     
     extract_json_from_response "$response" || return 1
@@ -293,13 +357,36 @@ call_kimi_code() {
         -H "Content-Type: application/json" \
         -d "$json_data" 2>/dev/null)
     
-    if [[ -z "$response" ]] || echo "$response" | jq -e '.error // empty' >/dev/null 2>&1; then
-        echo '{"status": "FAIL", "severity": "UNKNOWN", "findings": "Kimi Code API call failed"}'
+    if [[ -z "$response" ]]; then
+        echo '{"status": "FAIL", "severity": "CRITICAL", "findings": "Kimi Code API: empty response (network error or timeout)"}'
         return 1
     fi
     
-    # Return raw text (higher level will parse if needed)
-    echo "$response" | jq -r '.content[0].text' 2>/dev/null || return 1
+    if echo "$response" | jq -e '.error' >/dev/null 2>&1; then
+        local error_type error_message
+        error_type=$(echo "$response" | jq -r '.error.type' 2>/dev/null)
+        error_message=$(echo "$response" | jq -r '.error.message' 2>/dev/null)
+        
+        case "$error_type" in
+            .insufficient_quota|"insufficient_quota"|.invalid_api_key|"invalid_api_key"|.authentication_error|"authentication_error")
+                echo "{\"status\": \"FAIL\", \"severity\": \"CRITICAL\", \"findings\": \"Kimi Code API: QUOTA OR AUTH ERROR - $error_message\"}"
+                return 1
+                ;;
+            .rate_limit_exceeded|"rate_limit_exceeded")
+                echo "{\"status\": \"FAIL\", \"severity\": \"WARNING\", \"findings\": \"Kimi Code API: RATE LIMIT EXCEEDED\"}"
+                return 1
+                ;;
+            *)
+                echo "{\"status\": \"FAIL\", \"severity\": \"ERROR\", \"findings\": \"Kimi Code API error ($error_type): $error_message\"}"
+                return 1
+                ;;
+        esac
+    fi
+    
+    echo "$response" | jq -r '.content[0].text' 2>/dev/null || {
+        echo '{"status": "FAIL", "severity": "ERROR", "findings": "Kimi Code API: failed to parse response"}'
+        return 1
+    }
 }
 
 # Kimi Code API - returns parsed JSON
@@ -322,9 +409,30 @@ call_kimi_code_json() {
         -H "Content-Type: application/json" \
         -d "$json_data" 2>/dev/null)
     
-    if [[ -z "$response" ]] || echo "$response" | jq -e '.error // empty' >/dev/null 2>&1; then
-        echo '{"status": "FAIL", "severity": "UNKNOWN", "findings": "Kimi Code API call failed"}'
+    if [[ -z "$response" ]]; then
+        echo '{"status": "FAIL", "severity": "CRITICAL", "findings": "Kimi Code API: empty response (network error or timeout)"}'
         return 1
+    fi
+    
+    if echo "$response" | jq -e '.error' >/dev/null 2>&1; then
+        local error_type error_message
+        error_type=$(echo "$response" | jq -r '.error.type' 2>/dev/null)
+        error_message=$(echo "$response" | jq -r '.error.message' 2>/dev/null)
+        
+        case "$error_type" in
+            .insufficient_quota|"insufficient_quota"|.invalid_api_key|"invalid_api_key"|.authentication_error|"authentication_error")
+                echo "{\"status\": \"FAIL\", \"severity\": \"CRITICAL\", \"findings\": \"Kimi Code API: QUOTA OR AUTH ERROR - $error_message\"}"
+                return 1
+                ;;
+            .rate_limit_exceeded|"rate_limit_exceeded")
+                echo "{\"status\": \"FAIL\", \"severity\": \"WARNING\", \"findings\": \"Kimi Code API: RATE LIMIT EXCEEDED\"}"
+                return 1
+                ;;
+            *)
+                echo "{\"status\": \"FAIL\", \"severity\": \"ERROR\", \"findings\": \"Kimi Code API error ($error_type): $error_message\"}"
+                return 1
+                ;;
+        esac
     fi
     
     extract_json_from_response "$response" || return 1
@@ -346,12 +454,36 @@ call_kimi() {
             --arg user "$user" \
             '{model: $model, messages: [{role: "system", content: $system}, {role: "user", content: $user}], temperature: 0.3}')" 2>/dev/null)
     
-    if [[ -z "$response" ]] || echo "$response" | jq -e '.error // empty' >/dev/null 2>&1; then
-        echo '{"status": "FAIL", "severity": "UNKNOWN", "findings": "Kimi API call failed"}'
+    if [[ -z "$response" ]]; then
+        echo '{"status": "FAIL", "severity": "CRITICAL", "findings": "Kimi API: empty response (network error or timeout)"}'
         return 1
     fi
     
-    echo "$response" | jq -r '.choices[0].message.content' 2>/dev/null || return 1
+    if echo "$response" | jq -e '.error' >/dev/null 2>&1; then
+        local error_type error_message
+        error_type=$(echo "$response" | jq -r '.error.type' 2>/dev/null)
+        error_message=$(echo "$response" | jq -r '.error.message' 2>/dev/null)
+        
+        case "$error_type" in
+            .insufficient_quota|"insufficient_quota"|.invalid_api_key|"invalid_api_key"|.authentication_error|"authentication_error")
+                echo "{\"status\": \"FAIL\", \"severity\": \"CRITICAL\", \"findings\": \"Kimi API: QUOTA OR AUTH ERROR - $error_message\"}"
+                return 1
+                ;;
+            .rate_limit_exceeded|"rate_limit_exceeded")
+                echo "{\"status\": \"FAIL\", \"severity\": \"WARNING\", \"findings\": \"Kimi API: RATE LIMIT EXCEEDED\"}"
+                return 1
+                ;;
+            *)
+                echo "{\"status\": \"FAIL\", \"severity\": \"ERROR\", \"findings\": \"Kimi API error ($error_type): $error_message\"}"
+                return 1
+                ;;
+        esac
+    fi
+    
+    echo "$response" | jq -r '.choices[0].message.content' 2>/dev/null || {
+        echo '{"status": "FAIL", "severity": "ERROR", "findings": "Kimi API: failed to parse response"}'
+        return 1
+    }
 }
 
 # MiniMax API
@@ -371,12 +503,36 @@ call_minimax() {
             --arg user "$user" \
             '{model: $model, messages: [{role: "system", content: $system}, {role: "user", content: $user}], temperature: 0.3, stream: false}')" 2>/dev/null)
     
-    if [[ -z "$response" ]] || echo "$response" | jq -e '.error // empty' >/dev/null 2>&1; then
-        echo '{"status": "FAIL", "severity": "UNKNOWN", "findings": "MiniMax API call failed"}'
+    if [[ -z "$response" ]]; then
+        echo '{"status": "FAIL", "severity": "CRITICAL", "findings": "MiniMax API: empty response (network error or timeout)"}'
         return 1
     fi
     
-    echo "$response" | jq -r '.choices[0].message.content' 2>/dev/null || return 1
+    if echo "$response" | jq -e '.error' >/dev/null 2>&1; then
+        local error_type error_message
+        error_type=$(echo "$response" | jq -r '.error.code' 2>/dev/null)
+        error_message=$(echo "$response" | jq -r '.error.message' 2>/dev/null)
+        
+        case "$error_type" in
+            .insufficient_quota|"insufficient_quota"|.invalid_api_key|"invalid_api_key"|.authentication_error|"authentication_error"|"INVALID_ARGUMENT"|"UNAUTHORIZED")
+                echo "{\"status\": \"FAIL\", \"severity\": \"CRITICAL\", \"findings\": \"MiniMax API: QUOTA OR AUTH ERROR - $error_message\"}"
+                return 1
+                ;;
+            .rate_limit_exceeded|"rate_limit_exceeded")
+                echo "{\"status\": \"FAIL\", \"severity\": \"WARNING\", \"findings\": \"MiniMax API: RATE LIMIT EXCEEDED\"}"
+                return 1
+                ;;
+            *)
+                echo "{\"status\": \"FAIL\", \"severity\": \"ERROR\", \"findings\": \"MiniMax API error ($error_type): $error_message\"}"
+                return 1
+                ;;
+        esac
+    fi
+    
+    echo "$response" | jq -r '.choices[0].message.content' 2>/dev/null || {
+        echo '{"status": "FAIL", "severity": "ERROR", "findings": "MiniMax API: failed to parse response"}'
+        return 1
+    }
 }
 
 # Cross-evaluate using multiple providers in parallel
@@ -631,8 +787,8 @@ parse_cross_result() {
     
     if [[ "$result" == single:* ]]; then
         local content="${result#single:}"
-        # Check if content is an error
-        if [[ "$content" == *"ERROR"* ]] || [[ -z "$content" ]]; then
+        # Check if content is an error (JSON error object, ERROR, or FAIL in content)
+        if [[ "$content" == "{"* ]] || [[ "$content" == *"ERROR"* ]] || [[ "$content" == *"FAIL"* ]] || [[ -z "$content" ]]; then
             if [[ "$result_type" == "binary" ]]; then
                 echo "0"
             else
