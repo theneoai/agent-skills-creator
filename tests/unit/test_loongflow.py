@@ -14,3 +14,7 @@ class TestLoongFlowOrchestrator:
         orchestrator = LoongFlowOrchestrator(memory=memory)
         result = orchestrator.run("Create a weather skill")
         assert result.success is True
+        completed = orchestrator.collector.get_completed()
+        assert len(completed) == 1
+        assert completed[0].task_type == "CREATE"
+        assert completed[0].outcome == "success"
