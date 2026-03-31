@@ -1,0 +1,119 @@
+# Requirement Elicitation Questions
+# Inversion Pattern: 6 core questions to fully understand skill requirements
+# before implementation begins
+
+questions:
+  - id: core_problem
+    order: 1
+    text_en: What core problem does this skill solve?
+    text_zh: 这个技能解决什么核心问题？
+    purpose: >
+      Identify the fundamental value proposition and pain point this skill addresses.
+      This ensures the skill has clear utility and doesn't duplicate existing functionality.
+    examples:
+      - "Automates repetitive git operations that developers perform daily"
+      - "Provides structured debugging workflow to reduce time spent on bugs"
+      - "Standardizes code review process across team members"
+    validation:
+      - Must describe a specific, concrete problem
+      - Should not be a solution in search of a problem
+      - Must provide measurable value (time saved, errors reduced, etc.)
+
+  - id: target_users
+    order: 2
+    text_en: Who are the target users?
+    text_zh: 目标用户是谁？
+    purpose: >
+      Define the intended audience for this skill to ensure appropriate
+      complexity level, terminology, and workflow design.
+    examples:
+      - "Software developers working in teams with git-based workflows"
+      - "DevOps engineers managing CI/CD pipelines"
+      - "Technical leads conducting code reviews"
+      - "Junior developers learning debugging techniques"
+    validation:
+      - Must specify at least one clear user persona
+      - Should include technical proficiency level
+      - Must describe the context in which they'll use this skill
+
+  - id: input_format
+    order: 3
+    text_en: What is the input format?
+    text_zh: 输入格式是什么？
+    purpose: >
+      Define what data or parameters the skill expects to receive,
+      including format, structure, and any required preprocessing.
+    examples:
+      - "Git repository path (absolute or relative)"
+      - "Error message or stack trace as plain text"
+      - "YAML configuration file with specific schema"
+      - "Natural language description of the task"
+    validation:
+      - Must specify data types for all inputs
+      - Should indicate which inputs are required vs optional
+      - Must include example valid inputs
+      - Should describe how invalid inputs are handled
+
+  - id: expected_output
+    order: 4
+    text_en: What is the expected output?
+    text_zh: 预期输出是什么？
+    purpose: >
+      Define what the skill produces, including format, structure,
+      and how success/failure is communicated to the user.
+    examples:
+      - "Structured JSON with operation results and status codes"
+      - "Modified files in the working directory"
+      - "Human-readable report with actionable recommendations"
+      - "Terminal commands ready to be executed"
+    validation:
+      - Must specify output format and structure
+      - Should include example outputs for success and failure cases
+      - Must define how errors are reported
+      - Should indicate if output is displayed, saved, or both
+
+  - id: constraints
+    order: 5
+    text_en: What security or technical constraints apply?
+    text_zh: 适用哪些安全或技术约束？
+    purpose: >
+      Identify limitations, security requirements, and technical boundaries
+      that must be respected during skill execution.
+    examples:
+      - "Must not execute destructive commands without user confirmation"
+      - "Should work in air-gapped environments without internet access"
+      - "Must handle repositories up to 10GB in size"
+      - "Should complete within 30 seconds for typical inputs"
+    validation:
+      - Must include security considerations (secrets, permissions, etc.)
+      - Should specify performance requirements (time, memory)
+      - Must list platform or environment constraints
+      - Should identify any external dependencies
+
+  - id: acceptance_criteria
+    order: 6
+    text_en: What are the acceptance criteria?
+    text_zh: 验收标准是什么？
+    purpose: >
+      Define clear, testable conditions that must be met for the skill
+      to be considered complete and functional.
+    examples:
+      - "Skill successfully handles all example inputs without errors"
+      - "All validation rules are enforced correctly"
+      - "Documentation is complete with usage examples"
+      - "Unit tests cover at least 80% of code paths"
+      - "Integration tests pass in CI environment"
+    validation:
+      - Each criterion must be specific and measurable
+      - Must include both functional and non-functional requirements
+      - Should cover edge cases and error conditions
+      - Must define what 'done' means for this skill
+
+metadata:
+  pattern: inversion
+  version: "1.0.0"
+  created: "2024-01-01"
+  description: >
+    The Inversion Pattern ensures comprehensive requirement gathering
+    by asking six fundamental questions that cover: problem space,
+    user context, inputs, outputs, constraints, and success criteria.

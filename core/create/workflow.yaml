@@ -1,0 +1,206 @@
+id: create_workflow
+name: CREATE Mode Workflow
+description: Complete workflow for creating new components, features, or files from scratch using templates and structured elicitation
+
+steps:
+  - id: parse
+    name: Parse Request
+    description: Analyze the user's creation request to understand intent, scope, and requirements
+    inputs:
+      - user_request
+      - context
+    outputs:
+      - parsed_intent
+      - scope_definition
+      - requirements_list
+      - creation_type
+
+  - id: select_template
+    name: Select Template
+    description: Choose the appropriate template based on parsed intent and creation type
+    inputs:
+      - creation_type
+      - parsed_intent
+      - scope_definition
+    outputs:
+      - selected_template
+      - template_variables
+      - template_metadata
+
+  - id: elicit
+    name: Elicit Requirements
+    description: Ask clarifying questions to gather missing information needed for creation
+    inputs:
+      - parsed_intent
+      - requirements_list
+      - template_variables
+    outputs:
+      - elicited_answers
+      - filled_placeholders
+      - refined_requirements
+    questions:
+      - id: q1
+        text: What is the primary purpose or goal of what you're creating?
+        category: intent
+        required: true
+      - id: q2
+        text: Who are the target users or consumers of this creation?
+        category: audience
+        required: true
+      - id: q3
+        text: What are the key features or capabilities it must have?
+        category: functionality
+        required: true
+      - id: q4
+        text: Are there any specific constraints, standards, or requirements it must meet?
+        category: constraints
+        required: false
+      - id: q5
+        text: What is the expected scale or scope (e.g., number of users, data volume, performance needs)?
+        category: scale
+        required: false
+      - id: q6
+        text: Are there any examples, references, or existing implementations you want to emulate or avoid?
+        category: references
+        required: false
+
+  - id: generate
+    name: Generate Output
+    description: Create the final output by filling templates with gathered information
+    inputs:
+      - selected_template
+      - filled_placeholders
+      - refined_requirements
+      - template_metadata
+    outputs:
+      - generated_content
+      - generation_metadata
+      - file_paths
+    placeholders:
+      - name: PROJECT_NAME
+        description: Name of the project or component
+        example: "my-awesome-service"
+      - name: DESCRIPTION
+        description: Brief description of what is being created
+        example: "A microservice for handling user authentication"
+      - name: AUTHOR
+        description: Name or identifier of the creator
+        example: "developer@example.com"
+      - name: DATE
+        description: Creation date
+        example: "2024-01-15"
+      - name: VERSION
+        description: Version identifier
+        example: "1.0.0"
+      - name: DEPENDENCIES
+        description: List of required dependencies
+        example: "[express, lodash, uuid]"
+      - name: CONFIG_OPTIONS
+        description: Configuration options or parameters
+        example: "port: 3000, env: production"
+      - name: MAIN_FUNCTION
+        description: Primary function or entry point
+        example: "initializeServer"
+      - name: TEST_CASES
+        description: Key test scenarios to include
+        example: "should authenticate valid users"
+      - name: DOCUMENTATION
+        description: Additional documentation or notes
+        example: "See README.md for detailed usage"
+
+  - id: security_scan
+    name: Security Scan
+    description: Scan generated content for security vulnerabilities and best practice violations
+    inputs:
+      - generated_content
+      - file_paths
+      - creation_type
+    outputs:
+      - security_report
+      - vulnerabilities_found
+      - recommendations
+    checks:
+      - hardcoded_secrets
+      - injection_vulnerabilities
+      - insecure_dependencies
+      - weak_crypto
+      - access_control_issues
+
+  - id: lean_eval
+    name: LEAN Evaluation
+    description: Evaluate generated content against LEAN principles (Legible, Efficient, Accurate, Non-fragile)
+    inputs:
+      - generated_content
+      - security_report
+      - refined_requirements
+    outputs:
+      - lean_scores
+      - evaluation_summary
+      - improvement_suggestions
+    thresholds:
+      legible:
+        min_score: 7
+        description: Code is readable, well-documented, and follows conventions
+        criteria:
+          - naming_conventions
+          - code_comments
+          - formatting
+          - structure
+      efficient:
+        min_score: 7
+        description: Code is performant and resource-conscious
+        criteria:
+          - time_complexity
+          - space_complexity
+          - resource_usage
+          - algorithm_choice
+      accurate:
+        min_score: 8
+        description: Code correctly implements requirements
+        criteria:
+          - functional_correctness
+          - edge_case_handling
+          - requirement_coverage
+          - logic_validity
+      non_fragile:
+        min_score: 7
+        description: Code is robust and handles errors gracefully
+        criteria:
+          - error_handling
+          - input_validation
+          - exception_safety
+          - maintainability
+    overall_threshold: 7.5
+
+  - id: deliver
+    name: Deliver Output
+    description: Finalize and deliver the created content to the user
+    inputs:
+      - generated_content
+      - lean_scores
+      - security_report
+      - file_paths
+      - evaluation_summary
+    outputs:
+      - delivered_files
+      - delivery_summary
+      - next_steps
+    actions:
+      - write_files
+      - generate_manifest
+      - provide_summary
+      - suggest_next_steps
+
+workflow_metadata:
+  version: "1.0.0"
+  author: "opencode"
+  created: "2024-01-15"
+  description: "CREATE mode workflow for generating new code, files, and components"
+  supported_types:
+    - component
+    - feature
+    - file
+    - project
+    - configuration
+    - documentation
+  estimated_duration: "2-5 minutes"
