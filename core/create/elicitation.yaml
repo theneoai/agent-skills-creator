@@ -22,7 +22,7 @@ questions:
   - id: target_users
     order: 2
     text_en: Who are the target users?
-    text_zh: 目标用户是谁？
+    text_zh: 主要用户是谁，技术水平如何？
     purpose: >
       Define the intended audience for this skill to ensure appropriate
       complexity level, terminology, and workflow design.

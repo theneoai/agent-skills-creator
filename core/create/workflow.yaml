@@ -307,7 +307,7 @@ workflow_metadata:
   spec_ref: "skill-framework.md §5"
   author: theneoai
   updated: "2026-03-31"
-  phase_count: 10
+  phase_count: 9
   hard_gates:
     - elicit:         "All 6 questions answered"
     - plan:           "Consensus reached (not UNRESOLVED)"
