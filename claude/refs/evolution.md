@@ -181,6 +181,55 @@ IF trend_check = DIVERGING
 
 ---
 
+## §7  Live Feedback Loop (UTE Tier)
+
+UTE (Use-to-Evolve) is a **Tier 0** evolution layer that fires before the 3-trigger system.
+It collects real usage signals inline — no batch jobs, no scheduled checks required.
+
+```
+Invocation N
+    │
+    ▼
+UTE Post-Hook fires (inline)
+    ├─ Record usage entry
+    ├─ Detect feedback signal
+    └─ Cadence check
+          │
+   ┌──────┴───────┐
+   │ micro-patch  │ structural issue
+   │ candidate    │ → evolution-queue.jsonl
+   └──────┬───────┘
+          │
+   Staged patch
+   (applied next session)
+          │
+          ▼
+   Tier 0 metrics feed into
+   3-Trigger System (§1–§2)
+```
+
+**Relationship to 3-Trigger System**:
+
+| Tier | System | Fires When | Scope |
+|------|--------|-----------|-------|
+| 0 | UTE | Every invocation | Micro-patches (triggers, metadata) |
+| 1 | Threshold | F1/MRR breach | OPTIMIZE cycles |
+| 2 | Time | 30-day staleness | LEAN → OPTIMIZE |
+| 3 | Usage | 90-day inactivity | Deprecation review |
+
+**Data flow**: UTE usage.jsonl → Tier 1 threshold check reads this same file.
+`compute_rolling_metrics()` in §3 works identically whether data came from
+UTE hooks or manual invocations. No separate data source needed.
+
+**Queue consumption**: When Tier 1 fires an OPTIMIZE cycle, it reads
+`.skill-audit/evolution-queue.jsonl` written by UTE as the starting point
+for dimension analysis (§2 decision engine). This means UTE-collected signals
+directly influence which strategy is applied first — closing the feedback loop.
+
+Full UTE spec: `claude/refs/use-to-evolve.md`
+
+---
+
 ## §6  Staleness Review Workflow
 
 When time-based trigger fires (30 days no update):

@@ -45,6 +45,11 @@ extends:
     spec: claude/refs/deliberation.md
   convergence:
     spec: claude/refs/convergence.md
+  use_to_evolve:
+    enabled: true
+    spec: claude/refs/use-to-evolve.md
+    snippet: claude/templates/use-to-evolve-snippet.md
+    inject_on: [create, optimize]
 ---
 
 ## §1  Identity
@@ -176,7 +181,8 @@ Every mode executes via Plan-Execute-Summarize:
 | 5 | **SECURITY SCAN** — CWE patterns (`claude/refs/security-patterns.md`) | No P0 violations |
 | 6 | **LEAN EVAL** — fast heuristic check (§6) | Score ≥ 350 (pass lean) |
 | 7 | **FULL EVALUATE** — 4-phase pipeline if LEAN uncertain (§8) | Score ≥ 700 BRONZE |
-| 8 | **DELIVER** — annotate, certify, write audit entry | CERTIFIED / TEMP_CERT |
+| 8 | **INJECT UTE** — append `§UTE` section from snippet, fill placeholders (§15) | UTE section present |
+| 9 | **DELIVER** — annotate, certify, write audit entry | CERTIFIED / TEMP_CERT |
 
 ### Template Selection
 
@@ -330,6 +336,10 @@ Full protocol: `claude/refs/deliberation.md §2`
 ### 9-Step Loop
 
 ```
+Pre-loop — UTE bootstrap:
+  IF skill has no §UTE section → INJECT UTE first (§15)
+  ELSE → UPDATE UTE: refresh certified_lean_score to current LEAN score
+
 Round N:
   1. READ    — score all 7 dimensions; identify lowest-scoring
   2. ANALYZE — LLM-1/2 each propose 3 targeted fixes for weakest dimension
@@ -337,13 +347,17 @@ Round N:
   4. PLAN    — LLM-3 selects best fix strategy; log decision
   5. IMPLEMENT — apply atomic change (single dimension focus)
   6. VERIFY  — re-score; if score regressed → rollback; if no improvement → try fix #2
-  7. HUMAN_REVIEW — trigger if total_score < 8.0 after round 10
+  7. HUMAN_REVIEW — trigger if total_score < 560 after round 10
   8. LOG     — record: round, dimension, delta, confidence, strategy_used
   9. COMMIT  — git commit every 10 rounds; tag with score
 
 Convergence check (every round):
   IF volatility OR plateau OR trend=STABLE → STOP early
   See: claude/refs/convergence.md
+
+Post-loop — UTE update:
+  Update use_to_evolve.certified_lean_score with final LEAN score
+  Reset use_to_evolve.last_ute_check to today
 
 Max rounds: 20 → if not BRONZE after round 20 → HUMAN_REVIEW
 ```
@@ -489,11 +503,80 @@ Mode: EVALUATE → auto-route to OPTIMIZE on FAIL
 
 ---
 
+## §15  UTE Injection
+
+**Use-to-Evolve (UTE)** is injected into every skill the framework creates or optimizes.
+It makes the target skill self-improving through actual use — no scheduled jobs required.
+
+Full spec: `claude/refs/use-to-evolve.md`
+Snippet: `claude/templates/use-to-evolve-snippet.md`
+
+### Injection Protocol (CREATE Step 8 / OPTIMIZE Pre-loop)
+
+```
+1. CHECK   — does skill already have §UTE section?
+     YES → UPDATE: refresh certified_lean_score, reset last_ute_check
+     NO  → INJECT: proceed below
+
+2. LOAD    — read claude/templates/use-to-evolve-snippet.md
+
+3. FILL PLACEHOLDERS:
+     {{SKILL_NAME}}           = skill's `name` YAML field
+     {{VERSION}}              = skill's `version` YAML field
+     {{FRAMEWORK_VERSION}}    = "2.0.0"
+     {{INJECTION_DATE}}       = today ISO-8601
+     {{CERTIFIED_LEAN_SCORE}} = LEAN score from Step 6 (or 350 if unknown)
+
+4. APPEND  — add §UTE section after last ## §N section in skill
+
+5. MERGE YAML — add use_to_evolve: block to skill's YAML frontmatter
+
+6. LEAN RE-CHECK — run LEAN eval on injected skill
+     IF lean_score regressed > 10 pts → revert injection, log warning
+
+7. LOG — record in audit trail: {"ute_injected": true, "certified_lean_score": N}
+```
+
+### What UTE Adds to Target Skills
+
+After injection, every target skill gains:
+
+| Capability | Mechanism |
+|-----------|-----------|
+| Per-call usage recording | Post-Invocation Hook appended to skill context |
+| Implicit feedback detection | Pattern match on user follow-up (correction / rephrasing / approval) |
+| Trigger candidate collection | Rephrasing signals logged; count≥3 → micro-patch candidate |
+| Lightweight check every 10 calls | Rolling 20-call success rate + trigger accuracy check |
+| Full metric recompute every 50 calls | F1 / MRR / trigger_accuracy from usage log |
+| Tier drift detection every 100 calls | Estimated LEAN vs certified baseline |
+| Autonomous micro-patching | Keyword additions staged + LEAN-validated before apply |
+| OPTIMIZE queue | Structural issues written to evolution-queue.jsonl |
+
+### UTE Update (on OPTIMIZE)
+
+When optimizing a skill that already has UTE:
+
+```
+1. Load current use_to_evolve.certified_lean_score
+2. Load .skill-audit/evolution-queue.jsonl → read queued issues
+3. Use queued issues as starting point for dimension analysis (Step 1 READ)
+4. After all optimization rounds complete:
+     update use_to_evolve.certified_lean_score = final_lean_score
+     update use_to_evolve.last_ute_check = today
+     clear processed items from evolution-queue.jsonl
+```
+
+This closes the feedback loop: UTE collects real-usage signals → queues them →
+OPTIMIZE consumes the queue → updates UTE baseline → repeat.
+
+---
+
 **Triggers**:
 **CREATE** | **LEAN** | **EVALUATE** | **OPTIMIZE**
 **创建** | **快评** | **评测** | **优化**
 
-(Templates: `claude/templates/` · Eval rubrics: `claude/eval/rubrics.md` ·
-Pairwise: `claude/eval/pairwise.md` · Deliberation: `claude/refs/deliberation.md` ·
-Security: `claude/refs/security-patterns.md` · Evolution: `claude/refs/evolution.md` ·
+(Templates: `claude/templates/` · UTE snippet: `claude/templates/use-to-evolve-snippet.md` ·
+Eval rubrics: `claude/eval/rubrics.md` · Pairwise: `claude/eval/pairwise.md` ·
+Deliberation: `claude/refs/deliberation.md` · Security: `claude/refs/security-patterns.md` ·
+Evolution: `claude/refs/evolution.md` · UTE spec: `claude/refs/use-to-evolve.md` ·
 Convergence: `claude/refs/convergence.md` · Optimize strategies: `claude/optimize/strategies.md`)
