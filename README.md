@@ -7,6 +7,11 @@
   <img src="https://img.shields.io/github/stars/theneoai/skill-framework?style=social" alt="Stars">
   <img src="https://img.shields.io/github/last-commit/theneoai/skill-framework" alt="Last Commit">
   <img src="https://img.shields.io/badge/Framework-PLATINUM-950%2B-brightgreen" alt="Framework PLATINUM">
+  <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version">
+</p>
+
+<p align="center">
+  <strong>生产级 AI 技能的 CI/CD 系统</strong>
 </p>
 
 ---
@@ -92,6 +97,24 @@ ROUTE
   "status": "CERTIFIED"
 }
 ```
+
+---
+
+## 🤔 为什么选择 Skill Framework？
+
+| 痛点 | 传统方式 | Skill Framework |
+|------|---------|----------------|
+| **质量不可控** | 凭感觉写 Prompt | 1000分量化评估 |
+| **迭代无方向** | 盲目修改 | 7维度精准优化 |
+| **审核靠人工** | 单点检查 | 3LLM交叉验证 |
+| **维护困难** | 改一处崩一处 | 自进化系统监控 |
+| **团队协作** | 文档不同步 | 标准化模板 |
+
+**适合谁用？**
+- 🧑‍💻 **AI 应用开发者** - 需要可靠的 Prompt 工程
+- 🎯 **Prompt Engineer** - 追求可量化的质量提升
+- 🏢 **技术团队负责人** - 需要团队协作标准
+- 🔬 **AI 研究员** - 需要可复现的实验环境
 
 ---
 
@@ -200,18 +223,67 @@ flowchart TB
 
 ## 📚 示例技能展示
 
-探索我们精心设计的示例技能：
+探索我们精心设计的示例技能，**平均认证分数 938.3/1000**：
 
-| 示例 | 描述 | 等级 |
-|------|------|------|
-| [API Tester](examples/api-tester/) | 自动化API测试与验证 | 🏆 PLATINUM |
-| [Code Reviewer](examples/code-reviewer/) | 智能代码审查助手 | 🥇 GOLD |
-| [Doc Generator](examples/doc-generator/) | 自动化文档生成 | 🥇 GOLD |
+### 🏆 [API Tester](examples/api-tester/) - PLATINUM 960/1000
+**类型**: API Integration | **用途**: HTTP API 测试自动化
 
-每个示例都包含：
-- ✅ 完整的技能定义文件
-- ✅ 评估报告
-- ✅ 优化历史记录
+```bash
+# 测试单个接口
+skill run api-tester --input '{"url": "https://api.example.com/users"}'
+
+# 批量测试
+skill run api-tester --mode batch --input '{"endpoints": [...]}'
+```
+
+**亮点**: 
+- 支持 TEST/VALIDATE/BATCH 三种模式
+- 自动环境变量注入
+- 完整的错误处理（HTTP 4xx/5xx/超时）
+
+---
+
+### 🥇 [Code Reviewer](examples/code-reviewer/) - GOLD 935/1000
+**类型**: Workflow Automation | **用途**: 智能代码审查
+
+```bash
+# 审查代码文件
+skill run code-reviewer --input './src/main.py'
+
+# 安全扫描
+skill run code-reviewer --mode scan --input './src/'
+```
+
+**亮点**:
+- 多步骤工作流（解析→分析→扫描→检查→生成报告）
+- 安全漏洞检测（CWE-798/89/78/22）
+- 自动回滚机制
+
+---
+
+### 🥇 [Doc Generator](examples/doc-generator/) - GOLD 920/1000
+**类型**: Data Pipeline | **用途**: 自动化文档生成
+
+```bash
+# 生成单文件文档
+skill run doc-generator --input './src/utils.py'
+
+# 批量生成整个项目
+skill run doc-generator --mode batch --input './src/'
+```
+
+**亮点**:
+- ETVF 数据管道（Extract→Transform→Validate→Format）
+- 支持 Markdown/JSON/HTML 多格式输出
+- 完整的输入输出 Schema 验证
+
+---
+
+**每个示例都包含**:
+- ✅ 完整的技能定义文件 (`skill.md`)
+- ✅ 详细评估报告 (`eval-report.md`)
+- ✅ 使用说明文档 (`README.md`)
+- ✅ 真实可运行的代码示例
 
 ---
 
@@ -300,6 +372,29 @@ NEXT ACTION:         Ready for production deployment
 
 ---
 
+## 🗺️ 路线图
+
+### ✅ 已完成 (v1.0.0)
+- [x] 1000分评估体系
+- [x] 多LLM审议机制
+- [x] 3个认证示例技能
+- [x] 完整GitHub社区配置
+- [x] 双语支持
+
+### 🚧 进行中 (v1.1.0)
+- [ ] CLI工具 (`skill create/evaluate/optimize`)
+- [ ] VS Code插件
+- [ ] 更多示例技能（5+）
+- [ ] 在线评估服务
+
+### 📅 计划中 (v2.0.0)
+- [ ] 技能市场/注册表
+- [ ] Web IDE
+- [ ] 团队协作功能
+- [ ] 企业版（SSO、审计日志）
+
+---
+
 ## 📖 文档
 
 | 文档 | 描述 |
@@ -315,6 +410,30 @@ NEXT ACTION:         Ready for production deployment
 - [refs/security-patterns.md](refs/security-patterns.md) - CWE安全模式
 - [refs/convergence.md](refs/convergence.md) - 收敛检测算法
 - [refs/use-to-evolve.md](refs/use-to-evolve.md) - UTE自进化机制
+
+---
+
+## 🌟 社区与生态
+
+### 社区统计
+
+<p align="center">
+  <img src="https://img.shields.io/github/stars/theneoai/skill-framework?style=social" alt="Stars">
+  <img src="https://img.shields.io/github/forks/theneoai/skill-framework?style=social" alt="Forks">
+  <img src="https://img.shields.io/github/contributors/theneoai/skill-framework" alt="Contributors">
+</p>
+
+### 加入社区
+
+- 💬 [Discussions](https://github.com/theneoai/skill-framework/discussions) - 提问、分享想法
+- 🐛 [Issues](https://github.com/theneoai/skill-framework/issues) - 报告Bug、请求功能
+- 🎉 [Releases](https://github.com/theneoai/skill-framework/releases) - 查看最新版本
+
+### 使用 Skill Framework 的项目
+
+> 如果你的项目使用了 Skill Framework，欢迎提交 PR 添加到列表！
+
+*暂无 - 成为第一个！*
 
 ---
 
