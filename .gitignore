@@ -58,7 +58,6 @@ temp/
 
 # Project specific
 .opencode/
-docs/superpowers/
 
 # Environment variables
 .env

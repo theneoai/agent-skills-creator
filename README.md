@@ -2,9 +2,11 @@
 
 A cross-platform meta-skill for creating, evaluating, and optimizing AI assistant skills through natural language interaction.
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/yourusername/skill-writer)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/theneoai/skill-writer)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platforms](https://img.shields.io/badge/platforms-6-orange.svg)](#supported-platforms)
+[![GitHub Actions](https://github.com/theneoai/skill-writer/workflows/Build%20and%20Release/badge.svg)](https://github.com/theneoai/skill-writer/actions)
+[![Security Scan](https://github.com/theneoai/skill-writer/workflows/Security%20Scan/badge.svg)](https://github.com/theneoai/skill-writer/actions)
 
 ## Overview
 
@@ -38,7 +40,7 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 #### OpenCode
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/skill-writer.git
+git clone https://github.com/theneoai/skill-writer.git
 cd skill-writer
 
 # Copy the skill file
@@ -420,9 +422,9 @@ MIT License - See [LICENSE](LICENSE) file for details.
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/skill-writer/issues)
-- **Documentation**: [Full Documentation](https://github.com/yourusername/skill-writer/docs)
-- **Examples**: [Example Skills](https://github.com/yourusername/skill-writer/examples)
+- **Issues**: [GitHub Issues](https://github.com/theneoai/skill-writer/issues)
+- **Documentation**: [Full Documentation](https://theneoai.github.io/skill-writer)
+- **Examples**: [Example Skills](https://github.com/theneoai/skill-writer/tree/main/examples)
 
 ## Roadmap
 
