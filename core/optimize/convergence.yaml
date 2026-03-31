@@ -1,0 +1,163 @@
+# Convergence Detection Rules for Optimization
+# Defines when to stop, continue, or halt based on metric behavior
+
+convergence_detection:
+  # ============================================
+  # VOLATILITY CHECK
+  # Detects unstable optimization - high variance in recent scores
+  # ============================================
+  volatility:
+    description: "High standard deviation indicates unstable optimization"
+    enabled: true
+    window_size: 10  # Number of recent scores to analyze
+    threshold: 2.0   # Maximum acceptable standard deviation
+    metric: "score_stddev"  # Metric to track
+    
+    action:
+      type: STOP
+      reason: "Optimization is too volatile (stddev > {threshold})"
+      log_level: warning
+      save_checkpoint: true
+      
+  # ============================================
+  # PLATEAU CHECK
+  # Detects when improvement has stalled
+  # ============================================
+  plateau:
+    description: "Low deltas indicate optimization has plateaued"
+    enabled: true
+    window_size: 20  # Number of deltas to analyze
+    delta_threshold: 0.5  # Minimum meaningful improvement
+    plateau_percentage: 70  # % of deltas below threshold to trigger
+    metric: "score_delta"  # Change between consecutive scores
+    
+    action:
+      type: CONTINUE
+      cycles: 1  # Continue for one more cycle before final decision
+      reason: "Possible plateau detected ({percentage}% deltas < {delta_threshold})"
+      log_level: info
+      
+    final_action:
+      type: STOP
+      reason: "Plateau confirmed after additional cycle"
+      log_level: info
+      save_checkpoint: true
+      
+  # ============================================
+  # IMPROVING CHECK
+  # Detects consistent positive trend
+  # ============================================
+  improving:
+    description: "Consistent improvement indicates optimization should continue"
+    enabled: true
+    window_size: 10  # Number of scores to analyze for trend
+    min_improvement_rate: 0.01  # Minimum rate of improvement per iteration
+    consistency_threshold: 0.7  # % of deltas must be positive
+    metric: "score_trend"  # Linear regression slope of scores
+    
+    action:
+      type: CONTINUE
+      reason: "Optimization showing consistent improvement (trend: {trend})"
+      log_level: debug
+      
+  # ============================================
+  # DIVERGING CHECK
+  # Detects when scores are getting worse
+  # ============================================
+  diverging:
+    description: "Worsening scores indicate optimization is diverging"
+    enabled: true
+    window_size: 5   # Number of recent scores to analyze
+    worsening_threshold: 0.8  # % of recent deltas must be negative
+    min_decline: 0.5  # Minimum total decline to trigger
+    metric: "score_decline"  # Negative trend indicator
+    
+    action:
+      type: HALT
+      reason: "Optimization diverging (scores worsening by {decline_amount})"
+      log_level: error
+      save_checkpoint: true
+      restore_best: true  # Roll back to best known solution
+      
+  # ============================================
+  # EARLY STOPPING CRITERIA
+  # Hard limits to prevent excessive computation
+  # ============================================
+  early_stopping:
+    description: "Hard limits for optimization termination"
+    enabled: true
+    
+    criteria:
+      max_iterations:
+        limit: 1000
+        action: STOP
+        reason: "Maximum iteration limit reached"
+        
+      max_time_seconds:
+        limit: 3600  # 1 hour
+        action: STOP
+        reason: "Maximum time limit reached"
+        
+      max_evaluations:
+        limit: 10000
+        action: STOP
+        reason: "Maximum evaluation limit reached"
+        
+      target_score:
+        value: null  # Set to target score if known
+        tolerance: 0.001
+        action: STOP
+        reason: "Target score achieved"
+        
+      no_improvement:
+        window: 50  # Iterations without improvement
+        action: STOP
+        reason: "No improvement for {window} iterations"
+        
+  # ============================================
+  # DECISION PRIORITY
+  # Order in which checks are evaluated
+  # ============================================
+  decision_priority:
+    - diverging      # Highest priority - stop if getting worse
+    - early_stopping # Hard limits
+    - volatility     # Stop if unstable
+    - plateau        # Check for stalled progress
+    - improving      # Continue if making progress
+    
+  # ============================================
+  # DEFAULT ACTION
+  # When no specific condition is met
+  # ============================================
+  default:
+    action: CONTINUE
+    reason: "No convergence condition met"
+    log_level: debug
+    
+  # ============================================
+  # LOGGING CONFIGURATION
+  # ============================================
+  logging:
+    log_all_checks: false  # Log only triggered checks
+    log_convergence_state: true  # Log state on each check
+    history_size: 100  # Keep last N convergence states
+    
+  # ============================================
+  # THRESHOLD REFERENCE
+  # Quick reference for tuning
+  # ============================================
+  threshold_reference:
+    volatility_stddev:
+      low: 0.5
+      medium: 2.0
+      high: 5.0
+      
+    plateau_delta:
+      strict: 0.1
+      normal: 0.5
+      relaxed: 1.0
+      
+    improvement_rate:
+      slow: 0.001
+      normal: 0.01
+      fast: 0.1

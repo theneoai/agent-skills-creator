@@ -1,0 +1,680 @@
+# Skill Optimization Strategies
+# 9-Step Loop with 9 Targeted Strategies
+# Each strategy targets specific dimensions for systematic improvement
+
+optimization_loop:
+  name: "9-Step Skill Optimization Loop"
+  version: "1.0.0"
+  description: "Systematic iterative improvement process for skill quality"
+  
+  # ============================================
+  # THE 9-STEP LOOP
+  # ============================================
+  steps:
+    - step: 1
+      name: "Evaluate Current State"
+      description: "Run full evaluation on current skill state"
+      action: "execute_evaluation"
+      inputs:
+        - skill_path
+        - evaluation_criteria
+      outputs:
+        - current_scores
+        - gap_analysis
+        - total_score
+      
+    - step: 2
+      name: "Identify Gaps"
+      description: "Analyze evaluation results to identify improvement opportunities"
+      action: "analyze_gaps"
+      inputs:
+        - current_scores
+        - target_scores
+      outputs:
+        - prioritized_gaps
+        - dimension_analysis
+      
+    - step: 3
+      name: "Select Strategy"
+      description: "Choose optimal strategy based on gap analysis"
+      action: "select_strategy"
+      inputs:
+        - prioritized_gaps
+        - available_strategies
+      outputs:
+        - selected_strategy
+        - expected_outcome
+      
+    - step: 4
+      name: "Execute Strategy"
+      description: "Apply selected strategy to skill"
+      action: "apply_strategy"
+      inputs:
+        - selected_strategy
+        - skill_content
+      outputs:
+        - modified_skill
+        - changes_made
+      
+    - step: 5
+      name: "Validate Changes"
+      description: "Verify changes maintain skill integrity"
+      action: "validate_changes"
+      inputs:
+        - modified_skill
+        - original_skill
+      outputs:
+        - validation_result
+        - integrity_check
+      
+    - step: 6
+      name: "Re-evaluate"
+      description: "Run evaluation on modified skill"
+      action: "execute_evaluation"
+      inputs:
+        - modified_skill
+      outputs:
+        - new_scores
+        - improvement_delta
+      
+    - step: 7
+      name: "Measure Impact"
+      description: "Calculate actual vs expected improvement"
+      action: "measure_impact"
+      inputs:
+        - old_scores
+        - new_scores
+        - expected_delta
+      outputs:
+        - actual_delta
+        - strategy_effectiveness
+      
+    - step: 8
+      name: "Convergence Check"
+      description: "Determine if optimization is complete"
+      action: "check_convergence"
+      inputs:
+        - iteration_count
+        - score_history
+        - convergence_criteria
+      outputs:
+        - converged
+        - continue_optimization
+      
+    - step: 9
+      name: "Iterate or Complete"
+      description: "Decide next action based on convergence"
+      action: "decide_next_action"
+      inputs:
+        - converged
+        - remaining_gaps
+      outputs:
+        - next_action
+        - loop_exit_condition
+
+# ============================================
+# CONVERGENCE CHECKS
+# ============================================
+convergence:
+  criteria:
+    - name: "Score Threshold"
+      description: "Total score meets or exceeds target"
+      condition: "total_score >= 700"
+      priority: 1
+      
+    - name: "Dimension Minimums"
+      description: "All dimensions meet minimum threshold"
+      condition: "all_dimensions >= 80"
+      priority: 2
+      
+    - name: "Improvement Plateau"
+      description: "No significant improvement in last 3 iterations"
+      condition: "delta_last_3_iterations < 20"
+      priority: 3
+      
+    - name: "Maximum Iterations"
+      description: "Prevent infinite loops"
+      condition: "iteration_count <= 10"
+      priority: 4
+      
+    - name: "Diminishing Returns"
+      description: "Strategy effectiveness below threshold"
+      condition: "strategy_effectiveness < 0.5"
+      priority: 5
+
+  actions_on_converge:
+    - action: "finalize_skill"
+      description: "Mark skill as optimized"
+    - action: "generate_report"
+      description: "Create optimization summary"
+    - action: "archive_version"
+      description: "Save optimized version"
+
+# ============================================
+# OPTIMIZATION STRATEGIES
+# ============================================
+strategies:
+  
+  # ============================================
+  # S1: Expand Trigger Keywords
+  # ============================================
+  - id: "S1"
+    name: "Expand Trigger Keywords"
+    description: "Broaden activation patterns to improve discoverability and relevance matching"
+    target_dimensions:
+      - "D5"  # Triggering - Coverage
+      - "D3"  # Workflow - Completeness
+    estimated_delta:
+      D5: 15-25
+      D3: 5-10
+      total: 20-35
+    priority: 1
+    
+    when:
+      - "D5 score < 85"
+      - "User reports skill not activating"
+      - "Trigger coverage gaps identified"
+      - "Missing common query patterns"
+    
+    steps:
+      - order: 1
+        action: "audit_current_triggers"
+        description: "Document all current trigger keywords and patterns"
+        
+      - order: 2
+        action: "analyze_query_logs"
+        description: "Review failed activations and near-misses"
+        
+      - order: 3
+        action: "identify_synonyms"
+        description: "Find semantic equivalents and related terms"
+        
+      - order: 4
+        action: "add_variant_patterns"
+        description: "Include different phrasings and formulations"
+        
+      - order: 5
+        action: "test_trigger_coverage"
+        description: "Verify new triggers activate correctly"
+        
+      - order: 6
+        action: "update_documentation"
+        description: "Document expanded trigger set"
+    
+    success_metrics:
+      - "Trigger coverage increased by >15%"
+      - "False positive rate < 5%"
+      - "User activation success > 90%"
+
+  # ============================================
+  # S2: Strengthen System Design
+  # ============================================
+  - id: "S2"
+    name: "Strengthen System Design"
+    description: "Enhance architectural clarity and component relationships"
+    target_dimensions:
+      - "D1"  # System Design
+    estimated_delta:
+      D1: 20-30
+      total: 20-30
+    priority: 2
+    
+    when:
+      - "D1 score < 80"
+      - "Architecture unclear or inconsistent"
+      - "Component boundaries blurred"
+      - "Missing design rationale"
+    
+    steps:
+      - order: 1
+        action: "map_current_architecture"
+        description: "Document existing system structure"
+        
+      - order: 2
+        action: "identify_weak_points"
+        description: "Find design inconsistencies and gaps"
+        
+      - order: 3
+        action: "define_interfaces"
+        description: "Clarify component contracts and APIs"
+        
+      - order: 4
+        action: "add_design_patterns"
+        description: "Apply appropriate architectural patterns"
+        
+      - order: 5
+        action: "document_rationale"
+        description: "Explain design decisions and trade-offs"
+        
+      - order: 6
+        action: "validate_consistency"
+        description: "Ensure design aligns with implementation"
+    
+    success_metrics:
+      - "Architecture diagram complete"
+      - "All interfaces documented"
+      - "Design rationale provided for key decisions"
+
+  # ============================================
+  # S3: Deepen Domain Knowledge
+  # ============================================
+  - id: "S3"
+    name: "Deepen Domain Knowledge"
+    description: "Expand contextual understanding and domain-specific insights"
+    target_dimensions:
+      - "D2"  # Contextual Understanding
+      - "D5"  # Triggering - Relevance
+    estimated_delta:
+      D2: 15-25
+      D5: 5-10
+      total: 20-35
+    priority: 3
+    
+    when:
+      - "D2 score < 85"
+      - "Skill lacks domain depth"
+      - "Context handling insufficient"
+      - "Missing edge cases"
+    
+    steps:
+      - order: 1
+        action: "research_domain"
+        description: "Gather authoritative domain knowledge"
+        
+      - order: 2
+        action: "identify_context_factors"
+        description: "List all relevant contextual variables"
+        
+      - order: 3
+        action: "add_domain_examples"
+        description: "Include realistic domain scenarios"
+        
+      - order: 4
+        action: "expand_edge_cases"
+        description: "Document boundary conditions"
+        
+      - order: 5
+        action: "add_best_practices"
+        description: "Include domain standards and conventions"
+        
+      - order: 6
+        action: "validate_accuracy"
+        description: "Verify domain knowledge correctness"
+    
+    success_metrics:
+      - "Domain coverage comprehensive"
+      - "Context variables documented"
+      - "Edge cases identified and handled"
+
+  # ============================================
+  # S4: Tighten Workflow Definition
+  # ============================================
+  - id: "S4"
+    name: "Tighten Workflow Definition"
+    description: "Refine step-by-step procedures for clarity and completeness"
+    target_dimensions:
+      - "D3"  # Workflow - Completeness
+    estimated_delta:
+      D3: 20-30
+      total: 20-30
+    priority: 4
+    
+    when:
+      - "D3 score < 80"
+      - "Workflow steps unclear"
+      - "Missing decision points"
+      - "Procedures incomplete"
+    
+    steps:
+      - order: 1
+        action: "audit_workflow"
+        description: "Review all current workflow definitions"
+        
+      - order: 2
+        action: "identify_gaps"
+        description: "Find missing steps or unclear transitions"
+        
+      - order: 3
+        action: "add_decision_trees"
+        description: "Include conditional logic and branches"
+        
+      - order: 4
+        action: "define_entry_exit"
+        description: "Clarify workflow start and end conditions"
+        
+      - order: 5
+        action: "add_verification_steps"
+        description: "Include validation checkpoints"
+        
+      - order: 6
+        action: "test_workflow"
+        description: "Walk through complete workflow"
+    
+    success_metrics:
+      - "All workflows have clear entry/exit"
+      - "Decision points documented"
+      - "Verification steps included"
+
+  # ============================================
+  # S5: Harden Error Handling
+  # ============================================
+  - id: "S5"
+    name: "Harden Error Handling"
+    description: "Strengthen resilience and failure recovery mechanisms"
+    target_dimensions:
+      - "D4"  # Error Handling
+    estimated_delta:
+      D4: 20-30
+      total: 20-30
+    priority: 5
+    
+    when:
+      - "D4 score < 80"
+      - "Error scenarios undefined"
+      - "Recovery procedures missing"
+      - "Failure modes not documented"
+    
+    steps:
+      - order: 1
+        action: "identify_error_modes"
+        description: "List all possible failure scenarios"
+        
+      - order: 2
+        action: "classify_errors"
+        description: "Categorize by severity and recoverability"
+        
+      - order: 3
+        action: "define_responses"
+        description: "Specify handling for each error type"
+        
+      - order: 4
+        action: "add_recovery_procedures"
+        description: "Document recovery and rollback steps"
+        
+      - order: 5
+        action: "add_validation_checks"
+        description: "Include preventive validations"
+        
+      - order: 6
+        action: "test_error_scenarios"
+        description: "Verify error handling works correctly"
+    
+    success_metrics:
+      - "All error modes documented"
+      - "Recovery procedures defined"
+      - "Error handling tested"
+
+  # ============================================
+  # S6: Complete Metadata
+  # ============================================
+  - id: "S6"
+    name: "Complete Metadata"
+    description: "Enhance descriptive information and categorization"
+    target_dimensions:
+      - "D6"  # Metadata
+    estimated_delta:
+      D6: 25-35
+      total: 25-35
+    priority: 6
+    
+    when:
+      - "D6 score < 85"
+      - "Metadata incomplete"
+      - "Missing categorization"
+      - "Documentation outdated"
+    
+    steps:
+      - order: 1
+        action: "audit_metadata"
+        description: "Review all current metadata fields"
+        
+      - order: 2
+        action: "add_descriptions"
+        description: "Write clear, comprehensive descriptions"
+        
+      - order: 3
+        action: "define_tags"
+        description: "Add relevant categorization tags"
+        
+      - order: 4
+        action: "add_version_info"
+        description: "Include version and changelog"
+        
+      - order: 5
+        action: "add_examples"
+        description: "Include usage examples"
+        
+      - order: 6
+        action: "validate_completeness"
+        description: "Ensure all required fields populated"
+    
+    success_metrics:
+      - "All metadata fields complete"
+      - "Tags relevant and comprehensive"
+      - "Examples provided"
+
+  # ============================================
+  # S7: Fix Long-Context Integrity
+  # ============================================
+  - id: "S7"
+    name: "Fix Long-Context Integrity"
+    description: "Ensure consistent behavior across extended interactions"
+    target_dimensions:
+      - "D7"  # Long-Context Integrity
+    estimated_delta:
+      D7: 20-30
+      total: 20-30
+    priority: 7
+    
+    when:
+      - "D7 score < 80"
+      - "Context loss in long sessions"
+      - "Inconsistent behavior over time"
+      - "State management issues"
+    
+    steps:
+      - order: 1
+        action: "analyze_context_usage"
+        description: "Review how context is maintained"
+        
+      - order: 2
+        action: "identify_loss_points"
+        description: "Find where context degrades"
+        
+      - order: 3
+        action: "add_context_summaries"
+        description: "Include periodic context refresh"
+        
+      - order: 4
+        action: "define_state_management"
+        description: "Clarify state persistence rules"
+        
+      - order: 5
+        action: "add_continuity_checks"
+        description: "Include consistency validations"
+        
+      - order: 6
+        action: "test_long_sessions"
+        description: "Verify behavior over extended use"
+    
+    success_metrics:
+      - "Context maintained across 10+ turns"
+      - "No state inconsistencies"
+      - "Behavior consistent over time"
+
+  # ============================================
+  # S8: Full Structural Rebuild
+  # ============================================
+  - id: "S8"
+    name: "Full Structural Rebuild"
+    description: "Complete reconstruction when fundamental issues exist"
+    target_dimensions:
+      - "D1"  # System Design
+      - "D2"  # Contextual Understanding
+      - "D3"  # Workflow
+      - "D4"  # Error Handling
+      - "D5"  # Triggering
+      - "D6"  # Metadata
+      - "D7"  # Long-Context Integrity
+    estimated_delta:
+      D1: 30-40
+      D2: 25-35
+      D3: 25-35
+      D4: 25-35
+      D5: 20-30
+      D6: 25-35
+      D7: 25-35
+      total: 175-245
+    priority: 8
+    
+    when:
+      - "total_score < 560"
+      - "Multiple critical gaps identified"
+      - "Fundamental design flaws"
+      - "Incremental improvement insufficient"
+    
+    steps:
+      - order: 1
+        action: "preserve_core_value"
+        description: "Document essential skill purpose"
+        
+      - order: 2
+        action: "analyze_failures"
+        description: "Understand why current structure fails"
+        
+      - order: 3
+        action: "design_new_structure"
+        description: "Create improved architecture"
+        
+      - order: 4
+        action: "rebuild_components"
+        description: "Reconstruct each dimension systematically"
+        
+      - order: 5
+        action: "integrate_cross_cutting"
+        description: "Ensure dimensions work together"
+        
+      - order: 6
+        action: "comprehensive_testing"
+        description: "Validate entire skill thoroughly"
+        
+      - order: 7
+        action: "migration_guide"
+        description: "Document changes from old version"
+    
+    success_metrics:
+      - "Total score > 600 after rebuild"
+      - "No dimension below 70"
+      - "All critical gaps resolved"
+      - "Backward compatibility maintained or documented"
+
+  # ============================================
+  # S9: Targeted Metric Boost
+  # ============================================
+  - id: "S9"
+    name: "Targeted Metric Boost"
+    description: "Focused improvement on specific underperforming metrics"
+    target_dimensions:
+      - variable: "specific_metric"
+        description: "Any single dimension needing improvement"
+    estimated_delta:
+      variable: 15-25
+      total: 15-25
+    priority: 9
+    
+    when:
+      - "Single dimension significantly below others"
+      - "Specific metric blocking convergence"
+      - "Quick win opportunity identified"
+      - "Other dimensions already optimized"
+    
+    steps:
+      - order: 1
+        action: "isolate_metric"
+        description: "Focus analysis on target dimension"
+        
+      - order: 2
+        action: "root_cause_analysis"
+        description: "Identify why metric is low"
+        
+      - order: 3
+        action: "apply_targeted_fixes"
+        description: "Implement specific improvements"
+        
+      - order: 4
+        action: "measure_improvement"
+        description: "Verify metric increased"
+        
+      - order: 5
+        action: "check_side_effects"
+        description: "Ensure other metrics not degraded"
+    
+    success_metrics:
+      - "Target metric improved by >15 points"
+      - "No other metric degraded by >5 points"
+      - "Quick implementation (< 1 iteration)"
+
+# ============================================
+# STRATEGY SELECTION LOGIC
+# ============================================
+strategy_selection:
+  rules:
+    - condition: "total_score < 560"
+      action: "recommend S8"
+      reason: "Fundamental rebuild needed"
+      
+    - condition: "D1 < 75"
+      action: "recommend S2"
+      reason: "System design is foundation"
+      
+    - condition: "D5 < 80"
+      action: "recommend S1"
+      reason: "Trigger coverage critical for activation"
+      
+    - condition: "D4 < 75"
+      action: "recommend S5"
+      reason: "Error handling essential for reliability"
+      
+    - condition: "D3 < 75"
+      action: "recommend S4"
+      reason: "Workflow clarity affects usability"
+      
+    - condition: "D2 < 80"
+      action: "recommend S3"
+      reason: "Domain knowledge affects quality"
+      
+    - condition: "D6 < 80"
+      action: "recommend S6"
+      reason: "Metadata affects discoverability"
+      
+    - condition: "D7 < 75"
+      action: "recommend S7"
+      reason: "Context integrity affects long sessions"
+      
+    - condition: "single_dimension_lagging"
+      action: "recommend S9"
+      reason: "Targeted fix for specific gap"
+
+# ============================================
+# OPTIMIZATION METADATA
+# ============================================
+metadata:
+  version: "1.0.0"
+  created: "2026-03-31"
+  author: "Skill Optimization System"
+  
+  dimensions:
+    D1: "System Design"
+    D2: "Contextual Understanding"
+    D3: "Workflow - Completeness"
+    D4: "Error Handling"
+    D5: "Triggering - Coverage"
+    D6: "Metadata"
+    D7: "Long-Context Integrity"
+  
+  scoring:
+    max_per_dimension: 100
+    max_total: 700
+    target_total: 700
+    minimum_viable: 560
+    excellent: 650

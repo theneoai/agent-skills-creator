@@ -1,0 +1,242 @@
+optimization_dimensions:
+  version: "1.0.0"
+  description: "Skill optimization dimensions for systematic improvement and evaluation"
+  
+  dimensions:
+    - id: "system_design"
+      name: "System Design"
+      weight: 0.20
+      priority: 1
+      description: "Core identity, architectural patterns, and structural integrity of the skill"
+      indicators:
+        - "Clear identity statement with purpose and scope"
+        - "Consistent architectural patterns throughout"
+        - "Appropriate abstraction levels"
+        - "Modular, maintainable structure"
+        - "Clear separation of concerns"
+        - "Scalable design for future enhancements"
+      improvement_strategies:
+        - "Define explicit identity statement in header"
+        - "Establish consistent naming conventions"
+        - "Apply design patterns appropriate to the domain"
+        - "Document architectural decisions"
+        - "Review for single-responsibility principle compliance"
+        - "Create component interaction diagrams"
+      scoring_criteria:
+        excellent: "Identity crystal clear, architecture exemplary, patterns consistently applied"
+        good: "Identity clear, architecture sound, minor pattern inconsistencies"
+        fair: "Identity present but vague, architecture functional but not elegant"
+        poor: "Unclear identity, architectural issues, inconsistent patterns"
+
+    - id: "domain_knowledge"
+      name: "Domain Knowledge"
+      weight: 0.20
+      priority: 1
+      description: "Accuracy, depth, and specificity of domain expertise embedded in the skill"
+      indicators:
+        - "Domain terminology used correctly"
+        - "Concepts explained with appropriate depth"
+        - "Edge cases and exceptions covered"
+        - "Current best practices reflected"
+        - "Context-aware recommendations"
+        - "Domain-specific constraints honored"
+      improvement_strategies:
+        - "Consult domain experts for validation"
+        - "Reference authoritative sources"
+        - "Include domain-specific glossaries"
+        - "Update content to reflect current practices"
+        - "Add contextual examples from the domain"
+        - "Validate against real-world scenarios"
+      scoring_criteria:
+        excellent: "Expert-level accuracy, comprehensive coverage, nuanced understanding"
+        good: "Accurate information, good coverage, minor gaps"
+        fair: "Mostly accurate, some outdated or incomplete information"
+        poor: "Significant inaccuracies or missing critical domain knowledge"
+
+    - id: "workflow_definition"
+      name: "Workflow Definition"
+      weight: 0.20
+      priority: 1
+      description: "Clarity of phase sequences, decision points, and exit criteria"
+      indicators:
+        - "Clear phase sequence defined"
+        - "Entry and exit criteria explicit"
+        - "Decision points well-marked"
+        - "Dependencies between steps clear"
+        - "Progression logic unambiguous"
+        - "Alternative paths documented"
+      improvement_strategies:
+        - "Map workflow as state machine or flowchart"
+        - "Define explicit entry/exit criteria for each phase"
+        - "Add decision trees for branching logic"
+        - "Include checkpoint validation steps"
+        - "Document rollback procedures"
+        - "Create visual workflow diagrams"
+      scoring_criteria:
+        excellent: "Workflow crystal clear, all paths documented, no ambiguity"
+        good: "Clear workflow, most paths covered, minor ambiguities"
+        fair: "Workflow present but some paths unclear or missing"
+        poor: "Confusing workflow, critical paths undefined"
+
+    - id: "error_handling"
+      name: "Error Handling"
+      weight: 0.15
+      priority: 2
+      description: "Recovery paths, escalation procedures, and graceful degradation"
+      indicators:
+        - "Common failure modes identified"
+        - "Recovery strategies documented"
+        - "Escalation paths clear"
+        - "Error messages informative"
+        - "Fallback options available"
+        - "Failure impact minimized"
+      improvement_strategies:
+        - "Conduct failure mode analysis"
+        - "Document recovery procedures for each error type"
+        - "Define escalation thresholds and contacts"
+        - "Create error message templates"
+        - "Implement graceful degradation strategies"
+        - "Add validation checkpoints"
+      scoring_criteria:
+        excellent: "Comprehensive error coverage, clear recovery, robust escalation"
+        good: "Most errors covered, recovery paths clear, escalation defined"
+        fair: "Some error handling, basic recovery, unclear escalation"
+        poor: "Minimal error handling, no recovery or escalation defined"
+
+    - id: "examples"
+      name: "Examples"
+      weight: 0.15
+      priority: 2
+      description: "Quantity, quality, and bilingual coverage of illustrative examples"
+      indicators:
+        - "Sufficient number of examples"
+        - "Examples cover typical use cases"
+        - "Examples include edge cases"
+        - "Code examples are runnable"
+        - "Examples progress from simple to complex"
+        - "Bilingual examples where applicable (EN/ZH)"
+      improvement_strategies:
+        - "Add examples for each major feature"
+        - "Include before/after comparisons"
+        - "Create progressive example series"
+        - "Ensure all code examples are tested"
+        - "Add real-world scenario examples"
+        - "Provide bilingual versions of key examples"
+      scoring_criteria:
+        excellent: "Abundant high-quality examples, full bilingual coverage, comprehensive scenarios"
+        good: "Good example coverage, mostly bilingual, clear and tested"
+        fair: "Some examples, limited bilingual, basic coverage"
+        poor: "Few or no examples, no bilingual support"
+
+    - id: "metadata"
+      name: "Metadata"
+      weight: 0.10
+      priority: 3
+      description: "Completeness and accuracy of YAML frontmatter and structured metadata"
+      indicators:
+        - "All required fields present"
+        - "Version information current"
+        - "Dependencies documented"
+        - "Tags and categories appropriate"
+        - "Author/maintainer info present"
+        - "Last updated timestamp accurate"
+      improvement_strategies:
+        - "Create metadata template checklist"
+        - "Automate version bumping"
+        - "Validate YAML syntax"
+        - "Maintain dependency inventory"
+        - "Use consistent tagging taxonomy"
+        - "Set up automated metadata validation"
+      scoring_criteria:
+        excellent: "All metadata complete, accurate, and well-organized"
+        good: "Most metadata present, minor omissions"
+        fair: "Basic metadata present, some gaps"
+        poor: "Missing critical metadata fields"
+
+    - id: "long_context"
+      name: "Long-Context"
+      weight: 0.10
+      priority: 3
+      description: "Cross-reference management, chunking strategies, and context window optimization"
+      indicators:
+        - "Cross-references are accurate"
+        - "Content appropriately chunked"
+        - "Context loading is efficient"
+        - "References are bidirectional"
+        - "Context window usage optimized"
+        - "Related content easily discoverable"
+      improvement_strategies:
+        - "Implement smart chunking boundaries"
+        - "Create cross-reference index"
+        - "Optimize content for context windows"
+        - "Add navigation aids between related sections"
+        - "Use progressive disclosure for large content"
+        - "Implement content summarization for long contexts"
+      scoring_criteria:
+        excellent: "Optimal chunking, seamless cross-references, efficient context usage"
+        good: "Good chunking, accurate references, reasonable context efficiency"
+        fair: "Basic chunking, some references, context could be optimized"
+        poor: "Poor chunking, broken or missing references, inefficient context"
+
+  scoring:
+    formula: |
+      Total Score = Σ(dimension_score × dimension_weight)
+      
+      Where:
+      - dimension_score: 0-100 for each dimension
+      - dimension_weight: As defined above (sums to 1.0)
+      
+      Normalized Score = (Total Score / 100) × 100
+    
+    scale:
+      excellent: "90-100"
+      good: "75-89"
+      fair: "60-74"
+      poor: "0-59"
+    
+    minimum_viable: 60
+
+  target_selection:
+    strategy: "weighted_priority"
+    description: |
+      Select optimization targets based on weighted impact and current performance.
+      Priority 1 dimensions (System Design, Domain Knowledge, Workflow Definition) 
+      contribute 60% of total weight and should be optimized first.
+    
+    selection_logic:
+      - "Calculate gap = target_score - current_score for each dimension"
+      - "Calculate impact = gap × weight"
+      - "Sort by impact descending"
+      - "Prioritize Priority 1 dimensions when impact is similar"
+      - "Consider dependencies between dimensions"
+    
+    optimization_order:
+      primary: ["system_design", "domain_knowledge", "workflow_definition"]
+      secondary: ["error_handling", "examples"]
+      tertiary: ["metadata", "long_context"]
+    
+    thresholds:
+      critical: "Any Priority 1 dimension below 70"
+      warning: "Any dimension below 60"
+      attention: "Score variance > 20 points between dimensions"
+
+  review_process:
+    frequency: "per-release"
+    triggers:
+      - "Major feature addition"
+      - "Architecture change"
+      - "Quarterly review"
+      - "User feedback indicates issues"
+    
+    steps:
+      - "Score each dimension independently"
+      - "Identify lowest-scoring dimensions"
+      - "Apply target selection logic"
+      - "Create improvement plan"
+      - "Re-score after improvements"
+      - "Document changes and rationale"
+
+  version_history:
+    - version: "1.0.0"
+      date: "2026-03-31"
+      changes: "Initial definition of 7 optimization dimensions"
