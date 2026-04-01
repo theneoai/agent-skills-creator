@@ -31,7 +31,7 @@ Checks:
   Security Baseline section .......................... 50/50  ✓
   No {{PLACEHOLDER}} residue ......................... 50/50  ✓  (API_BASE_URL replaced)
 
-LEAN Decision: GOLD PASS (≥350) → proceed to full EVALUATE
+LEAN Decision: LEAN PASS (≥350) → proceed to full EVALUATE
 ```
 
 ---
@@ -120,7 +120,7 @@ LEAN Decision: GOLD PASS (≥350) → proceed to full EVALUATE
 
 | 检查项 | 得分 | 满分 | 说明 |
 |--------|------|------|------|
-| Variance Gate | 30 | 40 | \|Phase2_avg − Phase3_avg\| = \|275/300 − 370/400\| = \|0.917−0.925\| = 0.008 → 远低于 GOLD 限值 15 ✓ |
+| Variance Gate | 30 | 40 | \|(275/3) − (370/4)\| = \|91.67 − 92.5\| = 0.83 → 远低于 GOLD 限值 15 ✓ |
 | Security Scan | 60 | 60 | P0 CLEAR, P1 CLEAR |
 | F1 Gate | 40 | 40 | 0.92 ≥ 0.90 ✓ |
 | MRR Gate | 30 | 30 | 0.88 ≥ 0.85 ✓ |
@@ -129,10 +129,10 @@ LEAN Decision: GOLD PASS (≥350) → proceed to full EVALUATE
 
 **Variance 计算**:
 ```
-variance = | Phase2_avg - Phase3_avg |
-         = | 275/300 - 370/400 |
-         = | 0.9167 - 0.9250 |
-         = 0.008 → GOLD threshold < 15 ✅
+variance = | (phase2_score / 3) - (phase3_score / 4) |
+         = | (275 / 3) - (370 / 4) |
+         = | 91.67 - 92.5 |
+         = 0.83 → 远低于 GOLD threshold < 15 ✅
 ```
 
 ---

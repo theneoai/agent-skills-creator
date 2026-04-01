@@ -101,7 +101,7 @@ LEAN Decision: GOLD PASS (≥450) → proceed to full EVALUATE
 | Criterion | Score | Max | Notes |
 |-----------|-------|-----|-------|
 | LEAN re-check post-evaluation | 78/80 | 80 | LEAN 450/500 (GOLD PASS); minor trigger gap for LEAN/OPTIMIZE modes |
-| Variance check | 55/60 | 60 | \|Phase2_avg − Phase3_avg\| = \|273/300 − 385/400\| = \|0.910−0.963\| = 0.053 → within SILVER limit (<0.20) |
+| Variance check | 55/60 | 60 | \|(273/3) − (385/4)\| = \|91.0 − 96.25\| = 5.25 → within GOLD limit (< 15) ✓ |
 | UTE injection verified | 60/60 | 60 | §UTE section present; all 11 YAML fields filled |
 
 **Phase 4 Total: 193/200**
