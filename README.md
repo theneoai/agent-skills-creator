@@ -40,21 +40,26 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 
 ### Installation
 
-#### Option 1 — Agent Install (Recommended)
+#### Option 1 — Agent Install from Latest Release (Recommended)
 
-Tell your AI agent in any supported platform:
+Paste one command into your AI agent to install the latest stable release:
+
+| Platform | Agent command |
+|----------|--------------|
+| All platforms | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer.md and install` |
+| Claude only | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-claude.md and install to claude` |
+| OpenCode only | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-opencode.md and install to opencode` |
+| OpenClaw only | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-openclaw.md and install to openclaw` |
+| Cursor only | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-cursor.md and install to cursor` |
+| Gemini only | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-gemini.md and install to gemini` |
+
+Each [GitHub Release](https://github.com/theneoai/skill-writer/releases) includes per-platform assets and ready-to-paste agent commands for that version.
+
+To install from the development branch instead of a release:
 
 ```
 read https://raw.githubusercontent.com/theneoai/skill-writer/main/skill-framework.md and install
 ```
-
-The agent will fetch the file, confirm target platforms, and write it to each platform's skills directory.  Install to a single platform:
-
-```
-read https://raw.githubusercontent.com/theneoai/skill-writer/main/skill-framework.md and install to claude
-```
-
-Supported target keywords: `claude`, `opencode`, `openclaw`, `cursor`, `gemini`, `all` (default).
 
 #### Option 2 — Shell Script
 
@@ -71,8 +76,8 @@ cd skill-writer
 ./install.sh --platform cursor
 ./install.sh --platform gemini
 
-# Install from a URL (downloads skill-framework.md first)
-./install.sh --url https://raw.githubusercontent.com/theneoai/skill-writer/main/skill-framework.md
+# Install directly from a release asset
+./install.sh --url https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer.md
 ```
 
 #### Option 3 — Manual Copy

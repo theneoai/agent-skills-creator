@@ -16,17 +16,21 @@ This guide provides detailed examples and patterns for using Skill Writer effect
 
 ### Installation
 
-The fastest way to install skill-writer is to tell your AI agent:
+The fastest way to install skill-writer is to paste one of these commands into your AI agent.
 
+**Install latest release — all platforms:**
 ```
-read https://raw.githubusercontent.com/theneoai/skill-writer/main/skill-framework.md and install
+read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer.md and install
 ```
 
-The agent will fetch the file, confirm the target platforms, and write it to each platform's skills directory.  To install to a single platform, append `to <platform>`:
+**Install latest release — single platform:**
+```
+read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-claude.md and install to claude
+```
 
-```
-read https://raw.githubusercontent.com/theneoai/skill-writer/main/skill-framework.md and install to claude
-```
+Replace `claude` with `opencode`, `openclaw`, `cursor`, or `gemini` as needed.
+
+Every [GitHub Release](https://github.com/theneoai/skill-writer/releases) publishes per-platform assets and includes ready-to-paste agent commands for that specific version.
 
 See [INSTALL Mode Examples](#install-mode-examples) for more patterns, or the [README](README.md) for shell-script and manual alternatives.
 
@@ -56,11 +60,11 @@ The AI will:
 
 ## INSTALL Mode Examples
 
-### Example 1: Install to All Platforms from URL
+### Example 1: Install to All Platforms from Release URL
 
 **User Request:**
 ```
-"read https://raw.githubusercontent.com/theneoai/skill-writer/main/skill-framework.md and install"
+"read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer.md and install"
 ```
 
 **Agent Process:**
@@ -98,7 +102,7 @@ Installed to 5 platforms. Restart each to activate skill-writer.
 
 **User Request:**
 ```
-"read https://raw.githubusercontent.com/theneoai/skill-writer/main/skill-framework.md and install to claude"
+"read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-claude.md and install to claude"
 ```
 
 **Sample Output:**
@@ -423,9 +427,14 @@ sections:
 
 ### Pattern 3: Multi-Platform Deployment
 
-**Agent-driven (no shell required):**
+**Agent-driven — latest release (recommended):**
 ```
-"read https://raw.githubusercontent.com/theneoai/skill-writer/main/skill-framework.md and install"
+read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer.md and install
+```
+
+**Agent-driven — specific platform:**
+```
+read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-claude.md and install to claude
 ```
 
 **Shell script:**
@@ -437,8 +446,8 @@ sections:
 ./install.sh --platform claude
 ./install.sh --platform opencode
 
-# Install the latest version directly from GitHub
-./install.sh --url https://raw.githubusercontent.com/theneoai/skill-writer/main/skill-framework.md
+# Install directly from the latest release asset
+./install.sh --url https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer.md
 ```
 
 **Builder (generates platform-adapted variants):**

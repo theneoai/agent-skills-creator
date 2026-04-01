@@ -12,29 +12,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
         node-version: '18'
         cache: 'npm'
         cache-dependency-path: builder/package.json
-    
+
     - name: Install dependencies
       run: |
         cd builder
         npm ci
-    
+
     - name: Validate core engine
       run: |
         cd builder
         node bin/skill-writer-builder.js validate
-    
+
     - name: Check code style
       run: |
         cd builder
         npm run lint || true
-    
+
     - name: Run tests
       run: |
         cd builder
@@ -48,25 +48,32 @@ jobs:
         platform: [opencode, openclaw, claude, cursor, openai, gemini]
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
         node-version: '18'
         cache: 'npm'
         cache-dependency-path: builder/package.json
-    
+
     - name: Install dependencies
       run: |
         cd builder
         npm ci
-    
+
     - name: Build for ${{ matrix.platform }}
       run: |
         cd builder
-        node bin/skill-writer-builder.js build --platform ${{ matrix.platform }} --output ../platforms
-    
-    - name: Upload artifact
+        EXTRA_FLAGS=""
+        if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+          EXTRA_FLAGS="--release"
+        fi
+        node bin/skill-writer-builder.js build \
+          --platform ${{ matrix.platform }} \
+          --output ../platforms \
+          $EXTRA_FLAGS
+
+    - name: Upload build artifact
       uses: actions/upload-artifact@v3
       with:
         name: skill-writer-${{ matrix.platform }}
@@ -76,18 +83,91 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
     steps:
     - uses: actions/checkout@v3
-    
-    - name: Download all artifacts
+
+    - name: Download all build artifacts
       uses: actions/download-artifact@v3
       with:
-        path: platforms
-    
-    - name: Create Release
+        path: release-assets
+
+    - name: Prepare release assets with clean names
+      run: |
+        mkdir -p dist
+        for platform in opencode openclaw claude cursor gemini; do
+          src=$(find release-assets/skill-writer-${platform} -name "*.md" 2>/dev/null | head -1)
+          if [[ -n "$src" ]]; then
+            cp "$src" "dist/skill-writer-${platform}.md"
+            echo "  ✓ dist/skill-writer-${platform}.md"
+          fi
+        done
+        # OpenAI produces JSON
+        src=$(find release-assets/skill-writer-openai -name "*.json" 2>/dev/null | head -1)
+        if [[ -n "$src" ]]; then
+          cp "$src" "dist/skill-writer-openai.json"
+          echo "  ✓ dist/skill-writer-openai.json"
+        fi
+        # Universal asset: skill-framework.md → skill-writer.md
+        cp skill-framework.md dist/skill-writer.md
+        echo "  ✓ dist/skill-writer.md (universal)"
+
+    - name: Generate release body with agent install instructions
+      run: |
+        VERSION="${{ github.ref_name }}"
+        BASE="https://github.com/${{ github.repository }}/releases/download/${VERSION}"
+        cat > release-body.md << EOF
+        ## Install skill-writer ${VERSION}
+
+        Paste one of the commands below into your AI agent to install skill-writer.
+
+        ### Agent Install — per platform
+
+        | Platform | Command (paste into your agent) |
+        |----------|---------------------------------|
+        | **Claude** | \`read ${BASE}/skill-writer-claude.md and install to claude\` |
+        | **OpenCode** | \`read ${BASE}/skill-writer-opencode.md and install to opencode\` |
+        | **OpenClaw** | \`read ${BASE}/skill-writer-openclaw.md and install to openclaw\` |
+        | **Cursor** | \`read ${BASE}/skill-writer-cursor.md and install to cursor\` |
+        | **Gemini** | \`read ${BASE}/skill-writer-gemini.md and install to gemini\` |
+        | **All platforms** | \`read ${BASE}/skill-writer.md and install\` |
+
+        ### Agent Install — latest release (always up to date)
+
+        \`\`\`
+        read https://github.com/${{ github.repository }}/releases/latest/download/skill-writer.md and install
+        \`\`\`
+
+        ### Shell script
+
+        \`\`\`bash
+        # Install from this release (all platforms)
+        curl -fsSL ${BASE}/skill-writer.md -o /tmp/skill-writer.md
+        ./install.sh --url ${BASE}/skill-writer.md
+
+        # Single platform
+        ./install.sh --url ${BASE}/skill-writer-claude.md --platform claude
+        \`\`\`
+
+        ### Release assets
+
+        | File | Platform |
+        |------|----------|
+        | \`skill-writer.md\` | Universal (skill-framework.md) |
+        | \`skill-writer-claude.md\` | Claude |
+        | \`skill-writer-opencode.md\` | OpenCode |
+        | \`skill-writer-openclaw.md\` | OpenClaw |
+        | \`skill-writer-cursor.md\` | Cursor |
+        | \`skill-writer-gemini.md\` | Gemini |
+        | \`skill-writer-openai.json\` | OpenAI |
+        EOF
+
+    - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
-        files: platforms/**/*
+        files: dist/*
+        body_path: release-body.md
         generate_release_notes: true
         prerelease: ${{ contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}
       env:
@@ -99,19 +179,18 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
         node-version: '18'
-    
+
     - name: Build documentation
       run: |
         mkdir -p docs
         cp README.md docs/index.md
         cp USAGE.md docs/usage.md
-        # Add more docs as needed
-    
+
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
