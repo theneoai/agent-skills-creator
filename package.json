@@ -1,6 +1,6 @@
 {
   "name": "skill-writer",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Cross-platform meta-skill for creating, evaluating, and optimizing AI assistant skills",
   "main": "builder/src/index.js",
   "scripts": {
@@ -17,7 +17,7 @@
     "lint": "cd builder && npm run lint",
     "install:opencode": "cp platforms/skill-writer-opencode-dev.md ~/.config/opencode/skills/skill-writer.md",
     "install:openclaw": "cp platforms/skill-writer-openclaw-dev.md ~/.openclaw/skills/skill-writer.md",
-    "install:claude": "cp skill-framework.md ~/.claude/skills/skill-writer.md",
+    "install:claude": "bash install-claude.sh",
     "install:cursor": "cp platforms/skill-writer-cursor-dev.md ~/.cursor/skills/skill-writer.md",
     "install:gemini": "cp platforms/skill-writer-gemini-dev.md ~/.gemini/skills/skill-writer.md"
   },

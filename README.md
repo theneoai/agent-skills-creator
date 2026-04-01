@@ -2,7 +2,7 @@
 
 A cross-platform meta-skill for creating, evaluating, and optimizing AI assistant skills through natural language interaction.
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/theneoai/skill-writer)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/theneoai/skill-writer)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platforms](https://img.shields.io/badge/platforms-6-orange.svg)](#supported-platforms)
 [![GitHub Actions](https://github.com/theneoai/skill-writer/workflows/Build%20and%20Release/badge.svg)](https://github.com/theneoai/skill-writer/actions)

@@ -4,6 +4,8 @@ version: 1.0.0
 description: Use when performing code reviews, security audits, or quality assessments on codebases. Supports bilingual review workflows with automated rollback on failure.
 license: MIT
 author: Skill Framework Team
+created: "2026-03-31"
+updated: "2026-04-01"
 tags: [workflow-automation, security, code-quality, bilingual]
 interface:
   mode:

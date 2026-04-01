@@ -10,7 +10,7 @@ license: MIT
 author:
   name: theneoai
 created: "2026-03-31"
-updated: "2026-03-31"
+updated: "2026-04-01"
 type: meta-framework
 
 tags:
@@ -51,6 +51,23 @@ extends:
     snippet: claude/templates/use-to-evolve-snippet.md
     inject_on: [create, optimize]
 ---
+
+<!-- PATH CONVENTION
+  Throughout this document, `claude/` is a path prefix relative to the Claude
+  configuration root (~/.claude/). Companion files are installed there by
+  `npm run install:claude` (which runs install-claude.sh):
+
+    claude/refs/security-patterns.md  →  ~/.claude/refs/security-patterns.md
+    claude/refs/use-to-evolve.md      →  ~/.claude/refs/use-to-evolve.md
+    claude/refs/convergence.md        →  ~/.claude/refs/convergence.md
+    claude/refs/deliberation.md       →  ~/.claude/refs/deliberation.md
+    claude/refs/evolution.md          →  ~/.claude/refs/evolution.md
+    claude/templates/                 →  ~/.claude/templates/
+    claude/eval/                      →  ~/.claude/eval/
+    claude/optimize/                  →  ~/.claude/optimize/
+
+  Source files in this repository:  refs/  templates/  eval/  optimize/
+-->
 
 ## §1  Identity
 
