@@ -1,6 +1,6 @@
 {
   "name": "skill-writer-builder",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Build tool for skill-writer - embeds core engine into platform-specific skills",
   "main": "src/index.js",
   "bin": {
@@ -10,7 +10,7 @@
   "scripts": {
     "test": "jest",
     "lint": "eslint src/",
-    "dev": "node bin/skill-writer-builder.js --watch"
+    "dev": "node bin/skill-writer-builder.js dev"
   },
   "keywords": [
     "skill",

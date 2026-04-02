@@ -1,6 +1,6 @@
-# Contributing to Skill Framework
+# Contributing to Skill Writer
 
-Thank you for your interest in contributing to Skill Framework! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to Skill Writer! This document provides guidelines and instructions for contributing.
 
 ## Ways to Contribute
 
@@ -175,4 +175,4 @@ Contributors will be recognized in our:
 - Release notes
 - Hall of Fame page
 
-Thank you for contributing to Skill Framework!
+Thank you for contributing to Skill Writer!

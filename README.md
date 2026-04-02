@@ -5,8 +5,8 @@ A cross-platform meta-skill for creating, evaluating, and optimizing AI assistan
 [![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/theneoai/skill-writer)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platforms](https://img.shields.io/badge/platforms-6-orange.svg)](#supported-platforms)
-[![GitHub Actions](https://github.com/theneoai/skill-writer/workflows/Build%20and%20Release/badge.svg)](https://github.com/theneoai/skill-writer/actions)
-[![Security Scan](https://github.com/theneoai/skill-writer/workflows/Security%20Scan/badge.svg)](https://github.com/theneoai/skill-writer/actions)
+[![GitHub Actions](https://github.com/theneoai/skill-writer/workflows/Skill%20Writer%20-%20Build%20and%20Release/badge.svg)](https://github.com/theneoai/skill-writer/actions)
+[![Security Scan](https://github.com/theneoai/skill-writer/workflows/Skill%20Writer%20-%20Security%20Scan/badge.svg)](https://github.com/theneoai/skill-writer/actions)
 
 ## Overview
 
@@ -14,9 +14,10 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 
 ### Key Features
 
+- **Agent Install**: One-line install via "read [URL] and install" — works in any supported platform
 - **Zero CLI Interface**: Natural language interaction - no commands to memorize
 - **Cross-Platform**: Works on 6 major AI platforms
-- **Four Powerful Modes**: CREATE, LEAN, EVALUATE, and OPTIMIZE
+- **Five Powerful Modes**: CREATE, LEAN, EVALUATE, OPTIMIZE, and INSTALL
 - **Template-Based**: 4 built-in templates for common skill patterns
 - **Quality Assurance**: 1000-point scoring system with certification tiers
 - **Security Built-In**: CWE-based security pattern detection
@@ -39,39 +40,68 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 
 ### Installation
 
-#### OpenCode
+#### Option 1 — Agent Install from Latest Release (Recommended)
+
+Paste one command into your AI agent to install the latest stable release:
+
+| Platform | Agent command |
+|----------|--------------|
+| All platforms | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer.md and install` |
+| Claude only | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-claude.md and install to claude` |
+| OpenCode only | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-opencode.md and install to opencode` |
+| OpenClaw only | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-openclaw.md and install to openclaw` |
+| Cursor only | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-cursor.md and install to cursor` |
+| Gemini only | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-gemini.md and install to gemini` |
+
+Each [GitHub Release](https://github.com/theneoai/skill-writer/releases) includes per-platform assets and ready-to-paste agent commands for that version.
+
+To install from the development branch (always latest, includes companion files for Claude):
+
+```
+read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install
+read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install to claude
+```
+
+#### Option 2 — Shell Script
+
 ```bash
-# Clone the repository
 git clone https://github.com/theneoai/skill-writer.git
 cd skill-writer
 
-# Copy the skill file
-cp platforms/skill-writer-opencode-dev.md ~/.config/opencode/skills/skill-writer.md
+# Install to all supported platforms
+./install.sh
 
-# Or use the builder
-cd builder
-npm install
-npm run dev -- --platform opencode
+# Install to a single platform
+./install.sh --platform claude
+./install.sh --platform opencode
+./install.sh --platform cursor
+./install.sh --platform gemini
+
+# Install directly from a release asset
+./install.sh --url https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer.md
 ```
 
-#### OpenClaw
-```bash
-cp platforms/skill-writer-openclaw-dev.md ~/.openclaw/skills/skill-writer.md
-```
+#### Option 3 — Manual Copy
 
-#### Claude
 ```bash
-cp platforms/skill-writer-claude-dev.md ~/.claude/skills/skill-writer.md
-```
+# Claude
+cp skill-framework.md ~/.claude/skills/skill-writer.md
 
-#### Cursor
-```bash
-cp platforms/skill-writer-cursor-dev.md ~/.cursor/skills/skill-writer.md
-```
+# OpenCode
+mkdir -p ~/.config/opencode/skills
+cp skill-framework.md ~/.config/opencode/skills/skill-writer.md
 
-#### Gemini
-```bash
-cp platforms/skill-writer-gemini-dev.md ~/.gemini/skills/skill-writer.md
+# OpenClaw
+mkdir -p ~/.openclaw/skills
+cp skill-framework.md ~/.openclaw/skills/skill-writer.md
+
+# Cursor
+mkdir -p ~/.cursor/skills
+cp skill-framework.md ~/.cursor/skills/skill-writer.md
+
+# Gemini
+mkdir -p ~/.gemini/skills
+cp skill-framework.md ~/.gemini/skills/skill-writer.md
 ```
 
 ### Usage Examples
@@ -97,6 +127,13 @@ cp platforms/skill-writer-gemini-dev.md ~/.gemini/skills/skill-writer.md
 ```
 "Optimize this skill to make it more concise"
 "优化这个技能"
+```
+
+**Install skill-writer (agent-driven):**
+```
+"read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install"
+"read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install to claude"
+"安装 skill-writer"
 ```
 
 ## Modes
@@ -240,6 +277,33 @@ Optimization stops when:
 - "refine this skill" / "精炼这个技能"
 - "enhance this skill" / "增强这个技能"
 
+### INSTALL Mode
+
+Installs skill-writer itself to one or all supported platforms from a URL or local clone.
+
+#### Workflow
+1. **PARSE_INPUT**: Extract URL and target platform(s) from user message
+2. **FETCH**: If URL provided, download and verify the file
+3. **CONFIRM**: Show install plan, ask user to confirm
+4. **INSTALL**: Write skill file to each platform's skills directory
+5. **REPORT**: List installed paths and next steps
+
+#### Platform Paths
+
+| Platform | Skills Directory |
+|----------|-----------------|
+| Claude | `~/.claude/skills/` |
+| OpenCode | `~/.config/opencode/skills/` |
+| OpenClaw | `~/.openclaw/skills/` |
+| Cursor | `~/.cursor/skills/` |
+| Gemini | `~/.gemini/skills/` |
+
+#### Triggers (EN/ZH)
+- `"read <URL> and install"` / `"从 <URL> 安装"`
+- `"read <URL> and install to <platform>"`
+- `"install skill-writer"` / `"安装 skill-writer"`
+- `"install skill-writer to <platform>"`
+
 ## Security Features
 
 ### CWE Pattern Detection
@@ -312,6 +376,8 @@ npm install
 ```
 
 ### Commands
+
+> **Note**: Run `npm run build` from the project root before using `npm run install:*` scripts — they copy files from the `platforms/` directory created by the build step.
 
 #### Build
 ```bash
@@ -523,7 +589,7 @@ MIT License - See [LICENSE](LICENSE) file for details.
 
 ## Roadmap
 
-- [x] Core engine with CREATE, LEAN, EVALUATE, OPTIMIZE modes
+- [x] Core engine with CREATE, LEAN, EVALUATE, OPTIMIZE, INSTALL modes
 - [x] Builder tool with CLI
 - [x] Support for 6 platforms (OpenCode, OpenClaw, Claude, Cursor, OpenAI, Gemini)
 - [x] LEAN fast-evaluation mode

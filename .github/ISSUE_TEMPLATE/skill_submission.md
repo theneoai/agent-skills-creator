@@ -1,6 +1,6 @@
 ---
 name: Skill Submission
-about: Submit a new skill to the Skill Framework
+about: Submit a new skill to Skill Writer
 labels: ["skill-submission", "needs-review"]
 ---
 

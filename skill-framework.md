@@ -25,7 +25,7 @@ tags:
 interface:
   input: user-natural-language
   output: structured-skill
-  modes: [create, lean, evaluate, optimize]
+  modes: [create, lean, evaluate, optimize, install]
 
 extends:
   evaluation:
@@ -119,6 +119,8 @@ User Input
 │           assess,validate,benchmark,check,review]               │
 │ OPTIMIZE [优化,改进,提升,调优,完善,增强 | optimize,improve,      │
 │           enhance,tune,refine,upgrade,evolve]                   │
+│ INSTALL  [安装,部署,读取安装 | install,read.*install,            │
+│           fetch.*install,setup,deploy]                          │
 │                                                                 │
 │ confidence ≥ 0.85 → AUTO-ROUTE                                  │
 │ confidence 0.70–0.84 → CONFIRM before route                     │
@@ -588,9 +590,109 @@ OPTIMIZE consumes the queue → updates UTE baseline → repeat.
 
 ---
 
+---
+
+## §16  INSTALL Mode
+
+Installs skill-writer (this framework) to one or all supported platforms by fetching
+from a URL or using local files.  No evaluation or generation — pure deployment.
+
+### Platform Path Map
+
+| Platform | Install Path | Companion Files |
+|----------|-------------|-----------------|
+| claude   | `~/.claude/skills/skill-writer.md` | refs/, templates/, eval/, optimize/ |
+| opencode | `~/.config/opencode/skills/skill-writer.md` | — |
+| openclaw | `~/.openclaw/skills/skill-writer.md` | — |
+| cursor   | `~/.cursor/skills/skill-writer.md` | — |
+| gemini   | `~/.gemini/skills/skill-writer.md` | — |
+| openai   | see platform docs | — |
+| **all**  | all of the above | — |
+
+### Trigger Patterns
+
+```
+"read <URL> and install"           → fetch URL, install to all platforms
+"read <URL> and install to claude" → fetch URL, install to named platform only
+"install skill-writer"             → install from local clone (all platforms)
+"install skill-writer to cursor"   → install from local clone (single platform)
+"安装 skill-writer"                → install to all platforms
+"从 <URL> 安装"                    → fetch URL, install to all platforms
+```
+
+URL examples:
+- `https://raw.githubusercontent.com/theneoai/skill-writer/main/skill-framework.md`
+- Any raw URL returning a valid skill-writer markdown file
+
+### Installation Workflow
+
+```
+1. PARSE_INPUT
+   - Extract URL (if present) and target platform(s)
+   - target = explicit platform OR "all"
+
+2. FETCH (if URL provided)
+   - Fetch content from URL
+   - Verify it contains YAML frontmatter with name: skill-writer
+   - If verification fails → ABORT with message
+
+3. CONFIRM
+   - Show: source (URL or local), target platforms, install paths
+   - Ask: "Proceed with installation? (yes/no)"
+   - On "no" → ABORT gracefully
+
+4. INSTALL (per platform)
+   FOR EACH platform in target:
+     a. mkdir -p <install_path_dir>
+     b. Write skill content to <install_path>
+     c. IF platform == claude AND local clone available:
+          Copy companion files (refs/, templates/, eval/, optimize/)
+          to ~/.claude/{refs,templates,eval,optimize}/
+     d. Log: ✓ <install_path>
+
+5. REPORT
+   ✓ Installed to N platform(s):
+     • <platform>: <install_path>
+   ℹ Restart <platform> to activate skill-writer.
+   ℹ Companion files (refs/, eval/, templates/, optimize/) copied for Claude.
+```
+
+### Error Handling
+
+| Error | Action |
+|-------|--------|
+| URL unreachable | Report network error, offer local-clone fallback |
+| YAML name mismatch | ABORT — file is not skill-writer |
+| Directory write failure | Report path + permission error |
+| Platform not detected | Install anyway; warn path may not be active |
+
+### Example Interactions
+
+```
+User: "read https://raw.githubusercontent.com/theneoai/skill-writer/main/skill-framework.md and install"
+→ Fetch from URL ✓
+→ Confirm: install to all 5 local platforms? yes
+→ ✓ ~/.claude/skills/skill-writer.md
+→ ✓ ~/.config/opencode/skills/skill-writer.md
+→ ✓ ~/.openclaw/skills/skill-writer.md
+→ ✓ ~/.cursor/skills/skill-writer.md
+→ ✓ ~/.gemini/skills/skill-writer.md
+→ Installed to 5 platforms. Restart each to activate.
+```
+
+```
+User: "read https://raw.githubusercontent.com/.../skill-framework.md and install to claude"
+→ Fetch from URL ✓
+→ Confirm: install to claude only? yes
+→ ✓ ~/.claude/skills/skill-writer.md  + companion files
+→ Installed to 1 platform. Restart Claude to activate.
+```
+
+---
+
 **Triggers**:
-**CREATE** | **LEAN** | **EVALUATE** | **OPTIMIZE**
-**创建** | **快评** | **评测** | **优化**
+**CREATE** | **LEAN** | **EVALUATE** | **OPTIMIZE** | **INSTALL**
+**创建** | **快评** | **评测** | **优化** | **安装**
 
 (Templates: `claude/templates/` · UTE snippet: `claude/templates/use-to-evolve-snippet.md` ·
 Eval rubrics: `claude/eval/rubrics.md` · Pairwise: `claude/eval/pairwise.md` ·

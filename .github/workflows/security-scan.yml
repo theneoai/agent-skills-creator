@@ -1,4 +1,4 @@
-name: Daily Security Scan
+name: Skill Writer - Security Scan
 
 on:
   schedule:

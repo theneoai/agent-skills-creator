@@ -1,4 +1,4 @@
-name: Deploy GitHub Pages
+name: Skill Writer - Deploy GitHub Pages
 
 on:
   push:

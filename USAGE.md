@@ -5,13 +5,34 @@ This guide provides detailed examples and patterns for using Skill Writer effect
 ## Table of Contents
 
 1. [Getting Started](#getting-started)
-2. [CREATE Mode Examples](#create-mode-examples)
-3. [EVALUATE Mode Examples](#evaluate-mode-examples)
-4. [OPTIMIZE Mode Examples](#optimize-mode-examples)
-5. [Advanced Patterns](#advanced-patterns)
-6. [Best Practices](#best-practices)
+2. [INSTALL Mode Examples](#install-mode-examples)
+3. [CREATE Mode Examples](#create-mode-examples)
+4. [EVALUATE Mode Examples](#evaluate-mode-examples)
+5. [OPTIMIZE Mode Examples](#optimize-mode-examples)
+6. [Advanced Patterns](#advanced-patterns)
+7. [Best Practices](#best-practices)
 
 ## Getting Started
+
+### Installation
+
+The fastest way to install skill-writer is to paste one of these commands into your AI agent.
+
+**Install latest release — all platforms:**
+```
+read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer.md and install
+```
+
+**Install latest release — single platform:**
+```
+read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-claude.md and install to claude
+```
+
+Replace `claude` with `opencode`, `openclaw`, `cursor`, or `gemini` as needed.
+
+Every [GitHub Release](https://github.com/theneoai/skill-writer/releases) publishes per-platform assets and includes ready-to-paste agent commands for that specific version.
+
+See [INSTALL Mode Examples](#install-mode-examples) for more patterns, or the [README](README.md) for shell-script and manual alternatives.
 
 ### Installation Verification
 
@@ -21,7 +42,7 @@ After installation, verify the skill is working:
 "Hello, are you ready to help me create skills?"
 ```
 
-Expected response: The AI should acknowledge and offer to help with CREATE, EVALUATE, or OPTIMIZE modes.
+Expected response: The AI should acknowledge and offer to help with CREATE, LEAN, EVALUATE, OPTIMIZE, or INSTALL modes.
 
 ### First Skill Creation
 
@@ -36,6 +57,91 @@ The AI will:
 2. Select the Base template
 3. Generate the skill
 4. Show you the result
+
+## INSTALL Mode Examples
+
+### Example 1: Install via install.md URL (Recommended)
+
+**User Request:**
+```
+"read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install"
+```
+
+**Agent Process:**
+1. Fetch `install.md` from URL — contains self-contained install instructions
+2. Fetch `skill-framework.md` and all companion files from GitHub raw URLs
+3. Write to each platform's skills directory
+
+**Sample Output:**
+```
+Installing Skill Writer v2.0.0...
+✓ Fetched install.md (8 KB)
+✓ Fetched skill-framework.md (24 KB)
+
+Install plan:
+  • ~/.claude/skills/skill-writer.md
+  • ~/.config/opencode/skills/skill-writer.md
+  • ~/.openclaw/skills/skill-writer.md
+  • ~/.cursor/skills/skill-writer.md
+  • ~/.gemini/skills/skill-writer.md
+
+Proceed? yes
+
+✓ [claude]   ~/.claude/skills/skill-writer.md
+✓ [claude]   companion files → ~/.claude/{refs,templates,eval,optimize}/
+✓ [opencode] ~/.config/opencode/skills/skill-writer.md
+✓ [openclaw] ~/.openclaw/skills/skill-writer.md
+✓ [cursor]   ~/.cursor/skills/skill-writer.md
+✓ [gemini]   ~/.gemini/skills/skill-writer.md
+
+Installed to 5 platforms. Restart each to activate skill-writer.
+```
+
+### Example 2: Install to a Single Platform
+
+**User Request:**
+```
+"read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install to claude"
+```
+
+**Sample Output:**
+```
+✓ Fetched install.md
+✓ Fetched skill-framework.md
+
+Install plan: ~/.claude/skills/skill-writer.md  [claude only]
+Proceed? yes
+
+✓ [claude] ~/.claude/skills/skill-writer.md
+✓ [claude] companion files → ~/.claude/{refs,templates,eval,optimize}/
+
+Installed to 1 platform. Restart Claude to activate skill-writer.
+```
+
+### Example 3: Install from Local Clone
+
+**User Request:**
+```
+"install skill-writer"
+"安装 skill-writer"
+```
+
+**Agent Process:**
+Uses the local `install.md` already on disk (no network required).
+
+### Example 4: URL Verification Failure
+
+**User Request:**
+```
+"read https://example.com/some-other-skill.md and install"
+```
+
+**Sample Output:**
+```
+✗ ABORT — fetched file does not contain 'name: skill-writer'.
+  This does not appear to be skill-writer.
+  Check the URL and try again.
+```
 
 ## CREATE Mode Examples
 
@@ -320,7 +426,30 @@ sections:
 
 ### Pattern 3: Multi-Platform Deployment
 
-**Building for multiple platforms:**
+**Agent-driven — latest release (recommended):**
+```
+read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer.md and install
+```
+
+**Agent-driven — specific platform:**
+```
+read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-claude.md and install to claude
+```
+
+**Shell script:**
+```bash
+# Install to all platforms at once
+./install.sh
+
+# Or install to specific platforms
+./install.sh --platform claude
+./install.sh --platform opencode
+
+# Install directly from the latest release asset
+./install.sh --url https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer.md
+```
+
+**Builder (generates platform-adapted variants):**
 ```bash
 cd builder
 node bin/skill-writer-builder.js build --platform all
@@ -473,6 +602,16 @@ node bin/skill-writer-builder.js inspect --platform opencode
 ```
 
 ### Natural Language Commands
+
+**INSTALL Mode:**
+- `"read <URL> and install"` — fetch from URL, install to all platforms
+- `"read <URL> and install to <platform>"` — fetch from URL, install to one platform
+- `"install skill-writer"` — install from local clone, all platforms
+- `"install skill-writer to <platform>"` — install from local clone, one platform
+- `"安装 skill-writer"` — install (Chinese)
+- `"从 <URL> 安装"` — fetch from URL and install (Chinese)
+
+Supported `<platform>` values: `claude`, `opencode`, `openclaw`, `cursor`, `gemini`, `all`
 
 **CREATE Mode:**
 - "Create a [type] skill"

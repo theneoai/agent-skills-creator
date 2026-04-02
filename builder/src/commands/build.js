@@ -40,7 +40,7 @@ async function build(options) {
 
   // Normalize options
   const buildOptions = {
-    platform: options.platform || 'all',
+    platform: options.all ? 'all' : (options.platform || 'all'),
     release: options.release || false,
     output: options.output || 'platforms'
   };
