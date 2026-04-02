@@ -376,6 +376,8 @@ npm install
 
 ### Commands
 
+> **Note**: Run `npm run build` from the project root before using `npm run install:*` scripts — they copy files from the `platforms/` directory created by the build step.
+
 #### Build
 ```bash
 # Build for all platforms
