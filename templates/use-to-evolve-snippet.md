@@ -151,7 +151,7 @@ use_to_evolve:
 |------------|--------|---------|
 | `{{SKILL_NAME}}` | Skill's `name` field | `weather-query` |
 | `{{VERSION}}` | Skill's `version` field | `1.0.0` |
-| `{{FRAMEWORK_VERSION}}` | skill-writer version | `2.0.0` |
+| `{{FRAMEWORK_VERSION}}` | skill-writer version | `2.1.0` |
 | `{{INJECTION_DATE}}` | Today's ISO-8601 date | `2026-03-31` |
 | `{{CERTIFIED_LEAN_SCORE}}` | LEAN score from last EVALUATE | `460` |
 

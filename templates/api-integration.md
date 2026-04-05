@@ -51,7 +51,7 @@ api:
 
 use_to_evolve:
   enabled: true
-  injected_by: "skill-writer v2.0.0"
+  injected_by: "skill-writer v2.1.0"
   injected_at: "{{DATE}}"
   check_cadence: {lightweight: 10, full_recompute: 50, tier_drift: 100}
   micro_patch_enabled: true
@@ -202,7 +202,7 @@ Errors: none
 
 ## §UTE Use-to-Evolve
 
-<!-- Post-invocation hook — auto-managed by skill-writer v2.0.0 -->
+<!-- Post-invocation protocol — auto-managed by skill-writer v2.1.0 -->
 
 After each invocation, increment `use_to_evolve.cumulative_invocations`.
 Run lightweight LEAN check every 10 invocations; full re-score every 50;

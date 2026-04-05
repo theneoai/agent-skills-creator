@@ -112,7 +112,7 @@ Fetch each file below and write to the corresponding destination.
 |------|-----------|------------|-------------|
 | use-to-evolve.md | `…/refs/use-to-evolve.md` | `refs/use-to-evolve.md` | `~/.claude/refs/use-to-evolve.md` |
 | evolution.md | `…/refs/evolution.md` | `refs/evolution.md` | `~/.claude/refs/evolution.md` |
-| deliberation.md | `…/refs/deliberation.md` | `refs/deliberation.md` | `~/.claude/refs/deliberation.md` |
+| self-review.md | `…/refs/self-review.md` | `refs/self-review.md` | `~/.claude/refs/self-review.md` |
 | convergence.md | `…/refs/convergence.md` | `refs/convergence.md` | `~/.claude/refs/convergence.md` |
 | security-patterns.md | `…/refs/security-patterns.md` | `refs/security-patterns.md` | `~/.claude/refs/security-patterns.md` |
 | base.md | `…/templates/base.md` | `templates/base.md` | `~/.claude/templates/base.md` |
@@ -122,7 +122,6 @@ Fetch each file below and write to the corresponding destination.
 | use-to-evolve-snippet.md | `…/templates/use-to-evolve-snippet.md` | `templates/use-to-evolve-snippet.md` | `~/.claude/templates/use-to-evolve-snippet.md` |
 | rubrics.md | `…/eval/rubrics.md` | `eval/rubrics.md` | `~/.claude/eval/rubrics.md` |
 | benchmarks.md | `…/eval/benchmarks.md` | `eval/benchmarks.md` | `~/.claude/eval/benchmarks.md` |
-| pairwise.md | `…/eval/pairwise.md` | `eval/pairwise.md` | `~/.claude/eval/pairwise.md` |
 | strategies.md | `…/optimize/strategies.md` | `optimize/strategies.md` | `~/.claude/optimize/strategies.md` |
 | anti-patterns.md | `…/optimize/anti-patterns.md` | `optimize/anti-patterns.md` | `~/.claude/optimize/anti-patterns.md` |
 
@@ -133,7 +132,7 @@ Create each destination directory as needed. Skip any file that cannot be fetche
 ### Step 5 — Print summary
 
 ```
-Installing Skill Writer v2.0.0...
+Installing Skill Writer v2.1.0...
 
 ✓ [claude]   ~/.claude/skills/skill-writer.md
 ✓ [claude]   companion files → ~/.claude/{refs,templates,eval,optimize}/
@@ -177,7 +176,7 @@ https://raw.githubusercontent.com/theneoai/skill-writer/main/skill-framework.md
 # refs/
 https://raw.githubusercontent.com/theneoai/skill-writer/main/refs/use-to-evolve.md
 https://raw.githubusercontent.com/theneoai/skill-writer/main/refs/evolution.md
-https://raw.githubusercontent.com/theneoai/skill-writer/main/refs/deliberation.md
+https://raw.githubusercontent.com/theneoai/skill-writer/main/refs/self-review.md
 https://raw.githubusercontent.com/theneoai/skill-writer/main/refs/convergence.md
 https://raw.githubusercontent.com/theneoai/skill-writer/main/refs/security-patterns.md
 
@@ -191,7 +190,7 @@ https://raw.githubusercontent.com/theneoai/skill-writer/main/templates/use-to-ev
 # eval/
 https://raw.githubusercontent.com/theneoai/skill-writer/main/eval/rubrics.md
 https://raw.githubusercontent.com/theneoai/skill-writer/main/eval/benchmarks.md
-https://raw.githubusercontent.com/theneoai/skill-writer/main/eval/pairwise.md
+
 
 # optimize/
 https://raw.githubusercontent.com/theneoai/skill-writer/main/optimize/strategies.md
@@ -263,4 +262,4 @@ After installation, ask your agent:
 "Are you skill-writer? What version?"
 ```
 
-Expected: agent confirms skill-writer v2.0.0 and lists available modes (CREATE / LEAN / EVALUATE / OPTIMIZE / INSTALL).
+Expected: agent confirms skill-writer v2.1.0 and lists available modes (CREATE / LEAN / EVALUATE / OPTIMIZE / INSTALL).

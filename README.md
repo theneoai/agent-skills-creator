@@ -346,7 +346,7 @@ Self-improvement protocol that enables skills to evolve through usage.
 
 ```yaml
 use_to_evolve:
-  framework_version: "2.0.0"
+  framework_version: "2.1.0"
   injection_date: "2026-04-01"
   certified_lean_score: 390
   last_ute_check: "2026-04-01"
@@ -358,11 +358,11 @@ use_to_evolve:
 2. **Time Trigger**: Freshness check (cadence-gated)
 3. **Usage Trigger**: Usage pattern analysis
 
-### Post-Invocation Hook
-- Records usage context
-- Detects implicit feedback signals
-- Runs trigger checks
-- Applies micro-patches if needed
+### Post-Invocation Protocol
+- AI observes outcome and follows UTE protocol when section is present
+- Detects implicit feedback signals (user corrections, repeated patterns)
+- Runs cadence-gated health checks
+- Proposes micro-patches for user confirmation
 
 ## Builder Tool
 
@@ -581,4 +581,4 @@ MIT License - See [LICENSE](LICENSE) file for details.
 
 **Made with ❤️ by the Skill Writer Team**
 
-*Last updated: 2026-04-01*
+*Last updated: 2026-04-05*

@@ -135,10 +135,7 @@ skill-writer/
 
 1. Add mode-specific companion files under the appropriate directory (`refs/`, `eval/`, or `optimize/`).
 
-2. Create required files:
-   - `README.md` - Mode documentation
-   - `workflow.yaml` - Workflow definition
-   - `config.yaml` - Configuration
+2. Create companion `.md` files for the mode's data (no YAML config files needed since v2.1.0)
 
 3. Update embedder to support new mode
 

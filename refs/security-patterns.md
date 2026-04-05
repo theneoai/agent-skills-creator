@@ -188,7 +188,7 @@ SECURITY SCAN REPORT
 ====================
 Skill: <name> v<version>
 Scanned: <ISO-8601>
-Scanner: skill-writer v2.0.0
+Scanner: skill-writer v2.1.0
 
 P0 FINDINGS (ABORT triggers):
   [NONE | list of findings with location]

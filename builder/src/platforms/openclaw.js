@@ -29,8 +29,8 @@ metadata:
     format: agentskills
     compatibility: ["1.0", "2.0"]
     features:
-      - multi-agent
-      - deliberation
+      - self-review
+      - self-review
       - self-evolution
     runtime:
       timeout: 30000
@@ -46,7 +46,7 @@ metadata:
     '## §6 Quality Gates',
     '## §7 Security Baseline',
     '## §8 Error Handling',
-    '## §9 Multi-LLM Deliberation',
+    '## §9 Self-Review Protocol',
     '## §10 Usage Examples',
     '## §11 UTE Injection'
   ],
@@ -85,8 +85,8 @@ metadata:
     format: agentskills
     compatibility: ["1.0", "2.0"]
     features:
-      - multi-agent
-      - deliberation
+      - self-review
+      - self-review
       - self-evolution
     runtime:
       timeout: 30000
@@ -111,7 +111,7 @@ Every mode executes via Plan-Execute-Summarize:
 \`\`\`
 ┌──────────────────────────────────────────────────────────┐
 │  PLAN                                                    │
-│  Multi-LLM deliberation → consensus on approach          │
+│  Multi-pass self-review → plan reviewed                  │
 │  Build cognitive graph of steps                          │
 └──────────────────────────────┬───────────────────────────┘
                                │ consensus reached
@@ -125,7 +125,7 @@ Every mode executes via Plan-Execute-Summarize:
                                ▼
 ┌──────────────────────────────────────────────────────────┐
 │  SUMMARIZE                                               │
-│  LLM-3 cross-validates results                           │
+│  Cross-validate results against requirements              │
 │  Update evolution memory                                 │
 │  Produce consensus matrix                                │
 │  Route: CERTIFIED | TEMP_CERT | HUMAN_REVIEW | ABORT     │
@@ -142,28 +142,28 @@ Every mode executes via Plan-Execute-Summarize:
     }
   }
 
-  // Ensure Multi-LLM Deliberation section is present
-  if (!formattedContent.includes('## §9 Multi-LLM Deliberation')) {
-    const deliberationSection = `
+  // Ensure Self-Review Protocol section is present
+  if (!formattedContent.includes('## §9 Self-Review Protocol')) {
+    const reviewSection = `
 
-## §9 Multi-LLM Deliberation
+## §9 Self-Review Protocol
 
 | Role | Responsibility |
 |------|---------------|
-| LLM-1 Generator | Produce initial draft / score / fix proposal |
-| LLM-2 Reviewer | Security + quality audit; severity-tagged issue list |
-| LLM-3 Arbiter | Cross-validate; override if safety/quality critical; consensus matrix |
+| Pass 1 — Generate | Produce initial draft / score / fix proposal |
+| Pass 2 — Review | Security + quality audit; severity-tagged issue list (ERROR/WARNING/INFO) |
+| Pass 3 — Reconcile | Address all ERRORs, reconcile scores, produce final artifact |
 
-Timeouts: 30 s per LLM, 60 s per phase, 180 s total (6 turns max).
-Consensus: UNANIMOUS → proceed; MAJORITY → proceed with notes;
-SPLIT → one revision; UNRESOLVED → HUMAN_REVIEW.`;
+Timeouts: 30 s per pass, 60 s per phase, 180 s total (6 turns max).
+Consensus: CLEAR → proceed; REVISED → proceed with notes;
+UNRESOLVED → HUMAN_REVIEW.`;
 
     // Insert before Usage Examples
     const usageExamplesMatch = formattedContent.match(/(## §8 Usage Examples)/);
     if (usageExamplesMatch) {
       formattedContent = formattedContent.replace(
         usageExamplesMatch[1],
-        deliberationSection + '\n\n' + usageExamplesMatch[1]
+        reviewSection + '\n\n' + usageExamplesMatch[1]
       );
     }
   }
@@ -233,8 +233,8 @@ function generateMetadata(skillData) {
         format: 'agentskills',
         compatibility: ['1.0', '2.0'],
         features: [
-          'multi-agent',
-          'deliberation',
+          'self-review',
+          'self-review',
           'self-evolution'
         ],
         runtime: {
@@ -288,7 +288,7 @@ function validateSkill(skillContent) {
   const requiredSections = [
     '## §1 Identity',
     '## §4 LoongFlow Orchestration',
-    '## §9 Multi-LLM Deliberation'
+    '## §9 Self-Review Protocol'
   ];
   
   requiredSections.forEach(section => {

@@ -46,7 +46,7 @@ skill-writer-builder dev --platform opencode
 
 ### Validate
 
-Validate core engine structure:
+Validate project structure:
 
 ```bash
 skill-writer-builder validate
@@ -94,11 +94,11 @@ builder/
 
 ## How It Works
 
-1. **Read** - Reads all files from `../core/` directory
-2. **Parse** - Parses YAML and Markdown files
-3. **Embed** - Embeds core content into platform-specific templates
-4. **Generate** - Generates complete SKILL.md files for each platform
-5. **Output** - Writes to `../platforms/{platform}/SKILL.md`
+1. **Read** - Reads companion Markdown files from `refs/`, `templates/`, `eval/`, `optimize/`
+2. **Parse** - Parses Markdown and JSON files
+3. **Embed** - Embeds content into platform-specific templates
+4. **Generate** - Generates complete skill files for each platform
+5. **Output** - Writes to `../platforms/skill-writer-{platform}-dev.md`
 
 ## Development
 

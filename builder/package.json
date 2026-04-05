@@ -1,6 +1,6 @@
 {
   "name": "skill-writer-builder",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Build tool for skill-writer - embeds core engine into platform-specific skills",
   "main": "src/index.js",
   "bin": {

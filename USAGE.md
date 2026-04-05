@@ -74,7 +74,7 @@ The AI will:
 
 **Sample Output:**
 ```
-Installing Skill Writer v2.0.0...
+Installing Skill Writer v2.1.0...
 ✓ Fetched install.md (8 KB)
 ✓ Fetched skill-framework.md (24 KB)
 

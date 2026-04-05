@@ -1,6 +1,6 @@
 {
   "name": "skill-writer",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Cross-platform meta-skill for creating, evaluating, and optimizing AI assistant skills",
   "main": "builder/src/index.js",
   "scripts": {
