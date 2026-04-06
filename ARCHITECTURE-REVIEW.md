@@ -25,9 +25,99 @@ Skill-writer 是一个 **prompt-based 元框架**，帮助 AI 平台创建、评
 
 ---
 
-## 二、设计合理性评估
+## 二、设计理念深度分析
 
-### 2.1 模式分离 — ✅ 合理
+### 2.0.1 核心设计哲学
+
+框架建立在 5 个基础设计模式（"Google 5"）之上：
+
+| 模式 | 职责 | 实现位置 |
+|------|------|----------|
+| **Tool Wrapper** | 按需加载外部规范作为权威源 | §1 引用 companion files |
+| **Generator** | 基于模板的结构化输出 | §5 CREATE 9 阶段 |
+| **Reviewer** | 多遍自审 + 严重度分级（ERROR/WARNING/INFO）| §12 + `refs/self-review.md` |
+| **Inversion** | 阻断式需求澄清，先问后做 | §7 Inversion Gate |
+| **Pipeline** | 严格阶段排序 + 硬检查点 | §4 LoongFlow |
+
+16 个 §-section 的编排逻辑是**闭环生命周期**而非功能堆砌：
+
+```
+§1 (Identity) → §2 (Router) → §3 (Degradation fallback)
+    ↓
+§4 (LoongFlow meta-pattern: Plan → Execute → Summarize)
+    ↓
+§5-§9 (5 模式详规: CREATE → LEAN → EVALUATE → OPTIMIZE → 收敛)
+    ↓
+§10 (Evolution triggers) → §11-§13 (横切关注: Security, Self-Review, Audit)
+    ↓
+§14 (Usage Examples) → §15 (UTE injection) → §16 (INSTALL deploy)
+```
+
+**叙事主线**：创建 skill（含需求澄清和模板）→ 快速验证（LEAN）→ 深度评估（4阶段）→ 失败时优化 → 自进化 → 部署。
+
+### 2.0.2 模式间流转 — 隐式规则问题
+
+模式间的流转是**单向无环**的，但文档存在关键歧义：
+
+```
+CREATE ──→ LEAN ──→ EVALUATE ──→ OPTIMIZE
+  │          │          │            │
+  │     (PASS→done)  (PASS→cert)  (converge→done)
+  │     (UNCERTAIN→) (FAIL→)      (stuck→HUMAN_REVIEW)
+  └─────────────────────────────────┘
+                  INSTALL (独立)
+```
+
+**未明确的规则**：
+1. OPTIMIZE 完成后是否重新运行 EVALUATE？§9 使用 LEAN 式 7 维重评分，但不触发完整 4 阶段管道。**建议**：明确 OPTIMIZE 后若分数 ≥700 则以 LEAN 评分为准，<700 则触发 full EVALUATE。
+2. CREATE 的 CERTIFIED 认证是否绕过 LEAN 的 "24h 内安排 full EVALUATE" 要求？**建议**：在 §2 末尾添加"模式流转规则"小节。
+3. §16 INSTALL 与其他模式完全独立——这是合理的，但文档未显式声明。
+
+### 2.0.3 Inversion 模式的三个设计缺口
+
+§7 定义了阻断式提问（CREATE 6Q / EVALUATE 3Q / OPTIMIZE 2Q），设计动机正确（先问后做），但：
+
+| 缺口 | 说明 | 建议 |
+|------|------|------|
+| **无答案验证** | 用户回答"输入是文本"算满足吗？无最低完备性要求 | 添加 `answer_validation: minimal\|standard\|strict` 配置 |
+| **无拒答处理** | 用户拒绝回答某问题时无 fallback/abort 路径 | 添加 "skip with default / abort" 选项 |
+| **无领域自适应** | api-integration 和 data-pipeline 模板使用相同的通用 6 问 | 模板可声明追加问题（`extra_questions` 字段）|
+
+### 2.0.4 评分体系内部不一致
+
+三种不同的评分机制并存，增加了 AI 混淆风险：
+
+| 上下文 | 分制 | 维度数 | 来源 |
+|--------|------|--------|------|
+| LEAN (§6) | 500 分 → ×2 映射到 1000 | 7 维 | `eval/rubrics.md` |
+| EVALUATE (§8) | 原生 1000 分 | 4 阶段（Structure 100 + Dims 300 + Security 200 + Holistic 400）| `eval/rubrics.md` |
+| OPTIMIZE re-score (§9) | "re-score all 7 dimensions" | 7 维 | 未明确使用哪个分制 |
+
+**具体问题**：
+- Phase 2→3 方差公式 `|(phase2_score/3) - (phase3_score/4)|` 的除法原因未说明（归一化到每分密度），读者必须自行推导
+- OPTIMIZE 的 "7 dimensions" 与 EVALUATE Phase 2 的 "6 sub-dimensions" 不一致
+- **建议**：在 §8 添加方差公式推导注释；在 §9 明确声明使用 LEAN 7 维权重
+
+### 2.0.5 LoongFlow 错误恢复的外部化风险
+
+§4 定义了 Plan-Execute-Summarize 元模式，但错误恢复完全委托给 `refs/self-review.md §4`：
+
+| 模式 | PLAN 是否显式 | EXECUTE | SUMMARIZE | 错误恢复 |
+|------|:---:|:---:|:---:|:---:|
+| CREATE (§5) | ✅ Phase 3 | ✅ Phases 4-8 | ✅ Phase 9 | 外部 |
+| LEAN (§6) | 隐式 | ✅ | ✅ | 外部 |
+| EVALUATE (§8) | 隐式 | ✅ | ✅ | 外部 |
+| OPTIMIZE (§9) | ✅ Step 4 | ✅ Steps 5-8 | ✅ Post-loop | 部分内置（step 6: rollback） |
+
+**风险**：如果 companion 文件不可用（如平台不支持外部文件加载），LoongFlow 完全没有错误恢复 fallback。
+
+**建议**：在 §4 内嵌最小错误恢复规则（retry 1 次 + 降级到 HUMAN_REVIEW）。
+
+---
+
+## 三、设计合理性评估（原评估 + 扩展）
+
+### 3.1 模式分离 — ✅ 合理
 
 5 个模式（CREATE / LEAN / EVALUATE / OPTIMIZE / INSTALL）职责边界清晰：
 
@@ -40,7 +130,7 @@ Skill-writer 是一个 **prompt-based 元框架**，帮助 AI 平台创建、评
 **LoongFlow 编排**（Plan-Execute-Summarize）比状态机更适合 LLM 的自然工作方式。
 **自审协议**（3-pass: Generate/Review/Reconcile）替代了不可实现的 Multi-LLM 合议，是 v2.1.0 最重要的务实改进。
 
-### 2.2 SSOT 架构 — ⚠️ 基本合理，存在缺口
+### 3.2 SSOT 架构 — ⚠️ 基本合理，存在缺口
 
 Builder 的 Reader→Embedder→Adapter 管道实现了 Single Source of Truth：
 
@@ -71,7 +161,7 @@ refs/, templates/, eval/, optimize/  (权威源)
 
 **建议**: 要么扩展 reader 嵌入所有文件，要么在 validate 中区分 "必须嵌入" 和 "仅需存在"。
 
-### 2.3 平台适配器模式 — ✅ 合理，可优化
+### 3.3 平台适配器模式 — ✅ 合理，可优化
 
 6 个适配器（opencode / openclaw / claude / cursor / openai / gemini）统一接口：
 
@@ -86,13 +176,13 @@ refs/, templates/, eval/, optimize/  (权威源)
 - `openclaw.js` 第 32-33 行 features 数组有重复 `self-review` 条目
 - `openclaw.js`（337行）显著复杂于其他适配器，因为硬编码了 LoongFlow 和自审注入逻辑
 
-### 2.4 安全模型 — ✅ 合理
+### 3.4 安全模型 — ✅ 合理
 
 - CWE 矩阵（`refs/security-patterns.md`）嵌入所有生成输出
 - Red Lines（严禁条款）在 §11 中定义，validate 命令验证其存在
 - `security-scan.yml` CI 管道包含 npm audit + TruffleHog + CodeQL
 
-### 2.5 评分体系 — ⚠️ 部分合理
+### 3.5 评分体系 — ⚠️ 部分合理
 
 - 1000 分 4 阶段评估管道：**设计合理**，AI 可遵循评分量表打分
 - 认证分级（PLATINUM ≥ 950 / GOLD ≥ 850 / SILVER ≥ 700 / BRONZE ≥ 500 / FAIL）：**合理**
@@ -100,7 +190,7 @@ refs/, templates/, eval/, optimize/  (权威源)
 
 ---
 
-## 三、不可实现 / 理想化设计识别
+## 四、不可实现 / 理想化设计识别
 
 > 标记为"理想化"并非批评。在 prompt 工程中，理想化规格可以起到 **方向指引** 作用。
 > 但需要明确区分 **AI 可严格遵循** 和 **AI 尽力模拟** 的边界。
@@ -170,9 +260,9 @@ return stddev < 2.0  # 2.0 分阈值，基于 1000 分量表
 
 ---
 
-## 四、Builder 工具链评估
+## 五、Builder 工具链评估
 
-### 总体评分: 8.5 / 10
+### 总体评分: 7.5 / 10（从 8.5 下调，基于深度分析）
 
 **架构优势**:
 - 模块化清晰：reader / embedder / platforms / commands 四层分离
@@ -180,43 +270,118 @@ return stddev < 2.0  # 2.0 分阈值，基于 1000 分量表
 - validate 命令检查全面（12 文件 + 占位符 + §N sections + Red Lines + UTE 11 字段）
 - inspect 命令提供丰富的诊断信息
 
-### 问题清单
+### 数据流深度分析
+
+```
+Source Files (refs/, templates/, eval/, optimize/)
+    ↓  reader.js: glob 发现 → parseFile() → flat object {create, evaluate, optimize, shared}
+    ↓  [有损转换] YAML anchors/aliases → yaml.dump(lineWidth:-1, noRefs:true) 丢弃
+    ↓
+coreData 对象
+    ↓  embedder.js: generateSkillFile()
+    ↓  Template load → Metadata placeholder → Mode embedding → Shared resources → Frontmatter → UTE
+    ↓  [静默失败] 缺失 placeholder → 保留 {{KEY}} 原文，不报错
+    ↓
+Platform-agnostic content
+    ↓  adapters: formatSkill() → getInstallPath() → generateMetadata() → validateSkill()
+    ↓  [接口违反] OpenAI 返回 JSON，其余返回 Markdown string
+    ↓
+6 个平台输出文件 (platforms/)
+```
+
+**有损转换**：`yaml.dump({noRefs: true})` 丢弃 YAML anchors/aliases，如果源文件使用 `&anchor` / `*ref` 语法，嵌入结果会丢失引用关系。
+
+### 命令模块交互问题
+
+| 命令 | 使用 reader.js? | 路径定义来源 | 共享逻辑 |
+|------|:---:|------|------|
+| build.js | ✅ `readAllCoreData()` | reader.js | — |
+| validate.js | ❌ 硬编码路径 | 自身 line 18-22 | 与 reader 路径定义重复 |
+| inspect.js | ❌ 直接读文件 | 自身（8 种路径尝试）| — |
+| dev.js | ✅ `readAllCoreData()` | reader.js | 与 build.js 重复 metadata 逻辑 |
+
+**SSOT 断裂**：修改文件路径需要同步更新 3 处定义（reader.js、validate.js、inspect.js）。
+
+### 问题清单（扩展版）
 
 | # | 严重度 | 问题 | 文件 | 详情 |
 |---|--------|------|------|------|
 | B1 | **高** | 无测试套件 | — | 整个 builder 零单元/集成测试 |
-| B2 | 中 | SSOT 缺口 | `reader.js` | 3 个 refs 文件验证但不嵌入 |
-| B3 | 中 | embedder 死代码 | `embedder.js` | `extractPlaceholders()`, `applyPlatformTransforms()`, `validateEmbeddedContent()` 导出但未使用 |
-| B4 | 中 | adapter 代码重复 | `claude.js` / `gemini.js` | 95% 相同代码 |
-| B5 | 低 | features 重复 | `openclaw.js:32-33` | `self-review` 出现两次 |
-| B6 | 低 | 双重格式化 | `build.js:139` | `formatForPlatform()` 在 `generateSkillFile()` 之后再次调用 |
-| B7 | 低 | CI 环境兼容 | `dev.js:147` | `getInstallPath()` 在受限环境可能失败 |
-| B8 | 低 | 占位符正则 | `validate.js:54` | 只匹配 `{{UPPERCASE_UNDERSCORE}}`，不捕获其他格式 |
+| B2 | **高** | 静默失败 | `embedder.js:92-94` | 缺失 placeholder 保留 `{{KEY}}` 原文不报错，输出可能包含裸标记 |
+| B3 | **高** | SSOT 三处断裂 | `reader.js` / `validate.js` / `inspect.js` | 文件路径分别硬编码，不同步 |
+| B4 | 中 | embedder 死代码 | `embedder.js:667-756` | ~~`extractPlaceholders()`, `applyPlatformTransforms()`, `validateEmbeddedContent()` 导出但未使用~~ **已修复：移除导出** |
+| B5 | 中 | adapter 代码重复 | `claude.js` / `gemini.js` | ~90% 相同代码（仅差 name、install path、1 个 frontmatter 校验块）|
+| B6 | 中 | Frontmatter 重复风险 | `embedder.js:536+574` | 如果模板已含 `---` frontmatter，拼接后产生双重 frontmatter |
+| B7 | 中 | 适配器接口违反 | `openai.js` | `formatSkill()` 返回 JSON，其余返回 Markdown，无类型约束 |
+| B8 | 中 | SSOT 缺口 | `reader.js` | 3 个 refs 文件（self-review, evolution, use-to-evolve）验证但不嵌入 |
+| B9 | 低 | ~~features 重复~~ | `openclaw.js` | ~~`self-review` 出现两次~~ **已修复** |
+| B10 | 低 | 双重格式化 | `build.js:139` | `formatForPlatform()` 在 `generateSkillFile()` 之后再次调用 |
+| B11 | 低 | CRLF 敏感 | `inspect.js:63` | 标题正则 `/^(#{1,6})\s+(.+)$/` 在 Windows CRLF 下匹配失败 |
+| B12 | 低 | 占位符名称限制 | `embedder.js:39` | `/\{\{(\w+)\}\}/g` 不匹配 `{{OUTER-KEY}}` 或 `{{outer.key}}` |
+| B13 | 低 | UTE 注入正则 | `embedder.js:599` | `##\s+§UTE` 过于宽松，注释中的匹配会导致跳过注入 |
 
 ---
 
-## 五、CI/CD 与文档评估
+## 六、Companion 文件质量评估
 
-### 5.1 CI 死代码
+### 6.1 refs/ 参考文档
+
+| 文件 | 行数 | AI 可操作性 | 主要问题 |
+|------|------|:---:|------|
+| `self-review.md` | ~120 | ⚠️ | 3-pass 协议结构清晰，但超时策略（60s/pass, 180s total）在 prompt 环境下无法精确计时 |
+| `convergence.md` | ~100 | ❌ | Python 伪代码（stddev, plateau_check）AI 不可执行；**建议改为自然语言规则** |
+| `evolution.md` | ~90 | ⚠️ | 3 触发器中 2 个依赖持久存储（audit trail + invocation counter），仅时间触发可靠 |
+| `use-to-evolve.md` | ~80 | ⚠️ | 11 字段 UTE frontmatter 设计合理，但 cadence-gated 健康检查依赖不可持久的计数器 |
+| `security-patterns.md` | ~110 | ✅ | CWE 矩阵全面、结构化良好，是**最具操作性**的 companion 文件 |
+
+### 6.2 eval/ 评估规范
+
+| 文件 | 质量 | 说明 |
+|------|------|------|
+| `rubrics.md` | ✅ 高 | 6 维度评分量表清晰，权重合理（Security 25% 最高） |
+| `benchmarks.md` | ⚠️ 中 | 基准定义合理但**缺少参考 skill 样本**（只有评分标准，无实际基准数据） |
+
+### 6.3 optimize/ 优化规范
+
+| 文件 | 质量 | 说明 |
+|------|------|------|
+| `strategies.md` | ✅ 高 | 7 策略覆盖全面（结构/安全/性能/可读性/鲁棒性/可维护性/领域适配） |
+| `anti-patterns.md` | ✅ 高 | 反模式分类良好，每个附带修复建议 |
+
+### 6.4 templates/ 模板
+
+4 个领域模板 + 1 个 UTE snippet，占位符命名一致（`{{camelCase}}`）。
+
+### 6.5 跨文件一致性问题
+
+- `convergence.md` 使用 Python 变量名 `score_history`，`evolution.md` 使用 YAML 字段 `audit_history`——概念重叠但命名不一致
+- `self-review.md` 定义 3-pass 协议，`skill-framework.md` §12 引用它但**摘要与原文存在措辞差异**
+- ~~`skill-framework.md` §15 硬编码 `FRAMEWORK_VERSION = "2.0.0"` 但文件头声明 v2.1.0~~ **已修复**
+
+---
+
+## 七、CI/CD 与文档评估
+
+### 7.1 CI 死代码
 
 `.github/workflows/security-scan.yml` 第 52-71 行的 `cwe-validation` job 引用了 v2.1.0 中已删除的 `core/shared/security/cwe-patterns.yaml`。该 job 设置了 `continue-on-error: true` 所以不会阻塞，但属于死代码。
 
 **建议**: 删除该 job，或改为验证 `refs/security-patterns.md` 的格式。
 
-### 5.2 文档一致性
+### 7.2 文档一致性
 
 - `README.md` 中 code-reviewer 示例显示 820/SILVER，但实际 eval 报告为 947/GOLD
 - **建议**: 统一评分数据，或在示例中标注 "仅供演示"
 
-### 5.3 CI 管道覆盖
+### 7.3 CI 管道覆盖
 
 当前 CI 包含 validate → build → release → deploy-docs，**缺少自动化测试步骤**（因为没有测试）。
 
 ---
 
-## 六、前瞻性评估
+## 八、前瞻性评估
 
-### 6.1 可扩展性 — ✅ 良好
+### 8.1 可扩展性 — ✅ 良好
 
 | 扩展场景 | 复杂度 | 说明 |
 |----------|--------|------|
@@ -225,7 +390,7 @@ return stddev < 2.0  # 2.0 分阈值，基于 1000 分量表
 | 新增模板类型 | 低 | `templates/` 下添加 .md 文件 |
 | 新增评估维度 | 低 | 修改 `eval/rubrics.md` |
 
-### 6.2 风险矩阵
+### 8.2 风险矩阵
 
 | 风险 | 可能性 | 影响 | 缓解方案 |
 |------|--------|------|----------|
@@ -234,8 +399,11 @@ return stddev < 2.0  # 2.0 分阈值，基于 1000 分量表
 | **理想化设计积累** — 新贡献者混淆"必须遵循"和"尽力而为" | 中 | 中 | 在文档中用 `[ENFORCED]` / `[ASPIRATIONAL]` 标签明确区分 |
 | **AI 平台差异化加速** — 各平台 prompt 格式、能力持续分化 | 高 | 中 | adapter 自动化测试 + 平台差异对比报告 |
 | **Prompt 长度增长** — 生成输出已达 2,400-2,700 行 | 中 | 高 | 考虑按需加载（仅嵌入用户请求的模式） |
+| **LoongFlow 外部依赖** — 错误恢复完全委托 companion file | 中 | 高 | 在 §4 内嵌最小 fallback 规则 |
+| **评分体系碎片化** — 500/1000/7维 三套并存 | 高 | 中 | 统一为 1000 分制，LEAN 直接用 7 维子集 |
+| **Embedder 静默失败** — 缺失 placeholder 输出 `{{KEY}}` 裸标记 | 已发生 | 中 | 添加严格模式，缺失 placeholder 时报错而非静默 |
 
-### 6.3 演进路线图
+### 8.3 演进路线图
 
 #### 短期 — v2.2.0（维护性改进）
 
@@ -262,18 +430,36 @@ return stddev < 2.0  # 2.0 分阈值，基于 1000 分量表
 
 ---
 
-## 七、总结
+## 九、总结
 
-### 设计合理性：8/10
+### 设计理念：8.5/10
 
-Skill-writer 的核心设计——模式分离、LoongFlow 编排、SSOT 构建管道——是 **合理且务实的**。v2.1.0 用自审协议替代 Multi-LLM 合议是一个关键的务实转向。主要扣分项是 SSOT 缺口和理想化设计缺乏标注。
+框架的核心设计哲学——"Google 5" 模式（Tool Wrapper / Generator / Reviewer / Inversion / Pipeline）+ LoongFlow 元编排 + 闭环生命周期——是 **深思熟虑且内在一致的**。v2.1.0 用自审协议替代 Multi-LLM 合议是一个关键的务实转向。
+
+主要扣分项：模式间流转规则隐式化、Inversion 缺乏答案验证、评分体系三套并存。
+
+### 架构实现：7/10
+
+Builder 工具链的模块化设计合理（reader→embedder→adapter），但实现质量存在较多问题：静默失败（placeholder 缺失不报错）、路径定义三处断裂、适配器接口违反（OpenAI JSON vs 其余 Markdown）、零测试覆盖。
 
 ### 前瞻性：7/10
 
-平台扩展性良好，但面临三个中长期风险：模板膨胀、prompt 长度增长、无测试保障。路线图中的按需加载和模板去重是关键演进方向。
+平台扩展性良好（新增平台只需 adapter + template），但面临模板膨胀、prompt 长度增长、LoongFlow 外部依赖等中长期风险。
 
-### 最需要立即行动的 3 件事
+### 本轮评审已修复的问题
+
+| # | 问题 | 修复 |
+|---|------|------|
+| 1 | ~~CI cwe-validation 死代码~~ | 删除该 job（上一轮） |
+| 2 | ~~openclaw.js self-review 重复~~ | 删除重复条目（上一轮） |
+| 3 | ~~§15 FRAMEWORK_VERSION = "2.0.0"~~ | 改为 "2.1.0" |
+| 4 | ~~embedder.js 3 个未使用导出~~ | 移除导出 |
+| 5 | ~~formatFrontmatter null 静默~~ | 添加 warning 日志 |
+
+### 最需要立即行动的 5 件事
 
 1. **为 builder 添加测试套件** — 这是当前最大的技术债，阻碍所有后续重构
-2. **标注理想化设计** — 区分 `[ENFORCED]` 和 `[ASPIRATIONAL]`，降低新贡献者困惑
-3. **修复 CI 死代码和小 bug** — cwe-validation job、openclaw 重复 features
+2. **统一路径定义** — reader.js / validate.js / inspect.js 三处硬编码路径应收敛到单一来源
+3. **添加 embedder 严格模式** — placeholder 缺失时报错而非静默，防止 `{{KEY}}` 泄漏到输出
+4. **标注理想化设计** — 区分 `[ENFORCED]` 和 `[ASPIRATIONAL]`，降低新贡献者困惑
+5. **明确模式流转规则** — 在 §2 Mode Router 中添加允许/禁止的模式转换路径

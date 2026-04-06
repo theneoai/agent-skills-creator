@@ -541,7 +541,7 @@ Snippet: `claude/templates/use-to-evolve-snippet.md`
 3. FILL PLACEHOLDERS:
      {{SKILL_NAME}}           = skill's `name` YAML field
      {{VERSION}}              = skill's `version` YAML field
-     {{FRAMEWORK_VERSION}}    = "2.0.0"
+     {{FRAMEWORK_VERSION}}    = "2.1.0"
      {{INJECTION_DATE}}       = today ISO-8601
      {{CERTIFIED_LEAN_SCORE}} = LEAN score from Step 6 (or 350 if unknown)
 

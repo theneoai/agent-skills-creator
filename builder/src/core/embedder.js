@@ -567,7 +567,11 @@ function generateSkillFile(platform, coreData) {
       generated_at: new Date().toISOString(),
       ...(coreData.metadata.extra || {}),
     };
-    frontmatter = formatFrontmatter(fmData, config) || '';
+    frontmatter = formatFrontmatter(fmData, config);
+    if (!frontmatter) {
+      console.warn(`Warning: formatFrontmatter returned null for platform "${platform}", output will lack frontmatter`);
+      frontmatter = '';
+    }
   }
 
   // Combine frontmatter and content, then inject §UTE section
@@ -813,9 +817,6 @@ module.exports = {
   formatSectionHeader,
   formatCodeBlock,
   formatFrontmatter,
-  validateEmbeddedContent,
-  extractPlaceholders,
-  applyPlatformTransforms,
   
   // Constants
   PLATFORM_CONFIGS,
