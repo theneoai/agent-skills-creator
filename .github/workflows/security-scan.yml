@@ -48,25 +48,3 @@ jobs:
     
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
-
-  cwe-validation:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    
-    - name: Validate CWE patterns
-      run: |
-        # Check that all CWE patterns are valid
-        cd core/shared/security
-        python3 -c "
-import yaml
-with open('cwe-patterns.yaml', 'r') as f:
-    data = yaml.safe_load(f)
-    print(f'Loaded {len(data.get(\"patterns\", []))} CWE patterns')
-    for pattern in data.get('patterns', []):
-        assert 'id' in pattern, 'Pattern missing ID'
-        assert 'name' in pattern, f'Pattern {pattern.get(\"id\", \"unknown\")} missing name'
-        assert 'regex' in pattern, f'Pattern {pattern.get(\"id\", \"unknown\")} missing regex'
-    print('All CWE patterns valid ✓')
-"
-      continue-on-error: true

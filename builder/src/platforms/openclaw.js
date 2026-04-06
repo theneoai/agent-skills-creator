@@ -30,7 +30,6 @@ metadata:
     compatibility: ["1.0", "2.0"]
     features:
       - self-review
-      - self-review
       - self-evolution
     runtime:
       timeout: 30000
@@ -85,7 +84,6 @@ metadata:
     format: agentskills
     compatibility: ["1.0", "2.0"]
     features:
-      - self-review
       - self-review
       - self-evolution
     runtime:
@@ -233,7 +231,6 @@ function generateMetadata(skillData) {
         format: 'agentskills',
         compatibility: ['1.0', '2.0'],
         features: [
-          'self-review',
           'self-review',
           'self-evolution'
         ],
