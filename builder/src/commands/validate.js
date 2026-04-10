@@ -97,9 +97,11 @@ async function validateTemplates(result) {
         console.log(chalk.green(`  ✓ ${relativePath} (${uniquePlaceholders.length} placeholders)`));
       }
 
+      // {{PLACEHOLDER}} is intentional in templates — it marks spots where skill authors
+      // should insert content. Flag as warning (informational), not error.
       if (content.includes('{{PLACEHOLDER}}')) {
-        addIssue(result, 'error', `Template contains unmodified {{PLACEHOLDER}} marker: ${relativePath}`);
-        console.log(chalk.red(`  ✗ ${relativePath} (contains {{PLACEHOLDER}})`));
+        addIssue(result, 'warning', `Template uses {{PLACEHOLDER}} marker (intentional — replace when using): ${relativePath}`);
+        console.log(chalk.yellow(`  ⚠ ${relativePath} (contains {{PLACEHOLDER}} markers — expected for templates)`));
       }
     } catch (error) {
       addIssue(result, 'error', `Cannot read template ${relativePath}: ${error.message}`);

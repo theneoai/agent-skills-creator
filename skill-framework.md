@@ -128,12 +128,15 @@ User Input
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Confidence formula**:
+**Confidence formula** `[ASPIRATIONAL — use as heuristic guide, not literal computation]`:
 ```
 confidence = primary_match×0.5 + secondary_match×0.2
            + context_match×0.2 + no_negative×0.1
 language_weight: EN-input→EN×1.0,ZH×0.3 | ZH-input→ZH×1.0,EN×0.3 | mixed→both×1.0
 ```
+> AI uses this formula as a **reasoning scaffold**, not a precise calculation.
+> In practice: if the primary trigger keyword matches clearly → HIGH confidence;
+> if ambiguous → MEDIUM; if the request could mean multiple things → LOW → ask user.
 
 ---
 
@@ -152,6 +155,32 @@ When confidence < 0.70 **and** user insists on proceeding:
 
 **TEMP_CERT policy**: Skill may be used in development but not production until
 72 h window expires and re-evaluation passes fully.
+
+### Mode Flow — Valid Transitions
+
+Users may invoke any mode directly by supplying the required inputs.
+The table below defines what is needed and what happens next.
+
+| From | To | Required Input | Auto-Action |
+|------|----|----------------|-------------|
+| *(start)* | **CREATE** | Natural language description | Inversion elicitation → 9-phase pipeline |
+| *(start)* | **LEAN** | Skill file content or path | Heuristic scoring → PASS/UNCERTAIN/FAIL |
+| *(start)* | **EVALUATE** | Skill file content | 4-phase pipeline → certification |
+| *(start)* | **OPTIMIZE** | Skill file content + EVALUATE report | 7-dim 9-step loop |
+| *(start)* | **INSTALL** | Platform name (optional) | Deploy to target platforms |
+| **CREATE** | **LEAN** | *(auto)* — output of CREATE | Fast quality gate |
+| **CREATE** | **EVALUATE** | *(auto)* — if LEAN UNCERTAIN | Full certification |
+| **LEAN** | **EVALUATE** | LEAN UNCERTAIN result | Full pipeline |
+| **LEAN** | **OPTIMIZE** | LEAN FAIL result | Improvement loop |
+| **EVALUATE** | **OPTIMIZE** | EVALUATE FAIL result | Improvement loop |
+| **OPTIMIZE** | **LEAN** | *(auto)* — after each round | Fast re-score check |
+| **OPTIMIZE** | **EVALUATE** | *(optional)* — after loop converges | Full re-certification |
+| Any | **INSTALL** | Certified skill content | Platform deployment |
+
+> **OPTIMIZE → EVALUATE policy**: After the OPTIMIZE loop converges:
+> - If final LEAN score ≥ 450 (GOLD proxy) → LEAN_CERT is sufficient; EVALUATE is optional.
+> - If final LEAN score 350–449 → run full EVALUATE to confirm tier.
+> - If final LEAN score < 350 → EVALUATE is mandatory (loop may not have converged properly).
 
 ---
 
@@ -221,16 +250,18 @@ Template files: `claude/templates/<type>.md`
 
 ### Scoring (500-point heuristic → maps to 1000-point scale)
 
-| Check | Points |
-|-------|--------|
-| YAML frontmatter present (name, version, interface) | 60 |
-| ≥ 3 mode sections (`## §N`) present | 60 |
-| "Red Lines" / "严禁" text present | 50 |
-| Quality Gates table with numeric thresholds | 60 |
-| ≥ 2 code-block usage examples | 50 |
-| Trigger keywords (EN + ZH) present for each mode | 60 per mode (max 120) |
-| Security Baseline section present | 50 |
-| No `{{PLACEHOLDER}}` tokens remaining | 50 |
+LEAN checks map directly to the 7 unified dimensions (see `config.SCORING.dimensions`):
+
+| Dimension | LEAN Check | Points |
+|-----------|-----------|--------|
+| **systemDesign** (max 100) | Identity section present + Red Lines / 严禁 text | 60 + 40 |
+| **domainKnowledge** (max 100) | Template accurately used + field specificity visible | 60 + 40 |
+| **workflow** (max 75) | ≥ 3 mode sections (`## §N`) + Quality Gates table | 45 + 30 |
+| **errorHandling** (max 75) | Error/recovery section present + escalation paths documented | 45 + 30 |
+| **examples** (max 75) | ≥ 2 code-block usage examples + trigger keywords (EN + ZH) | 45 + 30 |
+| **security** (max 50) | Security Baseline section + no hardcoded secrets pattern | 30 + 20 |
+| **metadata** (max 25) | YAML frontmatter present (name, version, interface) + no `{{PLACEHOLDER}}` tokens | 15 + 10 |
+| **Total** | | **500** |
 
 **Scale mapping** (500 → 1000):
 ```
@@ -339,17 +370,20 @@ Full protocol: `claude/refs/self-review.md §2`
 
 ## §9  OPTIMIZE Mode — 7-Dimension 9-Step Loop
 
-### 7 Dimensions (with weights)
+### 7 Dimensions (unified with LEAN and EVALUATE)
 
-| Dimension | Weight | What It Covers |
-|-----------|--------|----------------|
-| System Design | 20% | Identity, architecture, Red Lines |
-| Domain Knowledge | 20% | Template accuracy, field specificity |
-| Workflow Definition | 20% | Phase sequence, exit criteria, loop gates |
-| Error Handling | 15% | Recovery paths, escalation triggers |
-| Examples | 15% | Usage examples count, quality, bilingual |
-| Metadata | 10% | YAML frontmatter, versioning, tags |
-| Long-Context | 10% | Section refs, chunking, cross-reference integrity |
+These dimensions are identical to the LEAN scoring dimensions and the EVALUATE
+sub-dimension schema. See `builder/src/config.js SCORING.dimensions` for the canonical spec.
+
+| ID | Dimension | Weight | Strategy | What It Covers |
+|----|-----------|--------|----------|----------------|
+| D1 | **systemDesign** | 20% | S1, S2 | Identity section, Red Lines, architecture clarity |
+| D2 | **domainKnowledge** | 20% | S3, S4 | Template accuracy, field specificity, terminology |
+| D3 | **workflow** | 15% | S5 | Phase sequence, exit criteria, loop gates |
+| D4 | **errorHandling** | 15% | S6 | Recovery paths, escalation triggers, timeouts |
+| D5 | **examples** | 15% | S7 | Usage examples count, quality, bilingual coverage |
+| D6 | **security** | 10% | S8 | CWE scan, Red Lines, auth/authz checks |
+| D7 | **metadata** | 5% | S9 | YAML frontmatter, versioning, tags, UTE fields |
 
 ### 9-Step Loop
 

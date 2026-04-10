@@ -1,11 +1,11 @@
 /**
  * Build Command
- * 
+ *
  * Main build command that generates platform-specific skills from the core engine.
  * Reads core data, embeds it into platform templates, and writes to output directory.
- * 
+ *
  * @module builder/src/commands/build
- * @version 1.0.0
+ * @version 2.2.0
  */
 
 const fs = require('fs-extra');
@@ -14,6 +14,10 @@ const chalk = require('chalk');
 const { readAllCoreData } = require('../core/reader');
 const { generateSkillFile } = require('../core/embedder');
 const { getSupportedPlatforms, isSupported } = require('../platforms');
+const config = require('../config');
+
+/** Platforms whose build output is JSON rather than Markdown */
+const JSON_OUTPUT_PLATFORMS = new Set(['openai', 'mcp']);
 
 /**
  * Build platform-specific skills from core engine
@@ -85,10 +89,14 @@ async function build(options) {
         console.log(chalk.cyan(`  Building ${chalk.bold(platform)}...`));
 
         // Prepare core data with metadata
+        // Read version from package.json (single source of truth)
+        const pkgVersion = require('../../package.json').version;
+        const supportedPlatforms = getSupportedPlatforms();
+
         const skillMetadata = {
           TITLE: 'Skill Writer',
           TYPE: 'Meta-Skill',
-          VERSION: '2.1.0',
+          VERSION: pkgVersion,
           DESCRIPTION: 'A meta-skill for creating, evaluating, and optimizing other skills through natural language interaction.',
           TRIGGERS: `
 **CREATE Mode:**
@@ -104,25 +112,30 @@ async function build(options) {
 **OPTIMIZE Mode:**
 - "optimize this skill"
 - "improve my skill"
-- "make this skill better"`,
+- "make this skill better"
+
+**INSTALL Mode:**
+- "install skill-writer"
+- "install skill-writer to [platform]"
+- "安装 skill-writer"`,
           name: 'skill-writer',
-          version: '2.1.0',
-          description: 'Meta-skill for creating, evaluating, and optimizing skills',
+          version: pkgVersion,
+          description: 'Meta-skill for creating, evaluating, and optimizing skills (supports MCP, Claude, OpenCode, OpenClaw, Cursor, OpenAI, Gemini)',
           author: 'skill-writer-builder',
           license: 'MIT',
-          tags: ['meta-skill', 'skill-creation', 'skill-evaluation', 'skill-optimization'],
-          modes: ['create', 'evaluate', 'optimize'],
+          tags: ['meta-skill', 'skill-creation', 'skill-evaluation', 'skill-optimization', 'mcp'],
+          modes: ['create', 'lean', 'evaluate', 'optimize', 'install'],
           defaultMode: 'create',
           extra: {
-            modes: ['create', 'evaluate', 'optimize'],
-            platforms: ['opencode', 'openclaw', 'claude', 'cursor', 'openai', 'gemini']
+            modes: ['create', 'lean', 'evaluate', 'optimize', 'install'],
+            platforms: supportedPlatforms,
           },
           // Security scan summary counts (filled at build time; 0 = clean baseline)
           p0_count: 0,
           p1_count: 0,
           p2_count: 0,
           p3_count: 0,
-          generated_at: new Date().toISOString()
+          generated_at: new Date().toISOString(),
         };
 
         const enrichedCoreData = {
@@ -143,10 +156,10 @@ async function build(options) {
         }
 
         // Determine output path
+        // JSON_OUTPUT_PLATFORMS (openai, mcp) emit .json; all others emit .md
         const outputDir = path.resolve(buildOptions.output);
-        // OpenAI uses JSON format, others use Markdown
-        const fileExtension = platform === 'openai' ? 'json' : 'md';
-        const outputFile = buildOptions.release 
+        const fileExtension = JSON_OUTPUT_PLATFORMS.has(platform) ? 'json' : 'md';
+        const outputFile = buildOptions.release
           ? `skill-writer-${platform}.${fileExtension}`
           : `skill-writer-${platform}-dev.${fileExtension}`;
         const outputPath = path.join(outputDir, outputFile);

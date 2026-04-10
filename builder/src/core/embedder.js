@@ -89,16 +89,19 @@ function formatCodeBlock(content, language, config) {
 }
 
 /**
- * Format YAML frontmatter for platform
+ * Format YAML frontmatter for platform.
+ * Returns null if the platform does not support YAML frontmatter (e.g. Cursor, MCP).
+ *
  * @param {Object} data - Frontmatter data
- * @param {Object} config - Platform configuration
+ * @param {Object} [platformConfig] - Platform configuration (from config.PLATFORMS)
  * @returns {string|null} Formatted frontmatter or null if not supported
  */
-function formatFrontmatter(data, config) {
-  if (!config.supportsFrontmatter) {
+function formatFrontmatter(data, platformConfig) {
+  // When called without a platform config, default to supporting frontmatter
+  if (platformConfig && !platformConfig.supportsFrontmatter) {
     return null;
   }
-  
+
   try {
     const yamlContent = yaml.dump(data, {
       lineWidth: -1,
@@ -696,39 +699,44 @@ function extractPlaceholders(template, platformConfig) {
 }
 
 /**
- * Apply platform-specific transformations
- * @param {string} content - Content to transform
- * @param {string} platform - Target platform
+ * Apply platform-specific post-processing transforms.
+ *
+ * NOTE: This is a utility for callers that have a pre-built Markdown string and need
+ * platform-specific adjustments AFTER all placeholder substitutions are done.
+ * In the standard build pipeline, formatSkill() on each platform adapter handles
+ * these transforms — you generally do NOT need to call this separately.
+ *
+ * @param {string} content - Content to transform (all {{PLACEHOLDER}}s already replaced)
+ * @param {string} platform - Target platform name
  * @returns {string} Transformed content
  */
 function applyPlatformTransforms(content, platform) {
-  const config = getPlatformConfig(platform);
+  const platformConfig = getPlatformConfig(platform);
   let result = content;
-  
-  // Platform-specific transformations
+
   switch (platform.toLowerCase()) {
     case 'cursor':
-      // Convert placeholders to ${...} format
-      result = result.replace(/\{\{(\w+)\}\}/g, '${$1}');
+      // Cursor uses ${KEY} syntax. Convert any remaining {{KEY}} markers that were
+      // intentionally left (e.g. UTE snippet placeholders filled at install time).
+      // This is safe here because all build-time substitutions are already done.
+      result = result.replace(/\{\{([\w.-]+)\}\}/g, '${$1}');
       break;
-      
+
     case 'openai':
-      // Convert frontmatter to JSON if not supported
-      if (!config.supportsFrontmatter) {
+      // OpenAI adapter prefers JSON-embedded frontmatter for API consumption
+      if (!platformConfig.supportsFrontmatter) {
         result = convertFrontmatterToJSON(result);
       }
       break;
-      
+
     case 'gemini':
-      // Ensure proper formatting for Gemini
       result = ensureGeminiFormatting(result);
       break;
-      
+
     default:
-      // No transformation needed
       break;
   }
-  
+
   return result;
 }
 
