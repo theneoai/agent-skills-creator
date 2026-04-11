@@ -17,7 +17,7 @@ module.exports = {
   },
   
   async validate() {
-    const validate = require('./commands/validate');
+    const { validate } = require('./commands/validate');
     return validate();
   },
   

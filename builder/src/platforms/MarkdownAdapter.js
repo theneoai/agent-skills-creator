@@ -120,8 +120,8 @@ tags: {{tags}}
       version: skillData?.version || '1.0.0',
       created: new Date().toISOString(),
       compatibility: {
-        minVersion: '1.0.0',
-        testedVersions: ['1.0.0', '2.0.0', '2.1.0', builderVersion].filter(
+        minVersion: '2.2.0',
+        testedVersions: [builderVersion].filter(
           (v, i, arr) => arr.indexOf(v) === i   // deduplicate
         ),
       },

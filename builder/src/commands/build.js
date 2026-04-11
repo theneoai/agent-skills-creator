@@ -15,6 +15,7 @@ const { readAllCoreData } = require('../core/reader');
 const { generateSkillFile } = require('../core/embedder');
 const { getSupportedPlatforms, isSupported } = require('../platforms');
 const config = require('../config');
+const { getSkillMetadata } = require('../metadata');
 
 /** Platforms whose build output is JSON rather than Markdown */
 const JSON_OUTPUT_PLATFORMS = new Set(['openai', 'mcp']);
@@ -88,55 +89,8 @@ async function build(options) {
       try {
         console.log(chalk.cyan(`  Building ${chalk.bold(platform)}...`));
 
-        // Prepare core data with metadata
-        // Read version from package.json (single source of truth)
-        const pkgVersion = require('../../package.json').version;
-        const supportedPlatforms = getSupportedPlatforms();
-
-        const skillMetadata = {
-          TITLE: 'Skill Writer',
-          TYPE: 'Meta-Skill',
-          VERSION: pkgVersion,
-          DESCRIPTION: 'A meta-skill for creating, evaluating, and optimizing other skills through natural language interaction.',
-          TRIGGERS: `
-**CREATE Mode:**
-- "create a [type] skill"
-- "help me write a skill for [purpose]"
-- "I need a skill that [description]"
-
-**EVALUATE Mode:**
-- "evaluate this skill"
-- "check the quality of my skill"
-- "certify my skill"
-
-**OPTIMIZE Mode:**
-- "optimize this skill"
-- "improve my skill"
-- "make this skill better"
-
-**INSTALL Mode:**
-- "install skill-writer"
-- "install skill-writer to [platform]"
-- "安装 skill-writer"`,
-          name: 'skill-writer',
-          version: pkgVersion,
-          description: 'Meta-skill for creating, evaluating, and optimizing skills (supports MCP, Claude, OpenCode, OpenClaw, Cursor, OpenAI, Gemini)',
-          author: 'skill-writer-builder',
-          license: 'MIT',
-          tags: ['meta-skill', 'skill-creation', 'skill-evaluation', 'skill-optimization', 'mcp'],
-          modes: ['create', 'lean', 'evaluate', 'optimize', 'install'],
-          defaultMode: 'create',
-          extra: {
-            modes: ['create', 'lean', 'evaluate', 'optimize', 'install'],
-            platforms: supportedPlatforms,
-          },
-          // Security scan summary counts (filled at build time; 0 = clean baseline)
-          p0_count: 0,
-          p1_count: 0,
-          p2_count: 0,
-          p3_count: 0,
-          generated_at: new Date().toISOString(),
-        };
+        // Prepare core data with metadata (sourced from shared metadata.js — SSoT)
+        const skillMetadata = getSkillMetadata(platform);
 
         const enrichedCoreData = {
           ...coreData,

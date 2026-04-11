@@ -37,8 +37,8 @@ function formatSkill(skillContent) {
 
   let formatted = skillContent;
 
-  // Convert {{...}} placeholders to ${...} format
-  formatted = formatted.replace(/\{\{(\w+)\}\}/g, '${$1}');
+  // Convert {{...}} placeholders to ${...} format (extended: supports hyphens and dots)
+  formatted = formatted.replace(/\{\{([\w.-]+)\}\}/g, '${$1}');
 
   // Convert YAML frontmatter to JSON code block (Cursor doesn't support YAML frontmatter)
   const frontmatterMatch = formatted.match(/^---\n([\s\S]*?)\n---\n/);

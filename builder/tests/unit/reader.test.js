@@ -43,21 +43,23 @@ describe('Reader Module', () => {
   });
 
   describe('readOptimizeMode', () => {
-    test('should return strategies, antiPatterns, and convergence properties', async () => {
+    test('should return strategies and antiPatterns properties', async () => {
       const result = await reader.readOptimizeMode();
       expect(result).toHaveProperty('strategies');
       expect(result).toHaveProperty('antiPatterns');
-      expect(result).toHaveProperty('convergence');
+      // convergence was moved to shared (refs/convergence.md) — do not expect it here
     });
   });
 
   describe('readSharedResources', () => {
-    test('should return all shared resource properties', async () => {
+    test('should return all shared resource properties including convergence', async () => {
       const result = await reader.readSharedResources();
       expect(result).toHaveProperty('securityPatterns');
       expect(result).toHaveProperty('selfReview');
       expect(result).toHaveProperty('evolution');
       expect(result).toHaveProperty('useToEvolve');
+      // convergence moved from optimize to shared in v3.x
+      expect(result).toHaveProperty('convergence');
     });
   });
 

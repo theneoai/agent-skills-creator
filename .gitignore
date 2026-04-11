@@ -74,7 +74,10 @@ htmlcov/
 *.min.js
 *.min.css
 
-# Generated platform files (keep directory but not files)
+# Generated platform files (keep directory but not the generated files)
+# Root platforms/ outputs are build artifacts — do not commit them.
+platforms/*.md
+platforms/*.json
 !platforms/.gitkeep
 builder/platforms/
 

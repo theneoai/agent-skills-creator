@@ -107,6 +107,9 @@ function generateMetadata(platformName, skillData) {
   return platform.generateMetadata(skillData);
 }
 
+/** Platforms that emit JSON output rather than Markdown */
+const JSON_PLATFORMS = new Set(['openai', 'mcp']);
+
 /**
  * Install skill to platform-specific location
  * @param {string} platformName - Target platform
@@ -117,7 +120,8 @@ function generateMetadata(platformName, skillData) {
 function installSkill(platformName, skillContent, skillName) {
   const platform = getPlatform(platformName);
   const installDir = platform.getInstallPath();
-  const filename = `${skillName}.md`;
+  const ext = JSON_PLATFORMS.has(platformName.toLowerCase()) ? 'json' : 'md';
+  const filename = `${skillName}.${ext}`;
   const fullPath = path.join(installDir, filename);
 
   // Ensure install directory exists

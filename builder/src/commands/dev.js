@@ -2,10 +2,11 @@
  * Dev Command
  *
  * Development mode with file watching for the skill-writer-builder.
- * Watches the core/ directory and automatically rebuilds when files change.
+ * Watches source directories (refs/, templates/, eval/, optimize/) and
+ * automatically rebuilds when files change.
  *
  * @module builder/src/commands/dev
- * @version 1.0.0
+ * @version 2.2.0
  */
 
 const chokidar = require('chokidar');
@@ -13,11 +14,19 @@ const chalk = require('chalk');
 const path = require('path');
 const { readAllCoreData } = require('../core/reader');
 const { generateSkillFile } = require('../core/embedder');
-const { getPlatform, isSupported, getSupportedPlatforms } = require('../platforms');
+const { getPlatform, isSupported } = require('../platforms');
 const fs = require('fs-extra');
+const config = require('../config');
+const { getSkillMetadata } = require('../metadata');
 
-// Core directory to watch
-const CORE_DIR = path.resolve(__dirname, '../../core');
+// Source directories to watch — use PATHS from config (SSoT) instead of a
+// hard-coded nonexistent 'builder/core/' path.
+const WATCH_DIRS = [
+  config.PATHS.refs,
+  config.PATHS.templates,
+  config.PATHS.eval,
+  config.PATHS.optimize,
+];
 
 // Debounce timeout in milliseconds
 const DEBOUNCE_MS = 300;
@@ -77,42 +86,9 @@ async function buildForPlatform(platform) {
     // Read all core data
     const coreData = await readAllCoreData();
 
-    // Prepare data for embedder
+    // Prepare data for embedder (metadata sourced from shared metadata.js — SSoT)
     const embedData = {
-      metadata: {
-        TITLE: 'Skill Writer',
-        TYPE: 'Meta-Skill',
-        VERSION: '1.0.0',
-        DESCRIPTION: 'A meta-skill for creating, evaluating, and optimizing other skills through natural language interaction.',
-        TRIGGERS: `
-**CREATE Mode:**
-- "create a [type] skill"
-- "help me write a skill for [purpose]"
-- "I need a skill that [description]"
-
-**EVALUATE Mode:**
-- "evaluate this skill"
-- "check the quality of my skill"
-- "certify my skill"
-
-**OPTIMIZE Mode:**
-- "optimize this skill"
-- "improve my skill"
-- "make this skill better"`,
-        name: 'skill-writer',
-        version: '1.0.0',
-        description: 'Meta-skill for creating, evaluating, and optimizing skills',
-        author: 'skill-writer-builder',
-        license: 'MIT',
-        tags: ['meta-skill', 'skill-creation', 'skill-evaluation', 'skill-optimization'],
-        modes: ['create', 'evaluate', 'optimize'],
-        defaultMode: 'create',
-        platform: platform,
-        extra: {
-          modes: ['create', 'evaluate', 'optimize'],
-          platforms: ['opencode', 'openclaw', 'claude', 'cursor', 'openai', 'gemini']
-        }
-      },
+      metadata: getSkillMetadata(platform),
       create: {
         workflow: coreData.create.workflow,
         elicitation: coreData.create.elicitation,
@@ -183,7 +159,7 @@ async function buildForPlatform(platform) {
  * @param {Function} rebuildFn - Rebuild function
  */
 async function handleFileChange(platform, eventType, filePath, rebuildFn) {
-  const relativePath = path.relative(CORE_DIR, filePath);
+  const relativePath = path.relative(config.PATHS.root, filePath);
   const eventLabels = {
     change: chalk.yellow('modified'),
     add: chalk.green('added'),
@@ -238,7 +214,7 @@ async function dev(options) {
   }
 
   log(chalk.bold(`Starting development mode for ${chalk.cyan(platform)}`));
-  log(`Watching ${chalk.gray(CORE_DIR)} for changes...`);
+  log(`Watching: ${WATCH_DIRS.map(d => chalk.gray(path.relative(config.PATHS.root, d))).join(', ')}`);
   log(`Press ${chalk.gray('Ctrl+C')} to stop\n`);
 
   // Perform initial build
@@ -260,8 +236,8 @@ async function dev(options) {
     }, DEBOUNCE_MS);
   };
 
-  // Initialize file watcher
-  const watcher = chokidar.watch(CORE_DIR, {
+  // Initialize file watcher — watch all actual source directories
+  const watcher = chokidar.watch(WATCH_DIRS, {
     ignored: [
       /(^|[\/\\])\../,  // dotfiles
       '**/node_modules/**',
