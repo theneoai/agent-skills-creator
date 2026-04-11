@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-04-11
+
+### 🐛 Fixed
+
+- **`dev.js` broken file watcher** — was watching nonexistent `builder/core/` directory; now watches correct `WATCH_DIRS` (refs, templates, eval, optimize) from `config.PATHS`
+- **`index.js` programmatic `validate()` API** — was calling `require('./commands/validate')` as a function directly; fixed to destructure `{ validate }` from the module export (was throwing `TypeError: validate is not a function` in any programmatic consumer)
+- **`cursor.js` placeholder regex** — `/\{\{(\w+)\}\}/g` missed `{{OUTER-KEY}}` and `{{outer.key}}` style markers; updated to `/\{\{([\w.-]+)\}\}/g`
+- **`platforms/index.js` wrong file extension for JSON platforms** — `installSkill` was always writing `.md`; now writes `.json` for `openai` and `mcp` platforms
+- **`inspect.js` JSON platform extension** — `getBuiltSkillPath` only checked `platform === 'openai'`; updated to use `JSON_PLATFORMS` set to also handle `mcp`
+- **`inspect.js` duplicate placeholder reporting** — added `seen` Set to deduplicate identical placeholder matches
+- **`MarkdownAdapter.js` dead compatibility versions** — `testedVersions` had hardcoded historical list `['1.0.0', '2.0.0', '2.1.0']`; now reads dynamically from `package.json`; `minVersion` updated from `'1.0.0'` to `'2.2.0'`
+- **`openai.js` stale `testedVersions` and `minVersion`** — same fix as MarkdownAdapter
+- **Reader test mis-placed `convergence` assertion** — `readOptimizeMode` test incorrectly expected `convergence` property; moved assertion to `readSharedResources` where it actually belongs
+- **`dev.js` frozen version** — metadata blob was hardcoded `VERSION: '1.0.0'`; now reads dynamically from `builder/package.json` via shared `metadata.js`
+
+### ✨ Added
+
+- **`builder/src/metadata.js`** — SSoT for skill-writer's own build metadata; exports `getSkillMetadata(platform)` replacing duplicate 50-line metadata blobs in `build.js` and `dev.js`
+- **`builder/.eslintrc.json`** — ESLint configuration so `npm run lint` actually enforces rules (was silently a no-op with no config)
+- **`builder/src/platforms/sections/`** — externalized LoongFlow, Self-Review, and UTE section template files; separates presentation content from adapter logic in `openclaw.js`
+- **`install.sh` MCP support** — added `mcp` case copying JSON manifest to `~/.mcp/servers/skill-writer/mcp-manifest.json`
+
+### 🔧 Changed
+
+- **`build.js` and `dev.js`** — replaced inline 50-line metadata blobs with `getSkillMetadata(platform)` from new `metadata.js` module
+- **`openclaw.js`** — replaced three ~100-line inline section strings with `readSection()` calls loading from `sections/` directory
+- **`opencode.js` `generateMetadata`** — now delegates entirely to `super.generateMetadata()`, only overriding `format: 'SKILL.md'`; removed dead compatibility override
+- **`mcp.js` frontmatter parsing** — replaced 7-regex hand-rolled parser with single `yaml.load()` call (handles both inline and block YAML list forms); platform list now sourced from `config.PLATFORMS` instead of hardcoded array
+- **`builder/templates/claude.md`** — version/description/date fields now use `{{VERSION}}`, `{{DESCRIPTION}}`, `{{generated_at}}` placeholders; added OWASP ASI security table; updated to 10-step OPTIMIZE loop; added `injected_by` and `injected_at` to `use_to_evolve` block
+- **`builder/templates/openai.json`** — same placeholder and feature parity updates as claude.md
+
+---
+
 ## [3.1.0] - 2026-04-11
 
 ### ✨ Added
@@ -243,27 +276,9 @@ Skill Framework MVP - Production Ready
 
 ---
 
-## Release Template
-
-### [Unreleased]
-
-### Added
-- New features
-
-### Changed
-- Changes in existing functionality
-
-### Deprecated
-- Soon-to-be removed features
-
-### Removed
-- Now removed features
-
-### Fixed
-- Bug fixes
-
-### Security
-- Security improvements
-
+[3.1.0]: https://github.com/theneoai/skill-writer/releases/tag/v3.1.0
+[3.0.0]: https://github.com/theneoai/skill-writer/releases/tag/v3.0.0
+[2.2.0]: https://github.com/theneoai/skill-writer/releases/tag/v2.2.0
+[2.1.0]: https://github.com/theneoai/skill-writer/releases/tag/v2.1.0
 [2.0.0]: https://github.com/theneoai/skill-writer/releases/tag/v2.0.0
 [1.0.0]: https://github.com/theneoai/skill-writer/releases/tag/v1.0.0

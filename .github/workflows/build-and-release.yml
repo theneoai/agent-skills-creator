@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        platform: [opencode, openclaw, claude, cursor, openai, gemini]
+        platform: [opencode, openclaw, claude, cursor, openai, gemini, mcp]
     steps:
     - uses: actions/checkout@v3
 
@@ -109,6 +109,12 @@ jobs:
           cp "$src" "dist/skill-writer-openai.json"
           echo "  ✓ dist/skill-writer-openai.json"
         fi
+        # MCP produces JSON manifest
+        src=$(find release-assets/skill-writer-mcp -name "*.json" 2>/dev/null | head -1)
+        if [[ -n "$src" ]]; then
+          cp "$src" "dist/skill-writer-mcp.json"
+          echo "  ✓ dist/skill-writer-mcp.json"
+        fi
         # Universal asset: skill-framework.md → skill-writer.md
         cp skill-framework.md dist/skill-writer.md
         echo "  ✓ dist/skill-writer.md (universal)"
@@ -131,6 +137,8 @@ jobs:
         | **OpenClaw** | \`read ${BASE}/skill-writer-openclaw.md and install to openclaw\` |
         | **Cursor** | \`read ${BASE}/skill-writer-cursor.md and install to cursor\` |
         | **Gemini** | \`read ${BASE}/skill-writer-gemini.md and install to gemini\` |
+        | **OpenAI** | \`read ${BASE}/skill-writer-openai.json and install to openai\` |
+        | **MCP** | \`read ${BASE}/skill-writer-mcp.json and install to mcp\` |
         | **All platforms** | \`read ${BASE}/skill-writer.md and install\` |
 
         ### Agent Install — latest release (always up to date)
@@ -160,7 +168,8 @@ jobs:
         | \`skill-writer-openclaw.md\` | OpenClaw |
         | \`skill-writer-cursor.md\` | Cursor |
         | \`skill-writer-gemini.md\` | Gemini |
-        | \`skill-writer-openai.json\` | OpenAI |
+        | \`skill-writer-openai.json\` | OpenAI (JSON) |
+        | \`skill-writer-mcp.json\` | MCP (JSON manifest) |
         EOF
 
     - name: Create GitHub Release

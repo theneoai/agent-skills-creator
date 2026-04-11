@@ -2,9 +2,9 @@
 
 A cross-platform meta-skill for creating, evaluating, and optimizing AI assistant skills through natural language interaction.
 
-[![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)](https://github.com/theneoai/skill-writer)
+[![Version](https://img.shields.io/badge/version-3.1.0-blue.svg)](https://github.com/theneoai/skill-writer)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Platforms](https://img.shields.io/badge/platforms-6-orange.svg)](#supported-platforms)
+[![Platforms](https://img.shields.io/badge/platforms-7-orange.svg)](#supported-platforms)
 [![GitHub Actions](https://github.com/theneoai/skill-writer/workflows/Skill%20Writer%20-%20Build%20and%20Release/badge.svg)](https://github.com/theneoai/skill-writer/actions)
 [![Security Scan](https://github.com/theneoai/skill-writer/workflows/Skill%20Writer%20-%20Security%20Scan/badge.svg)](https://github.com/theneoai/skill-writer/actions)
 
@@ -16,11 +16,11 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 
 - **Agent Install**: One-line install via "read [URL] and install" — works in any supported platform
 - **Zero CLI Interface**: Natural language interaction - no commands to memorize
-- **Cross-Platform**: Works on 6 major AI platforms
-- **Five Powerful Modes**: CREATE, LEAN, EVALUATE, OPTIMIZE, and INSTALL
+- **Cross-Platform**: Works on 7 major AI platforms (including MCP)
+- **Six Powerful Modes**: CREATE, LEAN, EVALUATE, OPTIMIZE, INSTALL, and COLLECT
 - **Template-Based**: 4 built-in templates for common skill patterns
 - **Quality Assurance**: 1000-point scoring system with certification tiers
-- **Security Built-In**: CWE-based security pattern detection
+- **Security Built-In**: CWE-based + OWASP Agentic Skills Top 10 (ASI01–ASI10) detection
 - **Continuous Improvement**: Automated optimization with convergence detection
 - **Self-Evolution**: UTE (Use-to-Evolve) protocol for automatic skill improvement
 - **Multi-Pass Self-Review**: Generate/Review/Reconcile quality protocol
@@ -33,8 +33,9 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 | [OpenClaw](https://openclaw.ai) | ✅ P0 | `~/.openclaw/skills/` |
 | [Claude](https://claude.ai) | ✅ P0 | `~/.claude/skills/` |
 | [Cursor](https://cursor.sh) | ✅ P1 | `~/.cursor/skills/` |
-| [OpenAI](https://openai.com) | ✅ P1 | Platform-specific |
+| [OpenAI](https://openai.com) | ✅ P1 | `~/.openai/skills/` (JSON) |
 | [Gemini](https://gemini.google.com) | ✅ P2 | `~/.gemini/skills/` |
+| [MCP](https://modelcontextprotocol.io) | ✅ P2 | `~/.mcp/servers/skill-writer/` (JSON manifest) |
 
 ## Quick Start
 
@@ -52,6 +53,8 @@ Paste one command into your AI agent to install the latest stable release:
 | OpenClaw only | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-openclaw.md and install to openclaw` |
 | Cursor only | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-cursor.md and install to cursor` |
 | Gemini only | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-gemini.md and install to gemini` |
+| OpenAI only | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-openai.json and install to openai` |
+| MCP only | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-mcp.json and install to mcp` |
 
 Each [GitHub Release](https://github.com/theneoai/skill-writer/releases) includes per-platform assets and ready-to-paste agent commands for that version.
 
@@ -76,6 +79,8 @@ cd skill-writer
 ./install.sh --platform opencode
 ./install.sh --platform cursor
 ./install.sh --platform gemini
+./install.sh --platform openai
+./install.sh --platform mcp
 
 # Install directly from a release asset
 ./install.sh --url https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer.md
@@ -102,6 +107,14 @@ cp skill-framework.md ~/.cursor/skills/skill-writer.md
 # Gemini
 mkdir -p ~/.gemini/skills
 cp skill-framework.md ~/.gemini/skills/skill-writer.md
+
+# OpenAI (JSON format)
+mkdir -p ~/.openai/skills
+cp platforms/skill-writer-openai-dev.json ~/.openai/skills/skill-writer.json
+
+# MCP (JSON manifest)
+mkdir -p ~/.mcp/servers/skill-writer
+cp platforms/skill-writer-mcp-dev.json ~/.mcp/servers/skill-writer/mcp-manifest.json
 ```
 
 ### Usage Examples
@@ -251,16 +264,17 @@ Continuously improves skills through iterative refinement with 7-dimension analy
 | Metadata | 10% | Documentation, tags |
 | Long-Context | 10% | Token efficiency, structure |
 
-#### 9-Step Optimization Loop
+#### 10-Step Optimization Loop
 1. **Parse**: Understand current skill
 2. **Analyze**: Identify improvement areas across 7 dimensions
 3. **Generate**: Create optimized version
 4. **Evaluate**: Score the new version
 5. **Compare**: Check against previous
 6. **Converge**: Detect improvement plateau
-7. **Validate**: Ensure correctness
+7. **RE-SCORE**: Re-score after single fix
 8. **Report**: Show changes
 9. **Iterate**: Repeat if needed
+10. **VERIFY**: Co-evolutionary independent re-evaluation pass after convergence (score inflation delta > 50 pts → HUMAN_REVIEW)
 
 #### Convergence Detection
 Optimization stops when:
@@ -290,13 +304,25 @@ Installs skill-writer itself to one or all supported platforms from a URL or loc
 
 #### Platform Paths
 
-| Platform | Skills Directory |
-|----------|-----------------|
-| Claude | `~/.claude/skills/` |
-| OpenCode | `~/.config/opencode/skills/` |
-| OpenClaw | `~/.openclaw/skills/` |
-| Cursor | `~/.cursor/skills/` |
-| Gemini | `~/.gemini/skills/` |
+| Platform | Skills Directory | Format |
+|----------|-----------------|--------|
+| Claude | `~/.claude/skills/` | Markdown |
+| OpenCode | `~/.config/opencode/skills/` | Markdown |
+| OpenClaw | `~/.openclaw/skills/` | Markdown |
+| Cursor | `~/.cursor/skills/` | Markdown |
+| Gemini | `~/.gemini/skills/` | Markdown |
+| OpenAI | `~/.openai/skills/` | JSON |
+| MCP | `~/.mcp/servers/skill-writer/` | JSON manifest |
+
+### COLLECT Mode
+
+Records structured session artifacts after each skill invocation (when UTE is enabled). Enables collective skill evolution via the AGGREGATE pipeline.
+
+#### Workflow
+1. **CAPTURE**: Record invocation context, outcome, and PRM signal
+2. **CLASSIFY**: Assign lesson type (strategic_pattern / failure_lesson / neutral)
+3. **STORE**: Append to session artifact log (refs/session-artifact.md schema)
+4. **AGGREGATE** (periodic): Distill N artifacts into ranked improvement signals → OPTIMIZE candidates
 
 #### Triggers (EN/ZH)
 - `"read <URL> and install"` / `"从 <URL> 安装"`
@@ -315,14 +341,29 @@ Automatically checks for:
 - **CWE-22**: Path Traversal
 - And more...
 
+### OWASP Agentic Skills Top 10 (2026)
+
+| ID | Risk | Severity |
+|----|------|----------|
+| ASI01 | Prompt Injection / Goal Hijack | P1 (−50 pts) |
+| ASI02 | Insecure Tool Use | P1 (−50 pts) |
+| ASI03 | Excessive Agency | P1 (−50 pts) |
+| ASI04 | Uncontrolled Resource Consumption | P1 (−50 pts) |
+| ASI05 | Missing Negative Boundaries | P2 (advisory) |
+| ASI06 | Sensitive Data Exposure | P2 (advisory) |
+| ASI07 | Insufficient Logging | P2 (advisory) |
+| ASI08 | Insecure Deserialization | P2 (advisory) |
+| ASI09 | Executable Script Risk | P2 (advisory) |
+| ASI10 | Broken Access Control | P2 (advisory) |
+
 ### Security Severity Levels
 
-| Level | CWE Examples | Action |
-|-------|--------------|--------|
+| Level | Examples | Action |
+|-------|----------|--------|
 | P0 (Critical) | CWE-798, CWE-89, CWE-78 | ABORT immediately |
-| P1 (High) | CWE-22, CWE-306, CWE-862 | -50 points |
-| P2 (Medium) | Various | -30 points |
-| P3 (Low) | Minor issues | -10 points |
+| P1 (High) | CWE-22, CWE-306, ASI01–ASI04 | −50 points |
+| P2 (Medium) | ASI05–ASI10, various CWE | −30 points (advisory) |
+| P3 (Low) | Minor issues | −10 points |
 
 ### Security Report Format
 
@@ -346,10 +387,12 @@ Self-improvement protocol that enables skills to evolve through usage.
 
 ```yaml
 use_to_evolve:
-  framework_version: "2.1.0"
-  injection_date: "2026-04-01"
+  framework_version: "{{VERSION}}"
+  injected_by: skill-writer-builder
+  injected_at: "{{generated_at}}"
+  injection_date: "2026-04-11"
   certified_lean_score: 390
-  last_ute_check: "2026-04-01"
+  last_ute_check: null
 ```
 
 ### 3-Trigger System
@@ -416,10 +459,13 @@ skill-writer/
 ├── skill-framework.md             # Main skill definition (entry point)
 ├── refs/                          # Reference documentation
 │   ├── self-review.md             # Multi-pass self-review protocol
-│   ├── use-to-evolve.md           # UTE self-improvement spec
+│   ├── use-to-evolve.md           # UTE 2.0 self-improvement spec (L1/L2 architecture)
 │   ├── evolution.md               # 3-trigger evolution system
 │   ├── convergence.md             # Convergence detection rules
-│   └── security-patterns.md       # CWE security patterns
+│   ├── security-patterns.md       # CWE + OWASP ASI security patterns
+│   ├── session-artifact.md        # Session artifact schema (COLLECT mode)
+│   ├── edit-audit.md              # Edit Audit Guard (MICRO/MINOR/MAJOR/REWRITE)
+│   └── skill-registry.md          # Skill Registry spec (SHA-256 IDs, push/pull/sync)
 ├── templates/                     # Skill templates (4 types + UTE snippet)
 │   ├── base.md
 │   ├── api-integration.md
@@ -438,12 +484,18 @@ skill-writer/
 │   ├── src/
 │   │   ├── commands/              # CLI commands (build, dev, validate, inspect)
 │   │   ├── core/                  # Reader and embedder modules
-│   │   └── platforms/             # 6 platform adapters
-│   └── templates/                 # Platform-specific output templates
-├── platforms/                     # Generated platform files (6 platforms)
+│   │   ├── metadata.js            # SSoT for builder metadata (version, platforms)
+│   │   └── platforms/             # 7 platform adapters
+│   │       ├── MarkdownAdapter.js # Shared base class for markdown platforms
+│   │       ├── sections/          # Externalized section templates (openclaw)
+│   │       └── index.js           # Platform registry
+│   ├── templates/                 # Platform-specific output templates
+│   ├── .eslintrc.json             # ESLint configuration
+│   └── tests/                     # Jest test suite (179 tests)
+├── platforms/                     # Generated platform files (7 platforms, gitignored)
 ├── examples/                      # Certified example skills
 │   ├── api-tester/                # GOLD 920/1000
-│   ├── code-reviewer/             # SILVER 820/1000
+│   ├── code-reviewer/             # GOLD 947/1000
 │   └── doc-generator/             # GOLD 895/1000
 └── docs/                          # GitHub Pages documentation
 ```
@@ -469,10 +521,10 @@ skill-writer/
 │  ┌──────────────┐  ┌─────────────────────────────────────┐ │
 │  │OPTIMIZE Mode │  │              Shared Resources        │ │
 │  │              │  │  • CWE Security Patterns            │ │
-│  │ • 7-Dimension│  │  • UTE Self-Evolution               │ │
-│  │   Analysis   │  │  • Multi-Pass Self-Review            │ │
-│  │ • 9-Step     │  │  • Utility Functions                │ │
-│  │   Loop       │  │                                     │ │
+│  │ • 7-Dimension│  │  • CWE + OWASP ASI Security         │ │
+│  │   Analysis   │  │  • UTE 2.0 Self-Evolution           │ │
+│  │ • 10-Step    │  │  • Multi-Pass Self-Review            │ │
+│  │   Loop       │  │  • COLLECT/AGGREGATE Pipeline       │ │
 │  └──────────────┘  └─────────────────────────────────────┘ │
 │                                                              │
 └─────────────────────────────────────────────────────────────┘
@@ -482,10 +534,10 @@ skill-writer/
 │                 Platform-Specific Builder                    │
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
-│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐           │
-│  │OpenCode │ │OpenClaw │ │ Claude  │ │ Cursor  │ ...       │
-│  │ Adapter │ │ Adapter │ │ Adapter │ │ Adapter │           │
-│  └─────────┘ └─────────┘ └─────────┘ └─────────┘           │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌───────┐ │
+│  │OpenCode │ │OpenClaw │ │ Claude  │ │ Cursor  │ │  MCP  │ │
+│  │ Adapter │ │ Adapter │ │ Adapter │ │ Adapter │ │ + 2   │ │
+│  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └───────┘ │
 │                                                              │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -561,11 +613,15 @@ MIT License - See [LICENSE](LICENSE) file for details.
 ## Roadmap
 
 - [x] Core engine with CREATE, LEAN, EVALUATE, OPTIMIZE, INSTALL modes
-- [x] Builder tool with CLI
-- [x] Support for 6 platforms (OpenCode, OpenClaw, Claude, Cursor, OpenAI, Gemini)
+- [x] COLLECT mode with AGGREGATE pipeline (UTE 2.0 L2)
+- [x] Builder tool with CLI and Jest test suite (179 tests)
+- [x] Support for 7 platforms (OpenCode, OpenClaw, Claude, Cursor, OpenAI, Gemini, MCP)
 - [x] LEAN fast-evaluation mode
-- [x] UTE (Use-to-Evolve) self-improvement protocol
+- [x] UTE 2.0 self-improvement protocol (L1 enforced + L2 collective)
 - [x] Multi-pass self-review protocol
+- [x] OWASP Agentic Skills Top 10 (ASI01–ASI10) security detection
+- [x] Co-evolutionary VERIFY step (Step 10 in OPTIMIZE loop)
+- [x] Edit Audit Guard and Skill Registry
 - [ ] Web UI for skill management
 - [ ] Skill marketplace integration
 - [ ] Automated testing framework
@@ -581,4 +637,4 @@ MIT License - See [LICENSE](LICENSE) file for details.
 
 **Made with ❤️ by the Skill Writer Team**
 
-*Last updated: 2026-04-05*
+*Last updated: 2026-04-11*

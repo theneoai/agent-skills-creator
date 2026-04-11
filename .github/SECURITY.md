@@ -6,7 +6,8 @@ We release patches for security vulnerabilities. Which versions are eligible rec
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 2.x.x   | :white_check_mark: |
+| 3.x.x   | :white_check_mark: |
+| 2.x.x   | :x:                |
 | 1.x.x   | :x:                |
 | < 1.0   | :x:                |
 
@@ -71,6 +72,14 @@ We scan for:
 - Directory traversal sequences
 - File access vulnerabilities
 
+### OWASP Agentic Skills Top 10 (ASI01–ASI10)
+We scan for agentic-specific vulnerabilities including:
+- **ASI01**: Prompt Injection / Goal Hijack (P1 — −50 pts)
+- **ASI02**: Insecure Tool Use (P1 — −50 pts)
+- **ASI03**: Excessive Agency (P1 — −50 pts)
+- **ASI04**: Uncontrolled Resource Consumption (P1 — −50 pts)
+- **ASI05–ASI10**: Advisory patterns (P2 — reported but not blocking)
+
 ## Security Best Practices
 
 ### For Users
@@ -122,5 +131,6 @@ We would like to thank the following security researchers who have responsibly d
 ## References
 
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
+- [OWASP Agentic Skills Top 10 (2026)](https://owasp.org/www-project-agentic-skills-top-ten/) — ASI01–ASI10
 - [CWE Top 25](https://cwe.mitre.org/top25/)
 - [GitHub Security Lab](https://securitylab.github.com/)

@@ -119,7 +119,7 @@
         <div class="hero-content">
             <div class="container">
                 <div class="hero-badge">
-                    <span class="badge">🎉 v2.0.0 正式发布</span>
+                    <span class="badge">🎉 v3.1.0 正式发布</span>
                 </div>
                 <h1 class="hero-title">
                     让 AI 技能像软件一样<br>
@@ -132,7 +132,7 @@
                 <div class="hero-badges">
                     <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License">
                     <img src="https://img.shields.io/badge/Framework-PLATINUM-brightgreen" alt="Framework">
-                    <img src="https://img.shields.io/badge/version-2.0.0-blue" alt="Version">
+                    <img src="https://img.shields.io/badge/version-3.1.0-blue" alt="Version">
                 </div>
                 <div class="hero-cta">
                     <a href="#quickstart" class="btn btn-primary btn-large">快速开始</a>
@@ -154,15 +154,15 @@
                         <div class="stat-label">分评估体系</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">878</div>
+                        <div class="stat-number">920</div>
                         <div class="stat-label">平均认证分数</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">3</div>
-                        <div class="stat-label">认证示例技能</div>
+                        <div class="stat-number">7</div>
+                        <div class="stat-label">支持平台</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">5</div>
+                        <div class="stat-number">6</div>
                         <div class="stat-label">工作模式</div>
                     </div>
                 </div>
@@ -185,6 +185,7 @@
                     <button class="install-tab" data-panel="openclaw">OpenClaw</button>
                     <button class="install-tab" data-panel="cursor">Cursor</button>
                     <button class="install-tab" data-panel="gemini">Gemini</button>
+                    <button class="install-tab" data-panel="mcp">MCP</button>
                 </div>
 
                 <div class="install-panel active" id="ip-all">
@@ -192,7 +193,7 @@
                         <code>read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install</code>
                         <button class="copy-btn" onclick="copyInstall(this)">复制</button>
                     </div>
-                    <p class="install-hint">安装到本机所有支持的 AI 平台（Claude / OpenCode / OpenClaw / Cursor / Gemini）</p>
+                    <p class="install-hint">安装到本机所有支持的 AI 平台（Claude / OpenCode / OpenClaw / Cursor / Gemini / OpenAI / MCP）</p>
                 </div>
 
                 <div class="install-panel" id="ip-claude">
@@ -233,6 +234,14 @@
                         <button class="copy-btn" onclick="copyInstall(this)">复制</button>
                     </div>
                     <p class="install-hint">安装到 <code>~/.gemini/skills/</code></p>
+                </div>
+
+                <div class="install-panel" id="ip-mcp">
+                    <div class="install-cmd-row">
+                        <code>read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install to mcp</code>
+                        <button class="copy-btn" onclick="copyInstall(this)">复制</button>
+                    </div>
+                    <p class="install-hint">安装 MCP JSON manifest 到 <code>~/.mcp/servers/skill-writer/mcp-manifest.json</code></p>
                 </div>
             </div>
         </div>
@@ -575,15 +584,30 @@ skill run doc-generator --mode batch \
                     </div>
                 </div>
 
-                <div class="roadmap-item in-progress">
-                    <div class="roadmap-marker">🚧</div>
+                <div class="roadmap-item completed">
+                    <div class="roadmap-marker">✅</div>
                     <div class="roadmap-content">
-                        <h3>v2.1.0 - 进行中</h3>
+                        <h3>v3.0.0 - 已发布</h3>
                         <ul>
-                            <li>CLI工具 (skill create/evaluate/optimize)</li>
-                            <li>VS Code插件</li>
-                            <li>更多示例技能（5+）</li>
-                            <li>在线评估服务</li>
+                            <li>COLLECT + AGGREGATE 模式（UTE 2.0 L2）</li>
+                            <li>Session Artifact 会话记录协议</li>
+                            <li>Edit Audit Guard 编辑防护</li>
+                            <li>Skill Registry 技能注册表</li>
+                            <li>MCP 平台支持（7th platform）</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="roadmap-item completed">
+                    <div class="roadmap-marker">✅</div>
+                    <div class="roadmap-content">
+                        <h3>v3.1.0 - 已发布</h3>
+                        <ul>
+                            <li>OWASP Agentic Skills Top 10（ASI01–ASI10）安全检测</li>
+                            <li>Co-evolutionary VERIFY Step 10（防分数膨胀）</li>
+                            <li>Mandatory Skill Summary + Negative Boundaries</li>
+                            <li>skill_tier / triggers 元数据字段</li>
+                            <li>179 Jest 测试（全平台覆盖）</li>
                         </ul>
                     </div>
                 </div>
@@ -591,10 +615,10 @@ skill run doc-generator --mode batch \
                 <div class="roadmap-item planned">
                     <div class="roadmap-marker">📅</div>
                     <div class="roadmap-content">
-                        <h3>v3.0.0 - 计划中</h3>
+                        <h3>v4.0.0 - 计划中</h3>
                         <ul>
-                            <li>技能市场/注册表</li>
-                            <li>Web IDE</li>
+                            <li>技能市场 / 注册表 Web UI</li>
+                            <li>VS Code 插件</li>
                             <li>团队协作功能</li>
                             <li>企业版（SSO、审计日志）</li>
                         </ul>
