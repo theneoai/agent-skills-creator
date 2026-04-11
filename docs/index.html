@@ -190,7 +190,7 @@
 
                 <div class="install-panel active" id="ip-all">
                     <div class="install-cmd-row">
-                        <code>read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install</code>
+                        <code>curl -fsSL https://raw.githubusercontent.com/theneoai/skill-writer/main/install.sh | bash</code>
                         <button class="copy-btn" onclick="copyInstall(this)">复制</button>
                     </div>
                     <p class="install-hint">安装到本机所有支持的 AI 平台（Claude / OpenCode / OpenClaw / Cursor / Gemini / OpenAI / MCP）</p>
@@ -198,7 +198,7 @@
 
                 <div class="install-panel" id="ip-claude">
                     <div class="install-cmd-row">
-                        <code>read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install to claude</code>
+                        <code>read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-claude.md and install to claude</code>
                         <button class="copy-btn" onclick="copyInstall(this)">复制</button>
                     </div>
                     <p class="install-hint">安装到 <code>~/.claude/skills/</code>，同时写入 refs / templates / eval / optimize 伴侣文件</p>
@@ -206,7 +206,7 @@
 
                 <div class="install-panel" id="ip-opencode">
                     <div class="install-cmd-row">
-                        <code>read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install to opencode</code>
+                        <code>read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-opencode.md and install to opencode</code>
                         <button class="copy-btn" onclick="copyInstall(this)">复制</button>
                     </div>
                     <p class="install-hint">安装到 <code>~/.config/opencode/skills/</code></p>
@@ -214,7 +214,7 @@
 
                 <div class="install-panel" id="ip-openclaw">
                     <div class="install-cmd-row">
-                        <code>read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install to openclaw</code>
+                        <code>read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-openclaw.md and install to openclaw</code>
                         <button class="copy-btn" onclick="copyInstall(this)">复制</button>
                     </div>
                     <p class="install-hint">安装到 <code>~/.openclaw/skills/</code></p>
@@ -222,7 +222,7 @@
 
                 <div class="install-panel" id="ip-cursor">
                     <div class="install-cmd-row">
-                        <code>read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install to cursor</code>
+                        <code>read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-cursor.md and install to cursor</code>
                         <button class="copy-btn" onclick="copyInstall(this)">复制</button>
                     </div>
                     <p class="install-hint">安装到 <code>~/.cursor/skills/</code></p>
@@ -230,7 +230,7 @@
 
                 <div class="install-panel" id="ip-gemini">
                     <div class="install-cmd-row">
-                        <code>read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install to gemini</code>
+                        <code>read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-gemini.md and install to gemini</code>
                         <button class="copy-btn" onclick="copyInstall(this)">复制</button>
                     </div>
                     <p class="install-hint">安装到 <code>~/.gemini/skills/</code></p>
@@ -238,7 +238,7 @@
 
                 <div class="install-panel" id="ip-mcp">
                     <div class="install-cmd-row">
-                        <code>read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install to mcp</code>
+                        <code>read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-mcp.json and install to mcp</code>
                         <button class="copy-btn" onclick="copyInstall(this)">复制</button>
                     </div>
                     <p class="install-hint">安装 MCP JSON manifest 到 <code>~/.mcp/servers/skill-writer/mcp-manifest.json</code></p>
@@ -259,12 +259,13 @@
                 <div class="feature-card">
                     <div class="feature-icon">⚡</div>
                     <h3 class="feature-title">LEAN 快评模式</h3>
-                    <p class="feature-desc">500分启发式快评，约1秒完成，无需调用 LLM。8项检查快速判断技能质量。</p>
+                    <p class="feature-desc">17项结构检查，[STATIC] 确定性检查（335分，零方差） + [HEURISTIC] LLM启发式检查（165分），快速判断技能质量。</p>
                     <ul class="feature-list">
-                        <li>YAML frontmatter 完整性</li>
-                        <li>§N 格式段落检查</li>
-                        <li>Red Lines / 严禁文本</li>
-                        <li>触发词覆盖度</li>
+                        <li>YAML frontmatter 完整性 [STATIC]</li>
+                        <li>§N 格式段落 + Quality Gates [STATIC]</li>
+                        <li>触发词 EN/ZH 覆盖度 [STATIC]</li>
+                        <li>红线/错误处理/安全基线 [STATIC]</li>
+                        <li>模板匹配度 + 字段具体性 [HEURISTIC]</li>
                     </ul>
                 </div>
 
@@ -282,13 +283,13 @@
 
                 <div class="feature-card">
                     <div class="feature-icon">🤖</div>
-                    <h3 class="feature-title">多LLM审议机制</h3>
-                    <p class="feature-desc">借鉴司法陪审团制度，3个LLM独立评分后交叉验证，消除单一模型的偏见和幻觉。</p>
+                    <h3 class="feature-title">多遍自审协议</h3>
+                    <p class="feature-desc">Generate/Review/Reconcile 三遍自审，在单一 LLM 会话内用独立视角发现盲点，VERIFY 步骤消除分数膨胀。</p>
                     <ul class="feature-list">
-                        <li><strong>Generator:</strong> 生成初稿</li>
-                        <li><strong>Reviewer:</strong> 安全审计</li>
-                        <li><strong>Arbiter:</strong> 仲裁分歧</li>
-                        <li>共识矩阵确保公正</li>
+                        <li><strong>Generate:</strong> 生成初稿技能</li>
+                        <li><strong>Review:</strong> 安全审计 + 质量检查</li>
+                        <li><strong>Reconcile:</strong> 差异整合 + 修正</li>
+                        <li><strong>VERIFY:</strong> 收敛后独立再评估</li>
                     </ul>
                 </div>
 
@@ -322,7 +323,6 @@
                     <div class="tier-score">≥ 950</div>
                     <p class="tier-desc">卓越品质，各项指标优秀</p>
                     <ul class="tier-features">
-                        <li>方差 < 10</li>
                         <li>Phase 2 ≥ 270</li>
                         <li>Phase 3 ≥ 360</li>
                     </ul>
@@ -334,7 +334,6 @@
                     <div class="tier-score">≥ 900</div>
                     <p class="tier-desc">高品质，适合生产环境</p>
                     <ul class="tier-features">
-                        <li>方差 < 15</li>
                         <li>Phase 2 ≥ 255</li>
                         <li>Phase 3 ≥ 340</li>
                     </ul>
@@ -346,7 +345,6 @@
                     <div class="tier-score">≥ 800</div>
                     <p class="tier-desc">良好品质，基本可用</p>
                     <ul class="tier-features">
-                        <li>方差 < 20</li>
                         <li>Phase 2 ≥ 225</li>
                         <li>Phase 3 ≥ 300</li>
                     </ul>
@@ -358,7 +356,6 @@
                     <div class="tier-score">≥ 700</div>
                     <p class="tier-desc">及格品质，需要改进</p>
                     <ul class="tier-features">
-                        <li>方差 < 30</li>
                         <li>Phase 2 ≥ 195</li>
                         <li>Phase 3 ≥ 265</li>
                     </ul>
@@ -386,12 +383,8 @@
                     <p class="example-desc">HTTP API 测试自动化，支持 TEST/VALIDATE/BATCH 三种模式，自动环境变量注入，完整的错误处理。</p>
                     <div class="example-code">
                         <pre><code># 测试单个接口
-skill run api-tester \
-  --input '{"url": "https://api.example.com/users"}'
-
-# 批量测试
-skill run api-tester --mode batch \
-  --input '{"endpoints": [...]}'</code></pre>
+"test this API endpoint: GET /api/users"
+"validate the response from https://api.example.com/users"</code></pre>
                     </div>
                     <a href="https://github.com/theneoai/skill-writer/tree/main/examples/api-tester" class="example-link" target="_blank">查看详情 →</a>
                 </div>
@@ -405,13 +398,9 @@ skill run api-tester --mode batch \
                     <p class="example-type">Workflow Automation</p>
                     <p class="example-desc">智能代码审查助手，多步骤工作流，安全漏洞检测（CWE-798/89/78/22），自动回滚机制。</p>
                     <div class="example-code">
-                        <pre><code># 审查代码文件
-skill run code-reviewer \
-  --input './src/main.py'
-
-# 安全扫描
-skill run code-reviewer --mode scan \
-  --input './src/'</code></pre>
+                        <pre><code># 审查代码
+"review my code for security issues"
+"scan this PR for vulnerabilities"</code></pre>
                     </div>
                     <a href="https://github.com/theneoai/skill-writer/tree/main/examples/code-reviewer" class="example-link" target="_blank">查看详情 →</a>
                 </div>
@@ -425,13 +414,9 @@ skill run code-reviewer --mode scan \
                     <p class="example-type">Data Pipeline</p>
                     <p class="example-desc">自动化文档生成，ETVF 数据管道，支持 Markdown/JSON/HTML 多格式输出，完整的 Schema 验证。</p>
                     <div class="example-code">
-                        <pre><code># 生成单文件文档
-skill run doc-generator \
-  --input './src/utils.py'
-
-# 批量生成
-skill run doc-generator --mode batch \
-  --input './src/'</code></pre>
+                        <pre><code># 生成文档
+"generate documentation for this function"
+"create API docs for this module"</code></pre>
                     </div>
                     <a href="https://github.com/theneoai/skill-writer/tree/main/examples/doc-generator" class="example-link" target="_blank">查看详情 →</a>
                 </div>
@@ -453,7 +438,7 @@ skill run doc-generator --mode batch \
                     <div class="step-content">
                         <h3>安装 Skill Writer</h3>
                         <div class="code-block">
-                            <pre><code>read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install</code></pre>
+                            <pre><code>curl -fsSL https://raw.githubusercontent.com/theneoai/skill-writer/main/install.sh | bash</code></pre>
                         </div>
                         <p style="margin-top:8px;font-size:13px;opacity:.7">将上方命令粘贴到你的 AI 助手中即可。</p>
                     </div>
@@ -526,10 +511,10 @@ skill run doc-generator --mode batch \
                     <p>7维度9步优化方法（319行）</p>
                 </a>
 
-                <a href="https://github.com/theneoai/skill-writer/blob/main/refs/deliberation.md" class="doc-card" target="_blank">
+                <a href="https://github.com/theneoai/skill-writer/blob/main/refs/self-review.md" class="doc-card" target="_blank">
                     <div class="doc-icon">🤖</div>
                     <h3>审议协议</h3>
-                    <p>多LLM审议流程规范</p>
+                    <p>多遍自审协议 (Generate/Review/Reconcile)</p>
                 </a>
 
                 <a href="https://github.com/theneoai/skill-writer/blob/main/refs/evolution.md" class="doc-card" target="_blank">

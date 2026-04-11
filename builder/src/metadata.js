@@ -7,7 +7,7 @@
  * version drift (dev hard-coded '1.0.0') and missing platform/mode entries.
  *
  * @module builder/src/metadata
- * @version 2.2.0
+ * @version 3.1.0
  */
 
 const { getSupportedPlatforms } = require('./platforms');
@@ -63,11 +63,11 @@ function getSkillMetadata(platform) {
       'skill-optimization',
       'mcp',
     ],
-    modes: ['create', 'lean', 'evaluate', 'optimize', 'install'],
+    modes: ['create', 'lean', 'evaluate', 'optimize', 'install', 'collect'],
     defaultMode: 'create',
     platform,
     extra: {
-      modes: ['create', 'lean', 'evaluate', 'optimize', 'install'],
+      modes: ['create', 'lean', 'evaluate', 'optimize', 'install', 'collect'],
       platforms: supportedPlatforms,
     },
     // Security scan summary counts (0 = clean baseline)
