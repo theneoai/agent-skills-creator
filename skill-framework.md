@@ -108,8 +108,10 @@ extends:
 
 ### Workflow E — "I want to track usage and improve over time"
 1. Ensure `use_to_evolve.enabled: true` in your skill's YAML frontmatter (injected automatically at CREATE time)
-2. After each important invocation, run `/collect` (or it fires automatically with UTE enabled) `[EXTENDED]`
-3. Accumulate 5+ Session Artifacts, then type: "aggregate skill feedback"
+2. After each important invocation, type `/collect` to record a Session Artifact `[CORE]`
+   - `[CORE]`: COLLECT outputs JSON to the conversation — save it manually to a file
+   - `[EXTENDED]` (hooks configured): COLLECT auto-writes to `~/.skill-artifacts/` — no manual step
+3. Accumulate 2+ Session Artifacts, then type: "aggregate skill feedback"
 4. Use the ranked improvement list as input to `/opt`
 
 ```
@@ -628,14 +630,15 @@ lean_score 300–349 (UNCERTAIN)
 
       Output exactly this block:
       ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+      ⚠ 输入 /skip 可跳过并保留 LEAN 结果 / Type /skip to keep LEAN result instead
+      ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
       LEAN 评分完成 / LEAN Complete
       分数 / Score: [N]/500  (UNCERTAIN — near BRONZE threshold)
       静态检查  [STATIC]:    [S]/335  (零方差 / zero variance)
       启发式检查 [HEURISTIC]: [H]/165  (±20 pt 方差 / variance)
 
-      ⚠ UNCERTAIN — 启动完整 EVALUATE (~60 秒) / launching full EVALUATE (~60s)
-        输入 /skip 跳过，保留 LEAN 结果 (附 TEMP_CERT 标记)
-        Type /skip to keep LEAN result with TEMP_CERT tag instead
+      UNCERTAIN — 启动完整 EVALUATE (~60 秒) / launching full EVALUATE (~60s)
+      (附 TEMP_CERT 标记 / LEAN result kept with TEMP_CERT tag if you /skip)
       ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 
       Then show phase progress as each phase completes:
@@ -676,11 +679,18 @@ Ask **one question at a time**. Wait for answer before next question.
    > 💡 **示例 / Examples**: "不用于生产数据库操作" / "不适用于超过1000条记录的批量处理" / "不用于需要实时数据的场景"
    > 💡 **卡住了？** 输入 `skip` — 将自动填充通用边界: "Avoid irreversible actions without explicit confirmation"
    > [Answer validation: SKIP accepted → auto-fill default boundary + WARNING note]
+   > ⚠️ **跳过后自动填充的内容 / Auto-filled content on skip**:
+   >   `**Do NOT use this skill for**: Irreversible actions without explicit confirmation.`
+   >   `**触发词排除 / Exclude trigger phrases**: None specified (review before publishing).`
+   >   注意: 这只是占位符，发布技能前务必替换为实际边界描述。
 
 8. "用户会用什么词或短语来触发这个skill？ / What phrases or keywords would a user say to trigger this skill? (List 3–8 examples)"
    > 💡 **示例 / Examples**: "检查我的代码" / "review this PR" / "code review" / "审查代码" / "scan for issues"
    > 💡 **卡住了？** 输入 `skip` — 将从技能名称和描述中自动推断触发词
    > [Answer validation: SKIP accepted → auto-generate triggers from skill name + description]
+   > ⚠️ **跳过后自动填充的内容 / Auto-filled content on skip**:
+   >   Triggers derived from skill name + description keywords (EN + ZH equivalents).
+   >   注意: 自动推断的触发词覆盖率约60%，建议添加用户实际使用的自然短语。
 
 > **Questions 7 & 8 are new (v3.1.0)**. Research basis:
 > - Q7 (Negative Boundaries): SKILL.md Pattern — without explicit negation, semantically

@@ -53,7 +53,16 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 
 \* Cursor uses `${KEY}` placeholder syntax instead of `{{KEY}}`  
 † Requires platform hooks — see `refs/use-to-evolve.md §8` for setup  
-⚠️ Cursor: Use keywords (`create a skill`, `evaluate`, `optimize`) — IDE command palette may intercept `/` commands
+⚠️ Cursor: IDE command palette intercepts `/` — use keyword phrases instead:
+
+| Mode | Use this keyword phrase (not `/command`) |
+|------|------------------------------------------|
+| CREATE | `create a skill that …` |
+| LEAN | `lean eval` / `fast check this skill` |
+| EVALUATE | `evaluate this skill` / `full eval` |
+| OPTIMIZE | `optimize this skill` |
+| INSTALL | `install skill-writer to cursor` |
+| COLLECT | `collect session data` / `record this session` |
 
 ## Quick Start
 
@@ -385,19 +394,33 @@ Installs skill-writer itself to one or all supported platforms from a URL or loc
 
 ### COLLECT Mode
 
-Records structured session artifacts after each skill invocation (when UTE is enabled). Enables collective skill evolution via the AGGREGATE pipeline.
+COLLECT records a structured **Session Artifact** after each skill invocation — a snapshot of what happened, how well it worked, and what to improve. Accumulate 2+ artifacts, then run AGGREGATE to get a ranked improvement list for `/opt`.
+
+**[CORE]** — COLLECT outputs JSON to the conversation. Copy it to a file manually.  
+**[EXTENDED]** — With UTE hooks configured, COLLECT auto-writes to `~/.skill-artifacts/` after each invocation. No manual step needed.
+
+#### When to run COLLECT
+- After an important or representative skill invocation
+- When a trigger phrase didn't match (helps identify missing keywords)
+- Before running OPTIMIZE (feed artifacts as input for evidence-based improvement)
 
 #### Workflow
 1. **CAPTURE**: Record invocation context, outcome, and PRM signal
 2. **CLASSIFY**: Assign lesson type (`strategic_pattern` / `failure_lesson` / `neutral`)
-3. **STORE**: Append to session artifact log (refs/session-artifact.md schema)
-4. **AGGREGATE** (periodic): Distill N artifacts into ranked improvement signals → OPTIMIZE candidates
+3. **STORE**: Output JSON artifact `[CORE]` or auto-write to `~/.skill-artifacts/` `[EXTENDED]`
+4. **AGGREGATE** (after 2+ artifacts): Distill artifacts into ranked improvement signals → OPTIMIZE candidates
 
 #### Triggers (EN/ZH)
-- Auto-triggered by UTE after each invocation (no user input required)
-- `"collect this session"` / `"收集本次会话"`
-- `"record session artifact"` / `"记录会话数据"`
-- `"export invocation log"` / `"导出调用日志"`
+- `/collect` or `collect session data` / `收集本次会话` — manual trigger
+- `record session artifact` / `记录会话数据`
+- `export invocation log` / `导出调用日志`
+- Auto-triggered by UTE after each invocation `[EXTENDED]`
+
+#### AGGREGATE (multi-session synthesis)
+After collecting 2+ Session Artifacts, type:
+- `"aggregate skill feedback"` / `"聚合技能反馈"`
+
+AGGREGATE groups findings by skill dimension, identifies the "no-skill bucket" (sessions where no skill triggered), and ranks improvement opportunities by evidence count. Output feeds directly into `/opt`.
 
 ## Security Features
 

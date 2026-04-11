@@ -62,7 +62,7 @@ use_to_evolve:
 
 ---
 
-## §2  Skill Summary
+## §2  Skill Summary *(required — ≤5 dense sentences: what / when / who / not-for)*
 
 git-diff-summarizer reads raw `git diff` or `git show` output and returns a concise, structured changelog entry grouped by file and change type (feat/fix/refactor/chore/docs/test). Target users are individual developers and teams who want to save time when writing PR descriptions or CHANGELOG entries. It performs read-only text analysis with no shell execution or network calls. Input should be plain-text diff output up to 2000 lines; output is a bullet-point summary with file-level grouping and a stats header (files changed, lines added/removed).
 

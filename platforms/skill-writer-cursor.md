@@ -74,12 +74,14 @@ A meta-skill that enables Cursor to create, evaluate, and optimize other skills 
 
 ## §1 Overview
 
-Skill Writer provides four powerful modes:
+Skill Writer provides six powerful modes:
 
 - **CREATE**: Generate new skills from scratch using structured templates
 - **LEAN**: Fast 500-point heuristic evaluation (~1 second)
 - **EVALUATE**: Assess skill quality with 1000-point scoring and certification
 - **OPTIMIZE**: Continuously improve skills through iterative refinement
+- **INSTALL**: Deploy skill-writer to one or more AI platforms
+- **COLLECT**: Record session artifacts for collective skill improvement
 
 ### Key Features
 
