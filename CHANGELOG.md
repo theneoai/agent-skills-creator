@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2026-04-11
 
+### 📝 Documentation
+
+- **`README.md`** — full rewrite of LEAN mode section: replaced outdated 8-check rubric with accurate 17-check table organized by dimension; added `[STATIC]`/`[HEURISTIC]` reliability labels and score proxy table
+- **`README.md`** — added tier-adjusted Phase 2 weights table in EVALUATE section; added confidence-zone column to certification tiers
+- **`README.md`** — fixed COLLECT mode triggers (was incorrectly showing INSTALL triggers)
+- **`README.md`** — updated UTE section to document L1/L2 architecture, cadence-gated checks, micro-patch rules, and platform hook integration
+- **`README.md`** — updated architecture diagram to include all 6 modes (INSTALL, COLLECT) and Shared Resources
+- **`README.md`** — updated Roadmap: all v3.1.0 features marked complete; separated into Completed / Planned sections
+- **`README.md`** — improved Troubleshooting section with score variance guidance, skill_tier advice, and confidence zone notes
+
+### 🔧 CI/CD
+
+- **`.github/workflows/build-and-release.yml`** — upgraded `actions/checkout@v3→v4`, `actions/setup-node@v3→v4`, `actions/upload-artifact@v3→v4`, `actions/download-artifact@v3→v4`, `softprops/action-gh-release@v1→v2`
+- **`.github/workflows/build-and-release.yml`** — removed `|| true` from `npm run lint` and `npm test`; failures now correctly fail the CI pipeline
+- **`.github/workflows/build-and-release.yml`** — removed redundant `deploy-docs` job (GitHub Pages is managed by `pages.yml`)
+- **`.github/workflows/security-scan.yml`** — upgraded `actions/checkout@v3→v4`, `actions/setup-node@v3→v4`
+- **`.github/workflows/security-scan.yml`** — upgraded CodeQL actions `v2→v3` (init, autobuild, analyze)
+- **`.github/workflows/security-scan.yml`** — pinned `trufflesecurity/trufflehog@main→v3` (eliminates unpinned-dependency supply-chain risk); removed `--debug` flag
+
 ### 🐛 Fixed
 
 - **`dev.js` broken file watcher** — was watching nonexistent `builder/core/` directory; now watches correct `WATCH_DIRS` (refs, templates, eval, optimize) from `config.PATHS`

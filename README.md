@@ -20,9 +20,11 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 - **Six Powerful Modes**: CREATE, LEAN, EVALUATE, OPTIMIZE, INSTALL, and COLLECT
 - **Template-Based**: 4 built-in templates for common skill patterns
 - **Quality Assurance**: 1000-point scoring system with certification tiers
+- **Tier-Aware Evaluation**: Tier-adjusted scoring weights for `planning` / `functional` / `atomic` skills (SkillX three-tier hierarchy)
+- **Reliable LEAN Scoring**: 17 checks split into `[STATIC]` (deterministic, 335 pts, zero variance) and `[HEURISTIC]` (LLM-judged, 165 pts) — score variance documented per phase
 - **Security Built-In**: CWE-based + OWASP Agentic Skills Top 10 (ASI01–ASI10) detection
-- **Continuous Improvement**: Automated optimization with convergence detection
-- **Self-Evolution**: UTE (Use-to-Evolve) protocol for automatic skill improvement
+- **Continuous Improvement**: Automated optimization with convergence detection + co-evolutionary VERIFY step
+- **Self-Evolution**: UTE (Use-to-Evolve) protocol for automatic skill improvement (L1 enforced + L2 collective)
 - **Multi-Pass Self-Review**: Generate/Review/Reconcile quality protocol
 
 ## Supported Platforms
@@ -193,25 +195,44 @@ Generates new skills from scratch using structured templates and elicitation.
 
 ### LEAN Mode
 
-Fast 500-point heuristic evaluator (~1 second, no LLM calls) for rapid quality assessment.
+Fast 500-point evaluator for rapid quality assessment. Checks are labeled by execution method:
+- **`[STATIC]`** — deterministic regex/structural match; same skill → same result every run (335 pts max, zero variance)
+- **`[HEURISTIC]`** — requires LLM judgment to assess adequacy (165 pts max, ±5–15 pts variance)
 
-#### 8-Check Rubric
+#### 17-Check Rubric (organized by dimension)
 
-| Check | Points | Criteria |
-|-------|--------|----------|
-| YAML frontmatter | 60 | name, version, interface fields present |
-| §N Pattern Sections | 60 | ≥3 sections with `## §N` format |
-| Red Lines | 50 | "Red Lines" or "严禁" text present |
-| Quality Gates Table | 60 | Table with numeric thresholds |
-| Code Block Examples | 50 | ≥2 code block examples |
-| Trigger Keywords | 120 | EN+ZH keywords for all 4 modes |
-| Security Baseline | 50 | Security section present |
-| No Placeholders | 50 | No `{{PLACEHOLDER}}`残留 |
+| Dimension | Check | Points | Type |
+|-----------|-------|--------|------|
+| **System Design** (max 95) | Identity section present (`## §1` or `## Identity`) | 55 | `[STATIC]` |
+| | Red Lines / 严禁 text present | 40 | `[STATIC]` |
+| **Domain Knowledge** (max 95) | Template type correctly matched (API/pipeline/workflow keywords) | 55 | `[HEURISTIC]` |
+| | Field specificity visible (concrete values, not generic placeholders) | 40 | `[HEURISTIC]` |
+| **Workflow** (max 75) | ≥ 3 `## §N` pattern sections | 45 | `[STATIC]` |
+| | Quality Gates table with numeric thresholds | 30 | `[STATIC]` |
+| **Error Handling** (max 75) | Error/recovery section present | 45 | `[STATIC]` |
+| | Escalation paths documented (HUMAN_REVIEW path present) | 30 | `[HEURISTIC]` |
+| **Examples** (max 75) | ≥ 2 fenced code blocks | 45 | `[STATIC]` |
+| | Trigger keywords present in both EN + ZH | 30 | `[STATIC]` |
+| **Security** (max 45) | Security Baseline section present | 25 | `[STATIC]` |
+| | No hardcoded secrets pattern | 10 | `[STATIC]` |
+| | ASI01: no unguarded `{user_input}` interpolation in commands | 10 | `[HEURISTIC]` |
+| **Metadata** (max 40) | YAML frontmatter with `name`, `version`, `interface` | 15 | `[STATIC]` |
+| | `triggers` field with ≥ 3 EN + ≥ 2 ZH phrases | 15 | `[STATIC]` |
+| | Negative Boundaries section present | 10 | `[STATIC]` |
 
-#### Decision Gates
-- **PASS (≥350)**: Skill passes LEAN certification
-- **UNCERTAIN (300-349)**: Upgrade to full EVALUATE mode
-- **FAIL (<300)**: Route to OPTIMIZE mode
+#### Score Proxies and Decision Gates
+
+| LEAN Score | Proxy | Decision |
+|------------|-------|----------|
+| ≥ 475 | PLATINUM proxy (est. ≥ 950) | LEAN PASS — deliver with `LEAN_CERT` |
+| ≥ 450 | GOLD proxy (est. ≥ 900) | LEAN PASS |
+| ≥ 400 | SILVER proxy (est. ≥ 800) | LEAN PASS |
+| ≥ 350 | BRONZE proxy (est. ≥ 700) | LEAN PASS |
+| 300–349 | UNCERTAIN | Escalate to full EVALUATE |
+| < 300 | FAIL | Route to OPTIMIZE |
+
+> **Score reliability**: If two LEAN runs differ by ≤ 20 pts, treat them as equivalent.
+> Static-only floor (335 pts) means any well-structured skill will clear the PASS threshold on `[STATIC]` checks alone.
 
 #### Triggers
 - "lean evaluate" / "快评"
@@ -224,22 +245,38 @@ Assesses skill quality with rigorous 1000-point scoring and certification.
 
 #### 4-Phase Pipeline
 
-| Phase | Points | Focus |
-|-------|--------|-------|
-| Phase 1: Structural | 100 | YAML syntax, format, metadata |
-| Phase 2: Content Quality | 300 | Clarity, completeness, accuracy, safety, maintainability, usability |
-| Phase 3: Runtime Tests | 400 | Unit, integration, sandbox, error handling, performance, security tests |
-| Phase 4: Certification | 200 | Documentation, coverage, quality, compatibility, review |
+| Phase | Points | Focus | Variance |
+|-------|--------|-------|---------|
+| Phase 1: Structural | 100 | YAML syntax, format, metadata | ±0–5 pts |
+| Phase 2: Content Quality | 300 | Clarity, completeness, accuracy, safety, maintainability, usability | ±15–30 pts |
+| Phase 3: Runtime Tests | 400 | Unit, integration, sandbox, error handling, performance, security tests | ±20–40 pts |
+| Phase 4: Certification | 200 | Documentation, coverage, quality, compatibility, review | ±5–10 pts |
+
+> **Total score variance**: ±30–60 pts across runs. Re-run if the score falls in a confidence zone (see below).
+
+#### Tier-Adjusted Phase 2 Weights
+
+Phase 2 weights shift based on `skill_tier` in YAML frontmatter:
+
+| Dimension | `planning` | `functional` (default) | `atomic` |
+|-----------|-----------|----------------------|---------|
+| System Design | **30%** | 20% | 15% |
+| Workflow | **25%** | 20% | 15% |
+| Error Handling | 15% | 15% | **25%** |
+| Examples | 10% | 15% | **20%** |
+| Security | 10% | 15% | **15%** |
 
 #### Certification Tiers
 
-| Tier | Score | Variance | Phase 2 Min | Phase 3 Min |
-|------|-------|----------|-------------|-------------|
-| **PLATINUM** | ≥950 | <10 | ≥270 | ≥360 |
-| **GOLD** | ≥900 | <15 | ≥255 | ≥340 |
-| **SILVER** | ≥800 | <20 | ≥225 | ≥300 |
-| **BRONZE** | ≥700 | <30 | ≥195 | ≥265 |
+| Tier | Score | Confidence Zone (re-run) | Phase 2 Min | Phase 3 Min |
+|------|-------|--------------------------|-------------|-------------|
+| **PLATINUM** | ≥950 | 940–959 | ≥270 | ≥360 |
+| **GOLD** | ≥900 | 890–919 | ≥255 | ≥340 |
+| **SILVER** | ≥800 | 790–819 | ≥225 | ≥300 |
+| **BRONZE** | ≥700 | 690–719 | ≥195 | ≥265 |
 | **FAIL** | <700 | — | — | — |
+
+> **Confidence zone**: Scores within ±10 pts of a tier boundary may flip on re-run. Run twice and take the lower score.
 
 #### Triggers (EN/ZH)
 - "evaluate this skill" / "评测这个技能"
@@ -265,16 +302,21 @@ Continuously improves skills through iterative refinement with 7-dimension analy
 | Long-Context | 10% | Token efficiency, structure |
 
 #### 10-Step Optimization Loop
-1. **Parse**: Understand current skill
-2. **Analyze**: Identify improvement areas across 7 dimensions
+1. **Parse**: Understand current skill and read `skill_tier` for weight selection
+2. **Analyze**: Identify improvement areas across 7 dimensions (tier-adjusted weights)
 3. **Generate**: Create optimized version
-4. **Evaluate**: Score the new version
+4. **Evaluate**: Score the new version (LEAN 500-pt scale)
 5. **Compare**: Check against previous
-6. **Converge**: Detect improvement plateau
-7. **RE-SCORE**: Re-score after single fix
-8. **Report**: Show changes
-9. **Iterate**: Repeat if needed
-10. **VERIFY**: Co-evolutionary independent re-evaluation pass after convergence (score inflation delta > 50 pts → HUMAN_REVIEW)
+6. **RE-SCORE**: Re-score after each single fix
+7. **Converge**: Detect improvement plateau
+8. **Report**: Show changes and dimension breakdown
+9. **Iterate**: Repeat if needed (max 20 rounds)
+10. **VERIFY**: Co-evolutionary independent re-evaluation after convergence — score inflation delta > 50 pts → HUMAN_REVIEW
+
+> **Tier-aware strategy** (from `optimize/strategies.md §6`):
+> - `planning` skills: prioritize Workflow (25%) → System Design (30%) first
+> - `atomic` skills: prioritize Error Handling (25%) → Examples (20%) first
+> - `functional` skills: target lowest-scoring dimension first (default)
 
 #### Convergence Detection
 Optimization stops when:
@@ -320,15 +362,15 @@ Records structured session artifacts after each skill invocation (when UTE is en
 
 #### Workflow
 1. **CAPTURE**: Record invocation context, outcome, and PRM signal
-2. **CLASSIFY**: Assign lesson type (strategic_pattern / failure_lesson / neutral)
+2. **CLASSIFY**: Assign lesson type (`strategic_pattern` / `failure_lesson` / `neutral`)
 3. **STORE**: Append to session artifact log (refs/session-artifact.md schema)
 4. **AGGREGATE** (periodic): Distill N artifacts into ranked improvement signals → OPTIMIZE candidates
 
 #### Triggers (EN/ZH)
-- `"read <URL> and install"` / `"从 <URL> 安装"`
-- `"read <URL> and install to <platform>"`
-- `"install skill-writer"` / `"安装 skill-writer"`
-- `"install skill-writer to <platform>"`
+- Auto-triggered by UTE after each invocation (no user input required)
+- `"collect this session"` / `"收集本次会话"`
+- `"record session artifact"` / `"记录会话数据"`
+- `"export invocation log"` / `"导出调用日志"`
 
 ## Security Features
 
@@ -381,31 +423,60 @@ Recommendations:
 
 ## UTE (Use-to-Evolve)
 
-Self-improvement protocol that enables skills to evolve through usage.
+Self-improvement protocol that enables skills to evolve through usage. Two-tier architecture:
+- **L1 (Single-user)** `[ENFORCED]`: Post-invocation hook runs per session; persists state to `~/.claude/skills/.ute-state/`
+- **L2 (Collective)** `[ASPIRATIONAL]`: Requires external aggregation infrastructure (SkillClaw-compatible)
 
 ### UTE YAML Block
 
 ```yaml
 use_to_evolve:
-  framework_version: "{{VERSION}}"
-  injected_by: skill-writer-builder
-  injected_at: "{{generated_at}}"
-  injection_date: "2026-04-11"
+  enabled: true
+  injected_by: "skill-writer v3.1.0"
+  injected_at: "2026-04-11"
+  check_cadence: {lightweight: 10, full_recompute: 50, tier_drift: 100}
+  micro_patch_enabled: true
+  feedback_detection: true
   certified_lean_score: 390
   last_ute_check: null
+  pending_patches: 0
+  total_micro_patches_applied: 0
+  cumulative_invocations: 0
 ```
 
-### 3-Trigger System
+### Cadence-Gated Health Checks
 
-1. **Threshold Trigger**: Quality drops below certified baseline
-2. **Time Trigger**: Freshness check (cadence-gated)
-3. **Usage Trigger**: Usage pattern analysis
+| Cadence | Trigger | Action |
+|---------|---------|--------|
+| Every 10 invocations | Lightweight check | rolling_success_rate < 0.80 → warn |
+| Every 50 invocations | Full metric recompute | F1 < 0.90 → queue OPTIMIZE |
+| Every 100 invocations | Tier drift check | estimated_lean < (certified − 50) → full EVALUATE |
 
-### Post-Invocation Protocol
-- AI observes outcome and follows UTE protocol when section is present
-- Detects implicit feedback signals (user corrections, repeated patterns)
-- Runs cadence-gated health checks
-- Proposes micro-patches for user confirmation
+### Micro-Patch Rules
+
+**Eligible** (apply autonomously after LEAN validation):
+- Add trigger keyword (YAML + mode section)
+- Add ZH trigger equivalent
+- Bump patch version + update `updated` date
+
+**Ineligible** (must queue for OPTIMIZE):
+- Structural section changes, output contract changes, security baseline changes
+
+### Platform Hook Integration (Claude Code / OpenCode)
+
+UTE state tracking upgrades from `[ASPIRATIONAL]` to `[ENFORCED]` when platform hooks are configured:
+
+```json
+// ~/.claude/settings.json
+{
+  "hooks": {
+    "PostToolUse": [{"command": "node ~/.claude/skills/ute-tracker.js post-tool"}],
+    "Stop": [{"command": "node ~/.claude/skills/ute-tracker.js stop"}]
+  }
+}
+```
+
+See `refs/use-to-evolve.md §8` for full hook setup and `ute-tracker.js` implementation.
 
 ## Builder Tool
 
@@ -420,7 +491,7 @@ npm install
 
 ### Commands
 
-> **Note**: Run `npm run build` from the project root before using `npm run install:*` scripts — they copy files from the `platforms/` directory created by the build step.
+> **Note**: Run `npm run build` from the project root before using `npm run install:*` scripts — they copy files from the `platforms/` directory created by the build step. In CI, lint and test run without `|| true` and will fail the pipeline on errors.
 
 #### Build
 ```bash
@@ -505,41 +576,51 @@ skill-writer/
 ### Core + Adapter Pattern
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Skill Writer Meta-Skill                   │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │ CREATE Mode  │  │  LEAN Mode   │  │EVALUATE Mode │      │
-│  │              │  │              │  │              │      │
-│  │ • Templates  │  │ • 500-Point  │  │ • 4-Phase    │      │
-│  │ • Elicitation│  │   Heuristic  │  │   Pipeline   │      │
-│  │ • 9-Phase    │  │ • 8-Check    │  │ • 1000-Point │      │
-│  │   Workflow   │  │   Rubric     │  │   Scoring    │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-│                                                              │
-│  ┌──────────────┐  ┌─────────────────────────────────────┐ │
-│  │OPTIMIZE Mode │  │              Shared Resources        │ │
-│  │              │  │  • CWE Security Patterns            │ │
-│  │ • 7-Dimension│  │  • CWE + OWASP ASI Security         │ │
-│  │   Analysis   │  │  • UTE 2.0 Self-Evolution           │ │
-│  │ • 10-Step    │  │  • Multi-Pass Self-Review            │ │
-│  │   Loop       │  │  • COLLECT/AGGREGATE Pipeline       │ │
-│  └──────────────┘  └─────────────────────────────────────┘ │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                 Platform-Specific Builder                    │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌───────┐ │
-│  │OpenCode │ │OpenClaw │ │ Claude  │ │ Cursor  │ │  MCP  │ │
-│  │ Adapter │ │ Adapter │ │ Adapter │ │ Adapter │ │ + 2   │ │
-│  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └───────┘ │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                     Skill Writer Meta-Skill                       │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                    │
+│  ┌─────────────┐  ┌──────────────────┐  ┌─────────────────────┐  │
+│  │ CREATE Mode │  │    LEAN Mode     │  │   EVALUATE Mode     │  │
+│  │             │  │                  │  │                     │  │
+│  │ • Templates │  │ • 500-pt scoring │  │ • 4-Phase pipeline  │  │
+│  │ • Elicit 8Q │  │ • 17 checks      │  │ • 1000-pt scoring   │  │
+│  │ • 9-Phase   │  │ • [STATIC] +     │  │ • Tier-adjusted     │  │
+│  │   Workflow  │  │   [HEURISTIC]    │  │   Phase 2 weights   │  │
+│  └─────────────┘  └──────────────────┘  └─────────────────────┘  │
+│                                                                    │
+│  ┌─────────────┐  ┌─────────────┐  ┌──────────────────────────┐  │
+│  │OPTIMIZE Mode│  │INSTALL Mode │  │      COLLECT Mode        │  │
+│  │             │  │             │  │                          │  │
+│  │ • 7-dim     │  │ • 7-platform│  │ • Session artifact log   │  │
+│  │   analysis  │  │   support   │  │ • Lesson classification  │  │
+│  │ • 10-step   │  │ • Agent     │  │ • AGGREGATE pipeline     │  │
+│  │   loop      │  │   install   │  │ • Collective evolution   │  │
+│  │ • VERIFY    │  │   protocol  │  │   (SkillRL-compatible)   │  │
+│  └─────────────┘  └─────────────┘  └──────────────────────────┘  │
+│                                                                    │
+│  ┌────────────────────────────────────────────────────────────┐   │
+│  │                     Shared Resources                       │   │
+│  │  • CWE + OWASP ASI01–ASI10 Security Patterns              │   │
+│  │  • UTE 2.0 Self-Evolution (L1 enforced + L2 collective)    │   │
+│  │  • Multi-Pass Self-Review (Generate/Review/Reconcile)      │   │
+│  │  • Skill Registry (SHA-256 IDs, push/pull/sync, semver)    │   │
+│  │  • Edit Audit Guard (MICRO/MINOR/MAJOR/REWRITE classes)    │   │
+│  └────────────────────────────────────────────────────────────┘   │
+│                                                                    │
+└──────────────────────────────────────────────────────────────────┘
+                               │
+                               ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                    Platform-Specific Builder                      │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                    │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌───────────┐  │
+│  │OpenCode │ │OpenClaw │ │ Claude  │ │ Cursor  │ │ OpenAI /  │  │
+│  │ Adapter │ │ Adapter │ │ Adapter │ │ Adapter │ │ Gemini /  │  │
+│  └─────────┘ └─────────┘ └─────────┘ └─────────┘ │   MCP     │  │
+│                                                    └───────────┘  │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ## Example Skills
@@ -582,16 +663,22 @@ All example skills are certified with detailed evaluation reports.
 ### Common Issues
 
 **Issue**: Skill not triggering
-- **Solution**: Check trigger phrases match exactly. Triggers are case-sensitive.
+- **Solution**: Verify `triggers` field in YAML frontmatter has ≥ 3 EN + ≥ 2 ZH phrases. Add synonyms for common user phrasings (see anti-pattern A1).
 
-**Issue**: Low evaluation score
-- **Solution**: Run OPTIMIZE mode for specific improvements. Check the detailed feedback.
+**Issue**: Low LEAN score despite good content
+- **Solution**: Check if `skill_tier` is declared — missing `skill_tier` silently defaults to `functional` and may apply wrong weights. Also verify Negative Boundaries section is present (10 pts in metadata dimension).
+
+**Issue**: Score jumps between evaluation runs
+- **Solution**: Phase 2 and 3 variance is ±15–40 pts per run. Scores within ±20 pts of each other are equivalent. Use LEAN as the primary iteration signal; run full EVALUATE only for certification.
+
+**Issue**: EVALUATE score near a tier boundary
+- **Solution**: Re-run once. If scores differ by < 20 pts, take the lower value. See the "Confidence Zone" column in the Certification Tiers table.
 
 **Issue**: Security warnings
-- **Solution**: Review CWE patterns and fix violations. See Security Features section.
+- **Solution**: P0 violations (CWE-798, CWE-89) trigger ABORT — fix before continuing. P1 (ASI01–ASI04) deduct 50 pts. See Security Features section.
 
 **Issue**: Build fails
-- **Solution**: Run `validate` command to check core engine structure.
+- **Solution**: Run `validate` command to check core engine structure. Ensure `npm ci` completes without errors before building.
 
 ### Debug Mode
 
@@ -612,20 +699,31 @@ MIT License - See [LICENSE](LICENSE) file for details.
 
 ## Roadmap
 
-- [x] Core engine with CREATE, LEAN, EVALUATE, OPTIMIZE, INSTALL modes
-- [x] COLLECT mode with AGGREGATE pipeline (UTE 2.0 L2)
+### Completed
+
+- [x] Core engine with CREATE, LEAN, EVALUATE, OPTIMIZE, INSTALL, COLLECT modes
 - [x] Builder tool with CLI and Jest test suite (179 tests)
 - [x] Support for 7 platforms (OpenCode, OpenClaw, Claude, Cursor, OpenAI, Gemini, MCP)
-- [x] LEAN fast-evaluation mode
+- [x] LEAN fast-evaluation mode with [STATIC]/[HEURISTIC] reliability labels
 - [x] UTE 2.0 self-improvement protocol (L1 enforced + L2 collective)
-- [x] Multi-pass self-review protocol
+- [x] Multi-pass self-review protocol (Generate/Review/Reconcile)
 - [x] OWASP Agentic Skills Top 10 (ASI01–ASI10) security detection
 - [x] Co-evolutionary VERIFY step (Step 10 in OPTIMIZE loop)
-- [x] Edit Audit Guard and Skill Registry
+- [x] Edit Audit Guard and Skill Registry (SHA-256 IDs, push/pull/sync)
+- [x] `skill_tier` (planning/functional/atomic) — tier-aware evaluation weights
+- [x] `triggers` metadata field — EN + ZH phrase coverage in LEAN scoring
+- [x] Mandatory Skill Summary and Negative Boundaries in all generated skills
+- [x] Score variance documentation and confidence-zone tier boundaries
+- [x] Semantic versioning breaking-change matrix for skill consumers
+- [x] Tier anti-patterns catalog (F1–F4) and tier-aware OPTIMIZE strategy
+- [x] UTE platform hook integration for Claude Code and OpenCode
+
+### Planned
+
 - [ ] Web UI for skill management
-- [ ] Skill marketplace integration
-- [ ] Automated testing framework
-- [ ] CI/CD pipeline templates
+- [ ] Skill marketplace / registry cloud backend
+- [ ] CI/CD pipeline templates for skill projects
+- [ ] Automated regression testing framework for skill outputs
 
 ## Acknowledgments
 

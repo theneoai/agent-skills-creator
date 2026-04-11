@@ -11,10 +11,10 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: '18'
         cache: 'npm'
@@ -33,12 +33,12 @@ jobs:
     - name: Check code style
       run: |
         cd builder
-        npm run lint || true
+        npm run lint
 
     - name: Run tests
       run: |
         cd builder
-        npm test || true
+        npm test
 
   build:
     needs: validate
@@ -47,10 +47,10 @@ jobs:
       matrix:
         platform: [opencode, openclaw, claude, cursor, openai, gemini, mcp]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: '18'
         cache: 'npm'
@@ -74,7 +74,7 @@ jobs:
           $EXTRA_FLAGS
 
     - name: Upload build artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: skill-writer-${{ matrix.platform }}
         path: platforms/skill-writer-${{ matrix.platform }}-*
@@ -86,10 +86,10 @@ jobs:
     permissions:
       contents: write
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Download all build artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         path: release-assets
 
@@ -173,7 +173,7 @@ jobs:
         EOF
 
     - name: Create GitHub Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         files: dist/*
         body_path: release-body.md
@@ -181,27 +181,3 @@ jobs:
         prerelease: ${{ contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  deploy-docs:
-    needs: validate
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-
-    - name: Build documentation
-      run: |
-        mkdir -p docs
-        cp README.md docs/index.md
-        cp USAGE.md docs/usage.md
-
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./docs
