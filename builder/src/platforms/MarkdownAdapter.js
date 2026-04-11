@@ -4,25 +4,18 @@
  * Shared base class for Markdown-based platform adapters (Claude, Gemini, OpenCode, OpenClaw).
  * Eliminates code duplication between adapters.
  *
+ * Uses the shared frontmatter utility (utils/frontmatter.js) to ensure consistent
+ * YAML frontmatter parsing across all adapters — replaces the duplicate ad-hoc regexes
+ * that previously lived in each adapter file.
+ *
  * @module builder/src/platforms/MarkdownAdapter
- * @version 2.2.0
+ * @version 3.1.0 - Use shared frontmatter utility; add outputFormat property
  */
 
 const path = require('path');
 const os = require('os');
-
-// Read builder version once so generateMetadata doesn't re-require on every call.
-let _builderVersion;
-function getBuilderVersion() {
-  if (!_builderVersion) {
-    try {
-      _builderVersion = require('../../package.json').version;
-    } catch {
-      _builderVersion = '0.0.0';
-    }
-  }
-  return _builderVersion;
-}
+const { hasFrontmatter } = require('../utils/frontmatter');
+const { markdownCompatibility, getBuilderVersion } = require('../utils/metadata-schema');
 
 /**
  * Base class for Markdown-based platform adapters
@@ -30,14 +23,17 @@ function getBuilderVersion() {
 class MarkdownAdapter {
   /**
    * @param {Object} options - Adapter configuration
-   * @param {string} options.name - Platform name
-   * @param {string} options.installDir - Installation directory name (e.g., '.claude')
-   * @param {string[]} options.sections - Default sections for the platform
-   * @param {string[]} options.requiredFields - Required frontmatter fields
+   * @param {string} options.name          - Platform name
+   * @param {string} options.installDir    - Installation directory name (e.g. '.claude')
+   * @param {string} [options.outputFormat='MARKDOWN'] - 'MARKDOWN' | 'JSON' | 'HYBRID'
+   * @param {string[]} [options.sections]  - Default sections for the platform
+   * @param {string[]} [options.requiredFields] - Required frontmatter fields
    */
   constructor(options) {
     this.name = options.name;
     this.installDir = options.installDir;
+    /** Output format used by build pipeline to choose file extension and adapter pathway */
+    this.outputFormat = options.outputFormat || 'MARKDOWN';
     this.sections = options.sections || [
       '## Overview',
       '## Usage',
@@ -66,7 +62,9 @@ tags: {{tags}}
   }
 
   /**
-   * Format skill content for the platform
+   * Format skill content for the platform.
+   * Uses shared hasFrontmatter() — canonical regex handles optional trailing newline.
+   *
    * @param {string} skillContent - Raw skill content
    * @returns {string} Formatted skill content
    */
@@ -75,9 +73,8 @@ tags: {{tags}}
       throw new Error('Invalid skill content provided');
     }
 
-    // Validate YAML frontmatter presence
-    const frontmatterMatch = skillContent.match(/^---\n([\s\S]*?)\n---/);
-    if (!frontmatterMatch) {
+    // Validate YAML frontmatter presence using shared utility
+    if (!hasFrontmatter(skillContent)) {
       throw new Error('Skill content missing required YAML frontmatter');
     }
 
@@ -108,26 +105,27 @@ tags: {{tags}}
 
   /**
    * Generate platform-specific metadata.
-   * Uses the builder's own package.json version as the highest tested version.
+   * Uses metadata-schema.js for the compatibility block — ensures consistent
+   * structure and reads the builder version dynamically (not hardcoded).
+   *
    * @param {Object} skillData - Skill data object
    * @returns {Object} Platform metadata
    */
   generateMetadata(skillData) {
-    const builderVersion = getBuilderVersion();
     return {
       platform: this.name,
       format: 'SKILL.md',
+      outputFormat: this.outputFormat,
       version: skillData?.version || '1.0.0',
       created: new Date().toISOString(),
-      compatibility: {
-        minVersion: '2.2.0',
-        testedVersions: [...new Set([builderVersion])],
-      },
+      compatibility: markdownCompatibility('2.2.0'),
     };
   }
 
   /**
-   * Validate skill structure
+   * Validate skill structure.
+   * Uses shared hasFrontmatter() — canonical regex handles optional trailing newline.
+   *
    * @param {string} skillContent - Skill content to validate
    * @returns {Object} Validation result
    */
@@ -135,9 +133,8 @@ tags: {{tags}}
     const errors = [];
     const warnings = [];
 
-    // Check YAML frontmatter
-    const frontmatterMatch = skillContent.match(/^---\n([\s\S]*?)\n---/);
-    if (!frontmatterMatch) {
+    // Check YAML frontmatter using shared utility
+    if (!hasFrontmatter(skillContent)) {
       errors.push('Missing YAML frontmatter');
     }
 

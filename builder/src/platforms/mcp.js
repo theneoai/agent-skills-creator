@@ -16,11 +16,16 @@ const path = require('path');
 const os = require('os');
 const yaml = require('js-yaml');
 const config = require('../config');
+const { parseFrontmatter } = require('../utils/frontmatter');
+const { mcpCompatibility } = require('../utils/metadata-schema');
 
 // Computed once from config so it stays in sync with the registry (no circular dep).
 const SUPPORTED_PLATFORMS = Object.keys(config.PLATFORMS);
 
 const name = 'mcp';
+
+/** Output format identifier — used by index.js and build.js to determine file extension */
+const outputFormat = 'JSON';
 
 const template = {
   /**
@@ -144,27 +149,22 @@ function formatSkill(skillContent) {
   let skillTier = null;
   let skillTriggers = { en: [], zh: [] };
 
-  // Parse YAML frontmatter with js-yaml (handles block scalars, nested objects,
-  // inline and block list styles — the hand-rolled regex approach only handled
-  // inline list format and was fragile with multi-line values).
-  const frontmatterMatch = skillContent.match(/^---\n([\s\S]*?)\n---/);
-  if (frontmatterMatch) {
-    try {
-      const fm = yaml.load(frontmatterMatch[1]) || {};
-      if (fm.name) skillName = String(fm.name);
-      if (fm.description) skillDescription = String(fm.description);
-      if (fm.version) skillVersion = String(fm.version);
-      if (fm.author) {
-        skillAuthor = typeof fm.author === 'string'
-          ? fm.author
-          : (fm.author?.name || String(fm.author));
-      }
-      if (fm.skill_tier) skillTier = String(fm.skill_tier);
-      if (fm.triggers?.en && Array.isArray(fm.triggers.en)) skillTriggers.en = fm.triggers.en;
-      if (fm.triggers?.zh && Array.isArray(fm.triggers.zh)) skillTriggers.zh = fm.triggers.zh;
-    } catch (e) {
-      console.warn(`[mcp] Failed to parse YAML frontmatter: ${e.message}`);
+  // Parse YAML frontmatter using shared utility (handles optional trailing newline —
+  // fixes silent failure when skill files end with `---` without trailing newline).
+  const { frontmatterData } = parseFrontmatter(skillContent);
+  if (frontmatterData) {
+    const fm = frontmatterData;
+    if (fm.name) skillName = String(fm.name);
+    if (fm.description) skillDescription = String(fm.description);
+    if (fm.version) skillVersion = String(fm.version);
+    if (fm.author) {
+      skillAuthor = typeof fm.author === 'string'
+        ? fm.author
+        : (fm.author?.name || String(fm.author));
     }
+    if (fm.skill_tier) skillTier = String(fm.skill_tier);
+    if (fm.triggers?.en && Array.isArray(fm.triggers.en)) skillTriggers.en = fm.triggers.en;
+    if (fm.triggers?.zh && Array.isArray(fm.triggers.zh)) skillTriggers.zh = fm.triggers.zh;
   }
 
   // Fallback: extract metadata from inline body patterns when there is no
@@ -233,13 +233,11 @@ function generateMetadata(skillData) {
   return {
     platform: name,
     format: 'MCP JSON Manifest',
+    outputFormat,
     schema_version: '1.0',
     version: skillData?.version || '1.0.0',
     created: new Date().toISOString(),
-    compatibility: {
-      mcp_protocol: '1.0',
-      clients: ['claude-desktop', 'cursor', 'vscode-mcp', 'openai-plugin'],
-    },
+    compatibility: mcpCompatibility(),
   };
 }
 
@@ -289,6 +287,7 @@ function validateSkill(skillContent) {
 
 module.exports = {
   name,
+  outputFormat,
   template,
   formatSkill,
   getInstallPath,

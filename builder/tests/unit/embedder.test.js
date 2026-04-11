@@ -193,6 +193,66 @@ describe('Embedder Module', () => {
     });
   });
 
+  describe('embedSharedResources — correct field names (BUG-1 regression guard)', () => {
+    // This block tests that embedSharedResources() maps the ACTUAL keys returned by
+    // readSharedResources() (reader.js), not the old wrong keys (security/utils/helpers/config).
+    // Signature: embedSharedResources(template: string, sharedData: object): string
+
+    test('embedSharedResources should be exported', () => {
+      expect(typeof embedder.embedSharedResources).toBe('function');
+    });
+
+    test('should embed content when sharedData uses the correct field names', () => {
+      const template = '# Skill\n\nBody content here.\n';
+      const sharedData = {
+        securityPatterns: { content: '# Security Patterns\n\nContent here.' },
+        selfReview:       { content: '# Self-Review\n\nContent here.' },
+        evolution:        { content: '# Evolution\n\nContent here.' },
+        useToEvolve:      { content: '# UTE\n\nContent here.' },
+        convergence:      { content: '# Convergence\n\nContent here.' },
+        sessionArtifact:  { content: '# Session Artifact\n\nContent here.' },
+        editAudit:        { content: '# Edit Audit\n\nContent here.' },
+        skillRegistry:    { content: '# Skill Registry\n\nContent here.' },
+      };
+      const result = embedder.embedSharedResources(template, sharedData);
+      // All 8 companion files should appear in output
+      expect(result).toContain('Security Patterns');
+      expect(result).toContain('Self-Review');
+      expect(result).toContain('Evolution');
+      expect(result).toContain('Session Artifact');
+      expect(result).toContain('Edit Audit');
+      expect(result).toContain('Skill Registry');
+    });
+
+    test('should NOT silently drop all content when old wrong keys are used', () => {
+      // Confirm that the old wrong keys (security, utils, helpers, config) do NOT
+      // accidentally produce content — this guards against the BUG-1 regression.
+      const template = '# Skill\n\nBody.\n';
+      const oldWrongData = {
+        security: { content: 'old security content' },
+        utils:    { content: 'old utils content' },
+        helpers:  { content: 'old helpers content' },
+        config:   { content: 'old config content' },
+      };
+      const result = embedder.embedSharedResources(template, oldWrongData);
+      // Old wrong keys should produce NO section content from sectionMap
+      expect(result).not.toContain('old security content');
+      expect(result).not.toContain('old utils content');
+    });
+
+    test('should gracefully skip keys whose value is falsy', () => {
+      const template = '# Skill\n\nBody.\n';
+      const partialData = {
+        securityPatterns: { content: '# Security\n\nHere.' },
+        selfReview:       null,
+        evolution:        undefined,
+      };
+      expect(() => embedder.embedSharedResources(template, partialData)).not.toThrow();
+      const result = embedder.embedSharedResources(template, partialData);
+      expect(result).toContain('Security');
+    });
+  });
+
   describe('validateEmbeddedContent', () => {
     test('should detect unbalanced code blocks', () => {
       const content = '# Title\n\n```\nopened but not closed';

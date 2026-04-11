@@ -17,8 +17,8 @@ const { getSupportedPlatforms, isSupported } = require('../platforms');
 const config = require('../config');
 const { getSkillMetadata } = require('../metadata');
 
-/** Platforms whose build output is JSON rather than Markdown */
-const JSON_OUTPUT_PLATFORMS = new Set(['openai', 'mcp']);
+// JSON_OUTPUT_PLATFORMS is the canonical SSOT in config — do not redefine here.
+const { JSON_OUTPUT_PLATFORMS } = config;
 
 /**
  * Build platform-specific skills from core engine
@@ -47,7 +47,8 @@ async function build(options) {
   const buildOptions = {
     platform: options.all ? 'all' : (options.platform || 'all'),
     release: options.release || false,
-    output: options.output || 'platforms'
+    output: options.output || 'platforms',
+    dryRun: options.dryRun || false,
   };
 
   console.log(chalk.bold.blue('\n🔨 Skill Writer Builder\n'));
@@ -57,7 +58,12 @@ async function build(options) {
   console.log(chalk.cyan('Configuration:'));
   console.log(`  Platform: ${chalk.yellow(buildOptions.platform)}`);
   console.log(`  Release: ${chalk.yellow(buildOptions.release ? 'yes' : 'no')}`);
-  console.log(`  Output: ${chalk.yellow(buildOptions.output)}\n`);
+  console.log(`  Output: ${chalk.yellow(buildOptions.output)}`);
+  if (buildOptions.dryRun) {
+    console.log(`  ${chalk.bold.yellow('[DRY RUN]')} No files will be written.\n`);
+  } else {
+    console.log();
+  }
 
   try {
     // Step 1: Read core data
@@ -118,11 +124,16 @@ async function build(options) {
           : `skill-writer-${platform}-dev.${fileExtension}`;
         const outputPath = path.join(outputDir, outputFile);
 
-        // Ensure output directory exists
-        await fs.ensureDir(outputDir);
-
-        // Write skill file
-        await fs.writeFile(outputPath, skillResult.content, 'utf-8');
+        if (buildOptions.dryRun) {
+          // Dry-run: show what would be written without actually writing
+          console.log(chalk.yellow(`    [DRY RUN] Would write: ${path.relative(process.cwd(), outputPath)}`));
+          console.log(chalk.gray(`    [DRY RUN] Size: ${formatBytes(skillResult.content.length)}\n`));
+        } else {
+          // Ensure output directory exists
+          await fs.ensureDir(outputDir);
+          // Write skill file
+          await fs.writeFile(outputPath, skillResult.content, 'utf-8');
+        }
 
         const platformDuration = Date.now() - platformStartTime;
         

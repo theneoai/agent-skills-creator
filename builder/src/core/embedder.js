@@ -365,14 +365,26 @@ function embedOptimizeMode(template, optimizeData) {
 }
 
 /**
- * Embed shared resources into template
+ * Embed shared resources into template.
+ *
+ * Maps the actual field names returned by reader.js `readSharedResources()`:
+ *   { securityPatterns, selfReview, evolution, useToEvolve,
+ *     convergence, sessionArtifact, editAudit, skillRegistry }
+ *
+ * Prior to v3.1.0 this function referenced non-existent keys
+ * (security, utils, helpers, config), causing all companion file content
+ * to be silently dropped from every platform build output. Fixed in v3.1.0.
  *
  * @param {string} template - Platform template string
- * @param {Object} sharedData - Shared resources data
- * @param {Object} sharedData.security - Security patterns (CWE, etc.)
- * @param {Object} sharedData.utils - Utility functions
- * @param {Object} sharedData.helpers - Helper patterns
- * @param {Object} sharedData.config - Shared configuration
+ * @param {Object} sharedData - Shared resources data from readSharedResources()
+ * @param {Object} [sharedData.securityPatterns] - CWE + OWASP ASI patterns
+ * @param {Object} [sharedData.selfReview]       - 3-pass self-review protocol
+ * @param {Object} [sharedData.evolution]        - 3-trigger evolution spec
+ * @param {Object} [sharedData.useToEvolve]      - UTE 2.0 L1/L2 spec
+ * @param {Object} [sharedData.convergence]      - Convergence detection rules
+ * @param {Object} [sharedData.sessionArtifact]  - Session artifact schema (COLLECT)
+ * @param {Object} [sharedData.editAudit]        - Edit Audit Guard spec
+ * @param {Object} [sharedData.skillRegistry]    - Skill Registry spec (SHARE)
  * @returns {string} Template with shared resources embedded
  */
 function embedSharedResources(template, sharedData) {
@@ -385,40 +397,25 @@ function embedSharedResources(template, sharedData) {
   sections.push(formatSectionHeader('Shared Resources', 2, platformCfg));
   sections.push('Common patterns, utilities, and security checks used across all modes.');
 
-  // Section 2: Security Patterns
-  if (sharedData.security) {
-    sections.push(formatSectionHeader('Security Patterns', 3, platformCfg));
-    sections.push(extractContent(sharedData.security));
-  }
+  // Map from actual reader.js field names → display labels.
+  // Order matters: security and self-review come first as they are referenced
+  // by CREATE, EVALUATE, and OPTIMIZE before the collective evolution refs.
+  const sectionMap = [
+    { key: 'securityPatterns', label: 'Security Patterns (CWE + OWASP ASI)' },
+    { key: 'selfReview',       label: 'Self-Review Protocol' },
+    { key: 'evolution',        label: 'Evolution Spec' },
+    { key: 'useToEvolve',      label: 'Use-to-Evolve (UTE) Spec' },
+    { key: 'convergence',      label: 'Convergence Detection' },
+    { key: 'sessionArtifact',  label: 'Session Artifact Schema (COLLECT)' },
+    { key: 'editAudit',        label: 'Edit Audit Guard' },
+    { key: 'skillRegistry',    label: 'Skill Registry (SHARE)' },
+  ];
 
-  // Section 3: Utilities
-  if (sharedData.utils) {
-    sections.push(formatSectionHeader('Utility Functions', 3, platformCfg));
-    sections.push(formatCodeBlock(
-      extractContent(sharedData.utils),
-      'yaml',
-      platformCfg
-    ));
-  }
-
-  // Section 4: Helpers
-  if (sharedData.helpers) {
-    sections.push(formatSectionHeader('Helper Patterns', 3, platformCfg));
-    sections.push(formatCodeBlock(
-      yaml.dump(sharedData.helpers, { lineWidth: -1 }),
-      'yaml',
-      platformCfg
-    ));
-  }
-
-  // Section 5: Configuration
-  if (sharedData.config) {
-    sections.push(formatSectionHeader('Shared Configuration', 3, platformCfg));
-    sections.push(formatCodeBlock(
-      yaml.dump(sharedData.config, { lineWidth: -1 }),
-      'yaml',
-      platformCfg
-    ));
+  for (const { key, label } of sectionMap) {
+    if (sharedData[key]) {
+      sections.push(formatSectionHeader(label, 3, platformCfg));
+      sections.push(extractContent(sharedData[key]));
+    }
   }
 
   const sharedContent = sections.join('\n\n');

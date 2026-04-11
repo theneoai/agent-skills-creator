@@ -10,16 +10,16 @@
 >
 > | Component | Level | Reason |
 > |-----------|-------|--------|
-> | Feedback signal detection (correction / approval) | `[ENFORCED]` | Observable within a single turn |
-> | Trigger miss detection (user rephrasing) | `[ENFORCED]` | Observable within session |
-> | Micro-patch proposal & user confirmation | `[ENFORCED]` | Single-session action |
-> | LEAN score after micro-patch | `[ENFORCED]` | Computed in same session |
-> | `cumulative_invocations` counter | `[ASPIRATIONAL]` | Resets across LLM sessions |
-> | Cadence checks (every 10/50/100 calls) | `[ASPIRATIONAL]` | Requires persistent counter |
-> | `last_ute_check` / `pending_patches` fields | `[ASPIRATIONAL]` | Cross-session state |
-> | Audit trail in `.skill-audit/` | `[ASPIRATIONAL]` | Requires external file system |
+> | Feedback signal detection (correction / approval) | `[CORE]` | Observable within a single turn |
+> | Trigger miss detection (user rephrasing) | `[CORE]` | Observable within session |
+> | Micro-patch proposal & user confirmation | `[CORE]` | Single-session action |
+> | LEAN score after micro-patch | `[CORE]` | Computed in same session |
+> | `cumulative_invocations` counter | `[EXTENDED]` | Resets across LLM sessions |
+> | Cadence checks (every 10/50/100 calls) | `[EXTENDED]` | Requires persistent counter |
+> | `last_ute_check` / `pending_patches` fields | `[EXTENDED]` | Cross-session state |
+> | Audit trail in `.skill-audit/` | `[EXTENDED]` | Requires external file system |
 >
-> **Workaround for `[ASPIRATIONAL]` items**: Treat each invocation as potentially the
+> **Workaround for `[EXTENDED]` items**: Treat each invocation as potentially the
 > Nth invocation. Run a lightweight check every invocation if session context is fresh.
 > For true cadence gating, connect an optional persistence backend (see §5).
 
@@ -175,7 +175,7 @@ protocol; they differ in *scope* (single-user vs. multi-user) and *persistence r
 ### L1: Single-User UTE (current)
 
 - **Scope**: One user, one session, one skill
-- **Enforcement**: `[ENFORCED]` — runs fully within a single LLM session
+- **Enforcement**: `[CORE]` — runs fully within a single LLM session
 - **Trigger source**: Feedback signals observed in the current conversation
 - **Output**: Micro-patch proposals (keywords/metadata) or OPTIMIZE queue entries
 - **State**: Session-local only; no cross-session persistence required
@@ -186,7 +186,7 @@ This is the complete implementation described in §1–§6 above.
 
 ## §8  Platform Hook Integration `[ENFORCED with hooks backend]`
 
-> This section upgrades UTE's `[ASPIRATIONAL]` cross-session items to `[ENFORCED]` by
+> This section upgrades UTE's `[EXTENDED]` cross-session items to `[CORE]` by
 > wiring them to the host platform's hook system. Currently documented for **Claude Code**
 > (session hooks). The same pattern applies to any platform that exposes pre/post-session hooks.
 
@@ -194,10 +194,10 @@ This is the complete implementation described in §1–§6 above.
 
 | UTE Item | Without Hooks | With Hooks |
 |----------|--------------|-----------|
-| `cumulative_invocations` counter | `[ASPIRATIONAL]` — resets per session | `[ENFORCED]` — persisted to file |
-| Cadence checks (every 10/50/100) | `[ASPIRATIONAL]` — approximate | `[ENFORCED]` — precise count-gated |
-| `last_ute_check` / `pending_patches` | `[ASPIRATIONAL]` — cross-session state lost | `[ENFORCED]` — read/written via hook |
-| Audit trail in `.skill-audit/` | `[ASPIRATIONAL]` — requires filesystem | `[ENFORCED]` — hook writes on session end |
+| `cumulative_invocations` counter | `[EXTENDED]` — resets per session | `[CORE]` — persisted to file |
+| Cadence checks (every 10/50/100) | `[EXTENDED]` — approximate | `[CORE]` — precise count-gated |
+| `last_ute_check` / `pending_patches` | `[EXTENDED]` — cross-session state lost | `[CORE]` — read/written via hook |
+| Audit trail in `.skill-audit/` | `[EXTENDED]` — requires filesystem | `[CORE]` — hook writes on session end |
 
 ### Claude Code Hook Setup
 
@@ -263,7 +263,7 @@ Create `~/.claude/hooks/ute-tracker.js`:
 ```javascript
 #!/usr/bin/env node
 // UTE state persistence hook for Claude Code
-// Upgrades [ASPIRATIONAL] cross-session tracking to [ENFORCED]
+// Upgrades [EXTENDED] cross-session tracking to [CORE]
 
 const fs = require('fs');
 const path = require('path');
@@ -326,28 +326,28 @@ notify the user and offer to run the corresponding UTE health check.
 
 ### Enforcement Status After Hook Integration
 
-With the above setup, these items upgrade from `[ASPIRATIONAL]` to `[ENFORCED]`:
+With the above setup, these items upgrade from `[EXTENDED]` to `[CORE]`:
 
 | Item | New Status |
 |------|-----------|
-| `cumulative_invocations` persistence | `[ENFORCED]` — written by PostToolUse hook |
-| Cadence check notifications | `[ENFORCED]` — session_log entries trigger next-session prompt |
-| `last_ute_check` update | `[ENFORCED]` — written by session-end hook |
-| Audit trail | `[ENFORCED]` — sessions.jsonl append on Stop |
+| `cumulative_invocations` persistence | `[CORE]` — written by PostToolUse hook |
+| Cadence check notifications | `[CORE]` — session_log entries trigger next-session prompt |
+| `last_ute_check` update | `[CORE]` — written by session-end hook |
+| Audit trail | `[CORE]` — sessions.jsonl append on Stop |
 
-**Remaining `[ASPIRATIONAL]` items** (require L2 collective infrastructure):
+**Remaining `[EXTENDED]` items** (require L2 collective infrastructure):
 - Multi-user artifact aggregation (SkillClaw / SkillRL collective pipeline)
 - Cross-skill tier drift monitoring (requires shared registry backend)
 
 ---
 
-### L2: Collective UTE `[ASPIRATIONAL — requires external tooling]`
+### L2: Collective UTE `[EXTENDED]`
 
-> **`[ASPIRATIONAL]`**: L2 requires external storage and the COLLECT + AGGREGATE pipeline.
+> **`[EXTENDED]`**: L2 requires external storage and the COLLECT + AGGREGATE pipeline.
 > See `refs/session-artifact.md` and `skill-framework.md §17` for full spec.
 
 - **Scope**: Multiple users, multiple sessions, one skill (or skill cluster)
-- **Enforcement**: `[ASPIRATIONAL]` — requires Session Artifact storage and AGGREGATE pipeline
+- **Enforcement**: `[EXTENDED]` — requires Session Artifact storage and AGGREGATE pipeline
 - **Trigger source**: Aggregated patterns from N session artifacts
 - **Output**: Evidence-backed evolution proposals (stronger signal than single-session L1)
 - **State**: Persistent storage (`sessions/` directory in shared storage backend)

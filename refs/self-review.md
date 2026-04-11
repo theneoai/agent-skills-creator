@@ -10,16 +10,16 @@
 >
 > | Component | Level | Notes |
 > |-----------|-------|-------|
-> | LoongFlow Plan-Execute-Summarize | `[ENFORCED]` | Fully executable within one session |
-> | 3-Pass Review (Generate/Review/Reconcile) | `[ENFORCED]` | Core mechanism, works within prompt |
-> | Severity tagging (ERROR/WARNING/INFO) | `[ENFORCED]` | Purely text-based, no external state |
-> | Security scan via CWE patterns | `[ENFORCED]` | Patterns embedded in refs/ companion file |
-> | Timeout enforcement (60 s / 180 s) | `[ASPIRATIONAL]` | LLMs have no internal clock; use turn count as proxy |
-> | Review log in `.skill-audit/review.jsonl` | `[ASPIRATIONAL]` | Requires external file-system backend |
+> | LoongFlow Plan-Execute-Summarize | `[CORE]` | Fully executable within one session |
+> | 3-Pass Review (Generate/Review/Reconcile) | `[CORE]` | Core mechanism, works within prompt |
+> | Severity tagging (ERROR/WARNING/INFO) | `[CORE]` | Purely text-based, no external state |
+> | Security scan via CWE patterns | `[CORE]` | Patterns embedded in refs/ companion file |
+> | Timeout enforcement (60 s / 180 s) | `[EXTENDED]` | LLMs have no internal clock; use turn count as proxy |
+> | Review log in `.skill-audit/review.jsonl` | `[EXTENDED]` | Requires external file-system backend |
 
 ---
 
-## §1  LoongFlow — Plan-Execute-Summarize `[ENFORCED]`
+## §1  LoongFlow — Plan-Execute-Summarize `[CORE]`
 
 **Architecture**: Replaces rigid state machines with a flexible 3-phase cognitive loop.
 
@@ -85,7 +85,7 @@ Switch to a reviewer persona. Explicitly re-read the output as if reviewing some
 
 ---
 
-## §4  Error Recovery `[ENFORCED]`
+## §4  Error Recovery `[CORE]`
 
 | Failure | Recovery |
 |---------|---------|
@@ -94,15 +94,15 @@ Switch to a reviewer persona. Explicitly re-read the output as if reviewing some
 | Phase timeout (> 60 s) | Deliver with WARNING flag; note incomplete review |
 | Repeated issues after 2 revision cycles | Escalate to HUMAN_REVIEW |
 
-> **Timeout note `[ASPIRATIONAL]`**: Wall-clock timeouts are not enforceable by AI.
+> **Timeout note `[EXTENDED]`**: Wall-clock timeouts are not enforceable by AI.
 > Use **turn count** as a proxy: each AI turn ≈ one review pass. If more than 6 turns
 > have elapsed on a single review cycle, treat as timeout and flag accordingly.
 
 ---
 
-## §5  Review Log Entry `[ASPIRATIONAL — requires external persistence]`
+## §5  Review Log Entry `[EXTENDED]`
 
-> **`[ASPIRATIONAL]`**: The log schema below is the canonical output format.
+> **`[EXTENDED]`**: The log schema below is the canonical output format.
 > In stateless sessions, produce the JSON object as part of your response; the
 > integration layer (or user) can persist it to `.skill-audit/review.jsonl`.
 

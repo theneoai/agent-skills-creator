@@ -3,7 +3,7 @@
 > **Purpose**: Prevent destructive rewrites during OPTIMIZE and UTE micro-patch cycles.
 > **Load**: When §9 (OPTIMIZE) or §15 (UTE Injection) of `claude/skill-writer.md` is accessed.
 > **Inspired by**: SkillClaw's "rewrite-like" rejection rule (50%+ section modifications blocked).
-> **Enforcement**: `[ENFORCED]` — AI applies this via content comparison reasoning within a session.
+> **Enforcement**: `[CORE]` — AI applies this via content comparison reasoning within a session.
 
 ---
 

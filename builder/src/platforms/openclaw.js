@@ -12,6 +12,8 @@
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
+const { hasFrontmatter, parseFrontmatter } = require('../utils/frontmatter');
+const { markdownCompatibility } = require('../utils/metadata-schema');
 
 const name = 'openclaw';
 
@@ -126,12 +128,13 @@ function hasSection(content, sectionHeading) {
 
 /**
  * Inject `metadata.openclaw` into frontmatter if not already present.
+ * Uses shared parseFrontmatter() — canonical regex handles optional trailing newline.
  */
 function ensureOpenClawMetadata(content) {
-  const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
-  if (!frontmatterMatch) return content;
+  const { frontmatterYaml, raw } = parseFrontmatter(content);
+  if (!raw) return content;
 
-  const fm = frontmatterMatch[1];
+  const fm = frontmatterYaml;
   if (fm.includes('metadata:') && fm.includes('openclaw:')) return content;
 
   const metaBlock = [
@@ -147,7 +150,9 @@ function ensureOpenClawMetadata(content) {
     `      checkpointInterval: ${OPENCLAW_METADATA.runtime.checkpointInterval}`,
   ].join('\n');
 
-  return content.replace(/^---\n([\s\S]*?)\n---/, `---\n$1\n${metaBlock}\n---`);
+  // Use shared canonical regex for replacement (handles optional trailing newline)
+  const { FRONTMATTER_REGEX } = require('../utils/frontmatter');
+  return content.replace(FRONTMATTER_REGEX, (match, yamlBody) => `---\n${yamlBody}\n${metaBlock}\n---\n`);
 }
 
 /**
@@ -188,8 +193,8 @@ function formatSkill(skillContent) {
     throw new Error('Invalid skill content provided');
   }
 
-  const frontmatterMatch = skillContent.match(/^---\n([\s\S]*?)\n---/);
-  if (!frontmatterMatch) {
+  // Use shared hasFrontmatter() — canonical regex handles optional trailing newline
+  if (!hasFrontmatter(skillContent)) {
     throw new Error('Skill content missing required YAML frontmatter');
   }
 
@@ -233,10 +238,11 @@ function generateMetadata(skillData) {
   return {
     platform: name,
     format: 'AgentSkills',
+    outputFormat: 'MARKDOWN',
     version: skillData?.version || '1.0.0',
     created: new Date().toISOString(),
     metadata: { openclaw: OPENCLAW_METADATA },
-    compatibility: { minVersion: '2.2.0', testedVersions: [require('../../package.json').version] },
+    compatibility: markdownCompatibility('2.2.0'),
   };
 }
 
@@ -249,11 +255,12 @@ function validateSkill(skillContent) {
   const errors = [];
   const warnings = [];
 
-  const frontmatterMatch = skillContent.match(/^---\n([\s\S]*?)\n---/);
-  if (!frontmatterMatch) {
+  // Use shared parseFrontmatter() — canonical regex handles optional trailing newline
+  const { frontmatterYaml } = parseFrontmatter(skillContent);
+  if (!frontmatterYaml) {
     errors.push('Missing YAML frontmatter');
   } else {
-    const fm = frontmatterMatch[1];
+    const fm = frontmatterYaml;
     if (!fm.includes('name:')) errors.push('Missing required field: name');
     if (!fm.includes('version:')) errors.push('Missing required field: version');
     if (!fm.includes('description:')) errors.push('Missing required field: description');
@@ -288,6 +295,7 @@ function fromOpenCode(opencodeContent) {
 
 module.exports = {
   name,
+  outputFormat: 'MARKDOWN',
   template,
   formatSkill,
   getInstallPath,

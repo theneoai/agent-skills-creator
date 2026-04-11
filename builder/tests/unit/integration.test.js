@@ -179,3 +179,50 @@ describe('Full pipeline — JSON platforms', () => {
     });
   }
 });
+
+describe('Shared resources — content present in build output (BUG-1 regression guard)', () => {
+  // This test suite guards against the BUG-1 regression where embedSharedResources()
+  // used wrong field names and silently dropped all 8 companion files from every build.
+  let coreData;
+
+  beforeAll(async () => {
+    coreData = await readAllCoreData();
+  }, 30000);
+
+  test('readAllCoreData includes all 8 companion resource fields', () => {
+    const shared = coreData.shared;
+    const expectedFields = [
+      'securityPatterns', 'selfReview', 'evolution', 'useToEvolve',
+      'convergence', 'sessionArtifact', 'editAudit', 'skillRegistry',
+    ];
+    expectedFields.forEach(field => {
+      expect(shared[field]).toBeTruthy();
+      expect(typeof shared[field].content).toBe('string');
+      expect(shared[field].content.length).toBeGreaterThan(50);
+    });
+  });
+
+  // Verify that the claude platform build output contains content from key companion files.
+  // Security patterns content is a known string present in refs/security-patterns.md.
+  test('claude build output contains security patterns content', () => {
+    const result = generateSkillFile('claude', { ...coreData, metadata: TEST_METADATA });
+    const formattedContent = platforms.formatForPlatform('claude', result.content);
+    // Content from security-patterns.md should be embedded
+    expect(formattedContent.toLowerCase()).toMatch(/cwe|owasp|security/);
+  });
+
+  test('claude build output contains self-review content', () => {
+    const result = generateSkillFile('claude', { ...coreData, metadata: TEST_METADATA });
+    const formattedContent = platforms.formatForPlatform('claude', result.content);
+    // Content from self-review.md should be embedded
+    expect(formattedContent.toLowerCase()).toMatch(/self.?review|loongflow|critique/i);
+  });
+
+  test('openai JSON build output contains embedded instructions with companion content', () => {
+    const result = generateSkillFile('openai', { ...coreData, metadata: TEST_METADATA });
+    const formattedContent = platforms.formatForPlatform('openai', result.content);
+    const obj = JSON.parse(formattedContent);
+    // The instructions field should have substantial content (companion files embedded)
+    expect(obj.instructions.length).toBeGreaterThan(1000);
+  });
+});

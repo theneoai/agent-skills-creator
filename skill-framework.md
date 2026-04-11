@@ -70,6 +70,55 @@ extends:
   Source files in this repository:  refs/  templates/  eval/  optimize/
 -->
 
+## §0  Quick Start — 5 Common Workflows
+
+> **New here?** Pick your scenario below and follow the steps. Full documentation starts at §1.
+
+| Goal | Command | Duration |
+|------|---------|----------|
+| Create a new skill | `/create` + one-sentence description | 2–5 min |
+| Fast quality check | `/lean` + skill content | <5s |
+| Full certification | `/eval` + skill content | ~60s |
+| Improve an existing skill | `/opt` + skill + eval report | 5–20 min |
+| Deploy to platforms | `/install [platform]` | <30s |
+| Record session data | `/collect` | ~10s |
+
+### Workflow A — "I want to create a new skill"
+1. Type `/create` followed by a one-sentence description of what the skill should do
+2. Answer the 8 elicitation questions (§7) one at a time
+3. Receive the completed skill file with a LEAN score attached
+4. LEAN ≥ 350 → ready to use immediately (LEAN_CERT)
+5. Before pushing to skill registry → run `/eval` for an authoritative score
+
+### Workflow B — "I have a skill file and want to check its quality"
+1. Share the file content
+2. `/lean` for a fast check (~5s) OR `/eval` for full assessment (~60s)
+3. Use LEAN during iteration; use EVALUATE before certifying or sharing
+
+### Workflow C — "My skill scored below 700 (FAIL)"
+1. Run `/opt` and share the skill file + EVALUATE report
+2. Choose an optimization strategy (or press Enter for Auto)
+3. Watch up to 20 rounds run with progress display
+4. After convergence → run `/eval` for final certification
+
+### Workflow D — "I want to deploy my skill"
+1. Run `/install [platform]` where platform is one of: `claude`, `opencode`, `openclaw`, `cursor`, `gemini`, `openai`, `mcp`
+2. Confirm the install paths shown
+3. Restart the target platform to activate the skill
+
+### Workflow E — "I want to track usage and improve over time"
+1. Ensure `use_to_evolve.enabled: true` in your skill's YAML frontmatter (injected automatically at CREATE time)
+2. After each important invocation, run `/collect` (or it fires automatically with UTE enabled) `[EXTENDED]`
+3. Accumulate 5+ Session Artifacts, then type: "aggregate skill feedback"
+4. Use the ranked improvement list as input to `/opt`
+
+> **Enforcement Level Key** (used throughout this document):
+> - `[CORE]` — Fully operational in any LLM session. No external backend required.
+> - `[EXTENDED]` — Requires optional external backend (file system, database, GitHub Gist).
+>   The framework functions fully without it; these features add persistence and cross-session capabilities.
+
+---
+
 ## §1  Identity
 
 **Name**: skill-writer
@@ -100,6 +149,26 @@ See `claude/refs/self-review.md §1` for full spec.
 
 ## §2  Mode Router
 
+### Priority 0 — Explicit Slash Commands `[CORE — evaluated first, skip keyword scoring]`
+
+When a message begins with a slash command, route immediately without keyword scoring.
+No confirmation needed. These commands are LLM-evaluated (not platform CLI commands).
+
+| Slash Command | Routes to | Chinese Equivalent |
+|--------------|-----------|-------------------|
+| `/create` | CREATE mode | `/创建` |
+| `/lean` | LEAN mode | `/快评` |
+| `/eval` or `/evaluate` | EVALUATE mode | `/评测` |
+| `/opt` or `/optimize` | OPTIMIZE mode | `/优化` |
+| `/install` | INSTALL mode | `/安装` |
+| `/collect` | COLLECT mode | `/采集` |
+
+> **Note**: These slash commands are evaluated by the LLM processing this skill prompt,
+> not by the platform's native command system. If a platform intercepts `/create`,
+> use the keyword form instead: type `create` or `创建`.
+
+### Priority 1 — Keyword Routing
+
 ```
 User Input
     │
@@ -122,13 +191,26 @@ User Input
 │ INSTALL  [安装,部署,读取安装 | install,read.*install,            │
 │           fetch.*install,setup,deploy]                          │
 │                                                                 │
-│ confidence ≥ 0.85 → AUTO-ROUTE                                  │
-│ confidence 0.70–0.84 → CONFIRM before route                     │
-│ confidence < 0.70 → GRACEFUL DEGRADATION (§3)                   │
+│ confidence HIGH   → AUTO-ROUTE (no confirmation)                │
+│ confidence MEDIUM → show "I'll run [MODE] — confirm? (yes/no)"  │
+│ confidence LOW    → show mode menu (see below)                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Routing Decision Tree** `[ENFORCED — apply in order, stop at first match]`:
+**Low confidence mode menu** (show when no clear keyword and no context clue):
+```
+Not sure which mode to use. Please choose:
+  1. /create  — Build a new skill from a description
+  2. /lean    — Quick quality check (~5s, heuristic scoring)
+  3. /eval    — Full 4-phase quality evaluation (~60s)
+  4. /opt     — Iterative improvement loop (up to 20 rounds)
+  5. /install — Deploy skill to platforms
+  6. /collect — Record this session as a skill artifact
+
+Or describe what you want to do and I'll route automatically.
+```
+
+**Routing Decision Tree** `[CORE — apply in order, stop at first match]`:
 
 ```
 Step 1 — Primary keyword match (most important signal):
@@ -154,9 +236,9 @@ Step 4 — Language weight:
   Mixed:    both count 1.0×
 
 Decision:
-  HIGH confidence (clear keyword match, no ambiguity)     → AUTO-ROUTE
-  MEDIUM confidence (context clue but no direct keyword) → CONFIRM before route
-  LOW confidence (no keyword, weak context, or conflict)  → GRACEFUL DEGRADATION (§3)
+  HIGH   (clear keyword match, no ambiguity)      → AUTO-ROUTE (no confirmation)
+  MEDIUM (context clue but no direct keyword)     → "I'll run [MODE] — confirm? (yes/no)"
+  LOW    (no keyword, weak context, or conflict)  → Show mode menu (Priority 1 above)
 
 Tie-break rule: If two modes score equally, ask the user one clarifying question.
 ```
@@ -278,6 +360,29 @@ These rules apply regardless of whether `claude/refs/self-review.md` is availabl
 >    mis-trigger skills. SkillProbe: negation reduces false trigger rate significantly.
 > 3. **Trigger phrases** in metadata: 3–8 canonical phrases users would say to invoke the skill.
 
+#### Negative Boundaries — Fill-in Template
+
+Use this template when writing the Negative Boundaries section in Phase 4 (GENERATE):
+
+```markdown
+## Negative Boundaries
+
+**Do NOT use this skill for:**
+- [Anti-example 1]: [Reason — what makes this out of scope]
+  → Recommended alternative: [skill name or approach]
+- [Anti-example 2]: [Reason — what makes this out of scope]
+  → Recommended alternative: [skill name or approach]
+- [Anti-example 3]: [Reason] (add ≥ 3 entries)
+  → Recommended alternative: [skill name or approach]
+
+**The following trigger phrases should NOT activate this skill:**
+- "[Phrase that sounds related but belongs to a different skill]"
+- "[Another similar-but-different phrase]"
+```
+
+> Minimum: 3 "Do NOT use for" entries. If the skill is the only option in its domain,
+> explicitly state "No direct alternative — escalate to [human role or process]."
+
 ### Template Selection
 
 ```
@@ -294,6 +399,36 @@ Template files: `claude/templates/<type>.md`
 ## §6  LEAN Mode (Fast Path ~1s)
 
 **Purpose**: Rapid triage without LLM calls. Use for quick checks or high-volume screening.
+
+### When to Use LEAN vs EVALUATE
+
+| Situation | Use |
+|-----------|-----|
+| First draft just completed | LEAN (fast structural check) |
+| Sharing with a colleague | LEAN (quick sanity check) |
+| About to push to skill registry | EVALUATE (authoritative score) |
+| Claiming "this is GOLD tier" | EVALUATE (LEAN ±variance too wide for tier claims) |
+| Score is near a tier boundary (±30 pts) | EVALUATE (LEAN variance may misclassify) |
+| Running 20 OPTIMIZE rounds | LEAN (fast iteration feedback per round) |
+| After OPTIMIZE converges | EVALUATE (final certification) |
+
+### Score Variance Reference
+
+LEAN and EVALUATE scores are **estimates**, not exact measurements. Treat scores as ranges:
+
+| Score Type | Typical Variance | Decision Guidance |
+|-----------|-----------------|-------------------|
+| LEAN `[STATIC]` checks | ±0 pts | Fully reliable — safe for binary pass/fail |
+| LEAN `[HEURISTIC]` checks | ±5–15 pts per dimension | Treat as estimate; ±20 total is noise |
+| EVALUATE Phase 2 (Text Quality) | ±15–30 pts total | Don't obsess over ±20 pt swings |
+| EVALUATE Phase 3 (Runtime) | ±20–40 pts | Highest variance — interpreter-dependent |
+| EVALUATE Total | ±30–60 pts | A 750 score means "somewhere 690–810" |
+
+**Practical rules**:
+- Two LEAN scores within ±20 pts → treat as identical
+- Score within ±30 pts of a tier boundary → run full EVALUATE, ideally twice
+- Never claim a specific tier from a single LEAN score if within 30 pts of boundary
+- OPTIMIZE rollback threshold is **20 pts** (not 5 pts) to account for variance floor
 
 ### Check Reliability Tiers
 
@@ -359,14 +494,26 @@ FAIL proxy:     lean < 300  → route to OPTIMIZE
 ```
 lean_score ≥ 350 AND no_placeholders AND security_section_present
     → LEAN PASS — deliver with LEAN_CERT tag
-    → Schedule full EVALUATE within 24 h
+    → Schedule full EVALUATE within 24 h (recommended, not blocking)
 
-lean_score 300–349
-    → UNCERTAIN — auto-escalate to full EVALUATE (§8)
+lean_score 300–349 (UNCERTAIN)
+    → Show escalation notice to user:
+      "LEAN score: [N]/500 — too close to BRONZE threshold to certify with confidence.
+       Running full EVALUATE for an authoritative assessment (~60 seconds).
+       [Type /skip to accept LEAN result as-is with TEMP_CERT tag, or wait...]"
+    → If /skip received → deliver with TEMP_CERT; otherwise proceed with EVALUATE (§8)
 
-lean_score < 300
-    → LEAN FAIL — route directly to OPTIMIZE (§9) with dimension report
+lean_score < 300 (FAIL)
+    → Show routing notice:
+      "LEAN score: [N]/500 — below BRONZE threshold.
+       Weakest dimension: [DIMENSION] ([score]/[max]).
+       Routing to OPTIMIZE mode to address [DIMENSION] first. [Type /skip to override]"
+    → Route to OPTIMIZE (§9) with full dimension report
 ```
+
+> **Escalation transparency principle** `[CORE]`: When LEAN auto-escalates to EVALUATE,
+> always show the escalation notice before proceeding. Never silently run a 60-second pipeline
+> when the user requested a 5-second check. The /skip escape hatch respects user intent.
 
 ---
 
@@ -499,23 +646,58 @@ sub-dimension schema. See `builder/src/config.js SCORING.dimensions` for the can
 | D6 | **security** | 10% | S8 | CWE + ASI scan, Red Lines, auth/authz checks, boundaries |
 | D7 | **metadata** | 5% | S9 | YAML frontmatter, trigger phrases, negative boundaries, UTE fields |
 
+### Pre-Loop Strategy Selection
+
+Before starting the loop, display current dimension scores and prompt for strategy:
+
+```
+OPTIMIZE pre-loop:
+  1. Score all 7 dimensions (LEAN pass)
+  2. Display dimension breakdown:
+     systemDesign   [NNN/100] ████████░░
+     domainKnowledge[NNN/100] ██████████
+     workflow       [NNN/100] ████░░░░░░
+     errorHandling  [NNN/100] ██████░░░░
+     examples       [NNN/100] ████████░░
+     security       [NNN/100] ██████████
+     metadata       [NNN/100] ███████░░░
+     TOTAL          [NNN/500]
+  3. Present strategy menu:
+     A) Auto       — system picks weakest dimension each round
+     B) Focus [dim] — concentrate all rounds on one dimension
+     C) Balanced   — rotate across all dimensions evenly
+     D) Security   — security + systemDesign dimensions first
+     [Enter to confirm A / type B, C, or D + optional dimension name]
+  4. IF skill has no §UTE section → INJECT UTE first (§15)
+     ELSE → UPDATE UTE: refresh certified_lean_score to current LEAN score
+  5. Initialize session_best = current_score; cumulative_delta = 0
+```
+
+> Type `/stop` at any time to exit the loop early and keep the best version so far.
+
 ### 9-Step Loop + VERIFY
 
 ```
-Pre-loop — UTE bootstrap:
-  IF skill has no §UTE section → INJECT UTE first (§15)
-  ELSE → UPDATE UTE: refresh certified_lean_score to current LEAN score
+Round N (max 20):
+  [progress] Round N/20 | Score: CUR/500 | Best: BEST/500 | Trend: ▲/▼/─ | Focus: DIMENSION
 
-Round N:
-  1. READ    — score all 7 dimensions; identify lowest-scoring
+  1. READ    — score all 7 dimensions; identify lowest-scoring per strategy
   2. ANALYZE — propose 3 targeted fixes for weakest dimension
   3. CURATE  — every 10 rounds: consolidate learning, prune stale context
   4. PLAN    — review and select best fix strategy; log decision
   5. IMPLEMENT — apply atomic change (single dimension focus)
-  6. RE-SCORE  — re-score; if score regressed → rollback; if no improvement → try fix #2
+  6. RE-SCORE  — re-score:
+       delta = new_score − prev_score
+       cumulative_delta += delta
+       IF delta < −20             → rollback this round's change
+       IF cumulative_delta < −40  → rollback to session_best + HUMAN_REVIEW
+       IF delta > 0               → update session_best if new_score > session_best
+       IF no improvement          → try fix #2
   7. HUMAN_REVIEW — trigger if total_score < 560 after round 10
   8. LOG     — record: round, dimension, delta, confidence, strategy_used
   9. COMMIT  — git commit every 10 rounds; tag with score
+
+  [User can type /stop → exit loop, output session_best version + final report]
 
 Convergence check (every round):
   IF volatility OR plateau OR trend=STABLE → STOP early
@@ -632,10 +814,10 @@ Full spec: `claude/refs/self-review.md`
 
 ---
 
-## §13  Audit Trail `[ASPIRATIONAL — requires external persistence]`
+## §13  Audit Trail `[EXTENDED — requires external persistence]`
 
-> **`[ASPIRATIONAL]`**: The audit trail schema below is the canonical output format.
-> Writing to `.skill-audit/framework.jsonl` requires an external file system or backend.
+> **Enforcement Level**: `[CORE]` — Produce the audit JSON as part of your response in all sessions.
+> `[EXTENDED]` — Writing to `.skill-audit/framework.jsonl` requires an external file system or backend.
 > In stateless LLM sessions, treat this as an **output specification** — produce the JSON
 > object as part of your response so the user or an integration layer can persist it.
 
@@ -756,12 +938,12 @@ After injection, the AI follows the UTE protocol to:
 
 | Capability | Level | How It Works |
 |-----------|-------|-----------|
-| Feedback detection | `[ENFORCED]` | AI observes user corrections, rephrasing, and approvals |
-| Trigger candidate collection | `[ENFORCED]` | Rephrasing patterns noted; ≥3 similar → micro-patch candidate |
-| Micro-patch proposals | `[ENFORCED]` | AI suggests keyword additions; user confirms before apply |
-| OPTIMIZE suggestions | `[ENFORCED]` | Structural issues flagged for full OPTIMIZE cycle |
-| Periodic health checks (every 10/50/100) | `[ASPIRATIONAL]` | Requires persistent `cumulative_invocations` counter |
-| Cadence-gated tier drift detection | `[ASPIRATIONAL]` | Requires cross-session invocation counter |
+| Feedback detection | `[CORE]` | AI observes user corrections, rephrasing, and approvals |
+| Trigger candidate collection | `[CORE]` | Rephrasing patterns noted; ≥3 similar → micro-patch candidate |
+| Micro-patch proposals | `[CORE]` | AI suggests keyword additions; user confirms before apply |
+| OPTIMIZE suggestions | `[CORE]` | Structural issues flagged for full OPTIMIZE cycle |
+| Periodic health checks (every 10/50/100) | `[EXTENDED]` | Requires persistent `cumulative_invocations` counter |
+| Cadence-gated tier drift detection | `[EXTENDED]` | Requires cross-session invocation counter |
 
 ### UTE Update (on OPTIMIZE)
 
@@ -848,6 +1030,22 @@ URL examples:
    ℹ Companion files (refs/, eval/, templates/, optimize/) copied for Claude.
 ```
 
+### Registry Push Policy
+
+Before pushing a skill to the shared registry, use the following tier thresholds to
+determine the appropriate tag and whether to proceed:
+
+| Tier | Score | Push | Tag |
+|------|-------|------|-----|
+| **PLATINUM** | ≥ 950 | Recommended | `stable` |
+| **GOLD** | ≥ 900 | Recommended | `stable` |
+| **SILVER** | ≥ 800 | Allowed | `beta` |
+| **BRONZE** | ≥ 700 | Allowed | `experimental` |
+| **FAIL** | < 700 | **Blocked** — fix first | — |
+
+> Use `/eval` for an authoritative score before pushing. A single LEAN score near a tier
+> boundary (±30 pts) is not sufficient — run EVALUATE to confirm.
+
 ### Error Handling
 
 | Error | Action |
@@ -881,14 +1079,19 @@ User: "read https://raw.githubusercontent.com/.../skill-framework.md and install
 
 ---
 
-## §17  Memory Architecture `[ASPIRATIONAL — optional backend required for full capability]`
+## §17  Memory Architecture `[EXTENDED — optional backend required for full capability]`
+
+> **Enforcement Level Legend for this section:**
+> - `[CORE]` — Available natively in every LLM session (in-context working memory).
+> - `[EXTENDED]` — Requires an optional external backend (file system, database, GitHub Gist, vector DB).
+>   The framework functions fully without it; these tiers add cross-session persistence and retrieval.
 
 Skill Writer operates across three memory layers. Only Working Memory is natively available
 in all LLM sessions. Episodic and Semantic Memory require optional external backends.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│  WORKING MEMORY  `[ENFORCED]`                                       │
+│  WORKING MEMORY  `[CORE]`                                       │
 │  Session-scoped in-context state                                    │
 │  • Current skill content being processed                            │
 │  • LEAN/EVALUATE scores and dimension breakdown                     │
@@ -899,7 +1102,7 @@ in all LLM sessions. Episodic and Semantic Memory require optional external back
                                  │ optional persistence via backend
                                  ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│  EPISODIC MEMORY  `[ASPIRATIONAL]`                                  │
+│  EPISODIC MEMORY  `[EXTENDED]`                                  │
 │  Persistent event log across sessions                               │
 │  • Skill invocation history (cumulative_invocations counter)        │
 │  • UTE feedback signals and micro-patch log                         │
@@ -910,7 +1113,7 @@ in all LLM sessions. Episodic and Semantic Memory require optional external back
                                  │ optional vector indexing
                                  ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│  SEMANTIC MEMORY  `[ASPIRATIONAL]`                                  │
+│  SEMANTIC MEMORY  `[EXTENDED]`                                  │
 │  Vectorized knowledge for retrieval-augmented skill generation      │
 │  • Skill knowledge base (domain patterns, best practices)           │
 │  • Historical optimization strategies and their outcomes            │
@@ -938,6 +1141,24 @@ skill generation respectively.
 
 ## §18  COLLECT Mode — Session Data Recording
 
+> **COLLECT at a Glance**
+>
+> **What it does**: After a skill invocation completes, COLLECT captures a structured
+> Session Artifact — a snapshot of what happened, how well it worked, and what to improve.
+>
+> **Why use it**: Accumulate 5+ artifacts → run AGGREGATE → get a ranked improvement list
+> for `/opt`. This is how skills improve through real usage rather than manual edits.
+>
+> **5-step workflow**: ASSESS → SCORE → OBSERVE → CLASSIFY → ASSEMBLE
+>
+> **When to trigger manually**:
+> - After an important or complex invocation
+> - When a trigger miss or output issue occurred (capture failure lessons)
+> - Before running `/opt` on a skill you've been using (build evidence base)
+>
+> **Enforcement**: Artifact generation is `[CORE]` (works in any session). File persistence
+> (`.skill-audit/`) is `[EXTENDED]` (requires external backend or file system access).
+
 **Purpose**: Produce a structured Session Artifact after any skill invocation, enabling
 collective skill evolution by accumulating usage data across sessions and users.
 
@@ -954,7 +1175,7 @@ COLLECT fires **automatically at the end of every skill invocation** when either
 It always runs *after* the primary mode (CREATE / LEAN / EVALUATE / OPTIMIZE) completes —
 never interrupts the main workflow.
 
-### Artifact generation protocol `[ENFORCED]`
+### Artifact generation protocol `[CORE]`
 
 ```
 1. ASSESS — review the session that just completed:
@@ -993,7 +1214,7 @@ never interrupts the main workflow.
    b. "Push to shared storage: skillclaw push <file>"
 ```
 
-### AGGREGATE mode (multi-session synthesis) `[ASPIRATIONAL — basic flow available]`
+### AGGREGATE mode (multi-session synthesis) `[EXTENDED — basic flow available]`
 
 When the user provides 2+ Session Artifact JSONs, AGGREGATE mode synthesizes them:
 

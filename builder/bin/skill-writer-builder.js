@@ -19,10 +19,11 @@ program
 program
   .command('build')
   .description('Build platform-specific skills from core engine')
-  .option('-p, --platform <platform>', 'Target platform (opencode, openclaw, claude, cursor, openai, gemini)')
+  .option('-p, --platform <platform>', 'Target platform (opencode, openclaw, claude, cursor, openai, gemini, mcp)')
   .option('-a, --all', 'Build all platforms')
   .option('-r, --release', 'Release build (optimized)')
   .option('-o, --output <dir>', 'Output directory', 'platforms')
+  .option('--dry-run', 'Preview what would be written without writing files')
   .action(async (options) => {
     try {
       await build(options);

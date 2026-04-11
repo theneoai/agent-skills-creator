@@ -11,11 +11,11 @@
 >
 > | Tag | Meaning |
 > |-----|---------|
-> | `[ENFORCED]` | Executes fully within a single session; no external persistence required |
-> | `[ASPIRATIONAL]` | Requires cross-session audit logs, persistent counters, or external schedulers |
+> | `[CORE]` | Executes fully within a single session; no external persistence required |
+> | `[EXTENDED]` | Requires cross-session audit logs, persistent counters, or external schedulers |
 > | `[ENFORCED — needs external trigger]` | Logic is clear and executable, but activation depends on external cron/scheduler |
 >
-> **For `[ASPIRATIONAL]` items**: AI applies the described logic where possible within the
+> **For `[EXTENDED]` items**: AI applies the described logic where possible within the
 > current session; cross-session tracking requires an optional external backend
 > (see §4 of this document).
 
@@ -36,9 +36,9 @@ Skills are monitored continuously. Any of five independent triggers can initiate
 | Error rate | > 10% per 100 calls | Immediate HUMAN_REVIEW escalation |
 | Tier downgrade | Drops 1+ tier | Investigate root cause → OPTIMIZE |
 
-**Detection method** `[ASPIRATIONAL]`: Score tracked in `.skill-audit/framework.jsonl`.
+**Detection method** `[EXTENDED]`: Score tracked in `.skill-audit/framework.jsonl`.
 Check after every invocation. Compare rolling 30-invocation average.
-> **`[ASPIRATIONAL]`**: Persistent `.skill-audit/` log and rolling 30-invocation counter require
+> **`[EXTENDED]`**: Persistent `.skill-audit/` log and rolling 30-invocation counter require
 > external storage. LLM sessions are stateless — cross-session tracking needs an optional backend.
 
 ---
@@ -55,11 +55,11 @@ Check after every invocation. Compare rolling 30-invocation average.
 Run daily cron check (or on each invocation if cron unavailable).
 > **`[ENFORCED — needs external trigger]`**: The comparison logic is straightforward and
 > AI-executable (current date vs. frontmatter `updated` field). The 30-day *automatic* trigger
-> requires an external scheduler; on-invocation checks are fully `[ENFORCED]`.
+> requires an external scheduler; on-invocation checks are fully `[CORE]`.
 
 ---
 
-### Trigger 3 — Usage-Based (Relevance Check) `[ASPIRATIONAL]`
+### Trigger 3 — Usage-Based (Relevance Check) `[EXTENDED]`
 
 
 | Condition | Threshold | Action |
@@ -68,7 +68,7 @@ Run daily cron check (or on each invocation if cron unavailable).
 | Invocations | 0 in 60 days | Auto-deprecate candidate (pending human confirmation) |
 | Invocations | < 10 in 90 days AND tier < SILVER | Deprecate or refocus |
 
-**Metrics tracked** `[ASPIRATIONAL]` (in `.skill-audit/usage.jsonl`):
+**Metrics tracked** `[EXTENDED]` (in `.skill-audit/usage.jsonl`):
 ```json
 {
   "skill_name": "<name>",
@@ -84,7 +84,7 @@ Run daily cron check (or on each invocation if cron unavailable).
 
 ---
 
-### Trigger 4 — OWASP Pattern Violation `[ENFORCED]`
+### Trigger 4 — OWASP Pattern Violation `[CORE]`
 
 > v3.1.0: New trigger. Security scan results now feed directly into evolution decisions.
 > Full patterns: `claude/refs/security-patterns.md §5`
@@ -97,13 +97,13 @@ Run daily cron check (or on each invocation if cron unavailable).
 | ASI05 unconstrained irreversible action | P1 WARNING | Flag → queue OPTIMIZE with strategy S8 |
 | P1 violation added since last version | WARNING | Re-run security scan before next delivery |
 
-**Detection method** `[ENFORCED]`: Triggered by security scan in Phase 4 of EVALUATE,
+**Detection method** `[CORE]`: Triggered by security scan in Phase 4 of EVALUATE,
 or by the ASI01-ASI10 heuristic checks in LEAN. Any P0/P1 finding fires this trigger
 regardless of current tier or score.
 
 ---
 
-### Trigger 5 — Skill Tier Drift `[ENFORCED]`
+### Trigger 5 — Skill Tier Drift `[CORE]`
 
 > v3.1.0: New trigger. `skill_tier` (planning/functional/atomic) changes must be validated.
 > Research basis: SkillX arxiv:2604.04804 — tier misclassification degrades composability in multi-tier pipelines.
@@ -115,7 +115,7 @@ regardless of current tier or score.
 | `skill_tier` = "planning" but no sub-skill references | Advisory: verify tier is correct |
 | `skill_tier` = "atomic" but skill calls external tools | Advisory: verify tier is correct |
 
-**Detection method** `[ENFORCED]`: Compare `skill_tier` in current YAML frontmatter
+**Detection method** `[CORE]`: Compare `skill_tier` in current YAML frontmatter
 against registry history (§3 of refs/skill-registry.md). If changed → fire trigger.
 Within a single session: any edit to `skill_tier` field fires this trigger immediately.
 

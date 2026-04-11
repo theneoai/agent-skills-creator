@@ -3,7 +3,7 @@
 > **Purpose**: Canonical format for skill identity, versioning, and shared distribution.
 > **Load**: When §16 (INSTALL / SHARE) of `claude/skill-writer.md` is accessed.
 > **Inspired by**: SkillClaw's skill registry with deterministic IDs and version history.
-> **Enforcement**: `[ENFORCED]` for ID generation and format; `[ASPIRATIONAL]` for remote sync.
+> **Enforcement**: `[CORE]` for ID generation and format; `[EXTENDED]` for remote sync.
 > **v3.1.0**: Added `skill_tier` and `triggers` fields to registry entry; schema_version bumped to 1.1.
 
 ---
@@ -124,7 +124,7 @@ storage-root/
     └── 2026-04-11-a3f9c2.json
 ```
 
-**Supported backends** `[ASPIRATIONAL — requires external tooling]`:
+**Supported backends** `[EXTENDED]`:
 - `local://`  — local filesystem (default; zero config)
 - `s3://`     — AWS S3 or any S3-compatible store
 - `oss://`    — Alibaba Cloud OSS

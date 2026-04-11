@@ -103,37 +103,17 @@ class OpenCodeAdapter extends MarkdownAdapter {
 }
 
 // ---------------------------------------------------------------------------
-// Singleton instance + legacy template export
+// Singleton instance
 // ---------------------------------------------------------------------------
 
 const opencodeAdapter = new OpenCodeAdapter();
 
-/**
- * Legacy template export kept for backward compatibility with the platform
- * registry's `platform.template` accessor.
- */
-const template = {
-  frontmatter: `---
-name: {{name}}
-version: {{version}}
-description: {{description}}
-license: {{license}}
-author: {{author}}
-tags: {{tags}}
-interface:
-  mode:
-    type: enum
-    values: {{modes}}
-    default: {{defaultMode}}
-    description: Operating mode for the skill
----`,
-  sections: OPENCODE_SECTIONS,
-  requiredFields: ['name', 'version', 'description'],
-};
-
 module.exports = {
   name: opencodeAdapter.name,
-  template,
+  outputFormat: opencodeAdapter.outputFormat,
+  // Use MarkdownAdapter's template directly — the duplicate hand-written local
+  // template object that previously lived here has been removed (ARCH-3 fix).
+  template: opencodeAdapter.template,
   formatSkill: opencodeAdapter.formatSkill.bind(opencodeAdapter),
   getInstallPath: opencodeAdapter.getInstallPath.bind(opencodeAdapter),
   generateMetadata: opencodeAdapter.generateMetadata.bind(opencodeAdapter),

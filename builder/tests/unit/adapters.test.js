@@ -489,6 +489,86 @@ describe('OpenAI Adapter', () => {
   });
 });
 
+describe('outputFormat — all adapters expose the property', () => {
+  const adapterModules = {
+    claude:    require('../../src/platforms/claude'),
+    gemini:    require('../../src/platforms/gemini'),
+    opencode:  require('../../src/platforms/opencode'),
+    openclaw:  require('../../src/platforms/openclaw'),
+    cursor:    require('../../src/platforms/cursor'),
+    openai:    require('../../src/platforms/openai'),
+    mcp:       require('../../src/platforms/mcp'),
+  };
+
+  const VALID_OUTPUT_FORMATS = new Set(['MARKDOWN', 'HYBRID', 'JSON']);
+
+  test.each(Object.entries(adapterModules))(
+    '%s adapter should have a valid outputFormat string',
+    (name, adapter) => {
+      expect(typeof adapter.outputFormat).toBe('string');
+      expect(VALID_OUTPUT_FORMATS.has(adapter.outputFormat)).toBe(true);
+    }
+  );
+
+  test('MARKDOWN adapters: claude, gemini, opencode, openclaw', () => {
+    expect(adapterModules.claude.outputFormat).toBe('MARKDOWN');
+    expect(adapterModules.gemini.outputFormat).toBe('MARKDOWN');
+    expect(adapterModules.opencode.outputFormat).toBe('MARKDOWN');
+    expect(adapterModules.openclaw.outputFormat).toBe('MARKDOWN');
+  });
+
+  test('HYBRID adapter: cursor', () => {
+    expect(adapterModules.cursor.outputFormat).toBe('HYBRID');
+  });
+
+  test('JSON adapters: openai, mcp', () => {
+    expect(adapterModules.openai.outputFormat).toBe('JSON');
+    expect(adapterModules.mcp.outputFormat).toBe('JSON');
+  });
+});
+
+describe('generateMetadata schema consistency', () => {
+  const adapterModules = {
+    claude:    require('../../src/platforms/claude'),
+    gemini:    require('../../src/platforms/gemini'),
+    opencode:  require('../../src/platforms/opencode'),
+    openclaw:  require('../../src/platforms/openclaw'),
+    cursor:    require('../../src/platforms/cursor'),
+    openai:    require('../../src/platforms/openai'),
+    mcp:       require('../../src/platforms/mcp'),
+  };
+
+  test.each(Object.entries(adapterModules))(
+    '%s generateMetadata should include platform and compatibility fields',
+    (name, adapter) => {
+      const meta = adapter.generateMetadata({ version: '1.0.0' });
+      expect(meta.platform).toBe(name);
+      expect(meta.compatibility).toBeDefined();
+    }
+  );
+
+  test('MARKDOWN adapters should include testedVersions in compatibility', () => {
+    const markdownAdapters = ['claude', 'gemini', 'opencode', 'openclaw', 'cursor'];
+    markdownAdapters.forEach(name => {
+      const meta = adapterModules[name].generateMetadata({ version: '1.0.0' });
+      expect(Array.isArray(meta.compatibility.testedVersions)).toBe(true);
+      expect(meta.compatibility.testedVersions.length).toBeGreaterThan(0);
+    });
+  });
+
+  test('cursor testedVersions should reflect current package.json version (not hardcoded 1.0.0)', () => {
+    const pkg = require('../../package.json');
+    const meta = adapterModules.cursor.generateMetadata({ version: '1.0.0' });
+    expect(meta.compatibility.testedVersions).toContain(pkg.version);
+  });
+
+  test('MCP adapter compatibility should include mcp_protocol', () => {
+    const meta = adapterModules.mcp.generateMetadata({ version: '1.0.0' });
+    expect(meta.compatibility.mcp_protocol).toBeDefined();
+    expect(typeof meta.compatibility.mcp_protocol).toBe('string');
+  });
+});
+
 describe('Platform Registry', () => {
   test('should support all 7 platforms including mcp', () => {
     const supported = platforms.getSupportedPlatforms();

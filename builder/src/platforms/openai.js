@@ -1,15 +1,25 @@
 /**
  * OpenAI Platform Adapter
- * 
+ *
  * Adapts skills to the OpenAI platform format.
  * OpenAI uses JSON format for instructions rather than Markdown.
+ *
+ * outputFormat: 'JSON' — build pipeline writes .json extension for this platform.
+ *
+ * @module builder/src/platforms/openai
+ * @version 3.1.0 - Use shared frontmatter utility and metadata-schema
  */
 
 const path = require('path');
 const os = require('os');
 const yaml = require('js-yaml');
+const { parseFrontmatter } = require('../utils/frontmatter');
+const { markdownCompatibility } = require('../utils/metadata-schema');
 
 const name = 'openai';
+
+/** Output format identifier — used by index.js and build.js to determine file extension */
+const outputFormat = 'JSON';
 
 const template = {
   // OpenAI uses JSON format
@@ -32,22 +42,19 @@ function formatSkill(skillContent) {
     throw new Error('Invalid skill content provided');
   }
 
-  // Extract YAML frontmatter
-  const frontmatterMatch = skillContent.match(/^---\n([\s\S]*?)\n---\n/);
+  // Extract YAML frontmatter using shared utility.
+  // Uses canonical FRONTMATTER_REGEX which handles optional trailing newline —
+  // fixes silent failure when skill files end with `---` without trailing newline.
+  const { frontmatterData, body, raw } = parseFrontmatter(skillContent);
   let metadata = {};
   let content = skillContent;
 
-  if (frontmatterMatch) {
-    try {
-      const parsed = yaml.load(frontmatterMatch[1]);
-      if (!parsed || typeof parsed !== 'object') {
-        throw new Error('Frontmatter did not parse to an object');
-      }
-      metadata = parsed;
-      content = skillContent.replace(frontmatterMatch[0], '');
-    } catch (error) {
-      throw new Error(`Invalid YAML frontmatter: ${error.message}`);
+  if (raw) {
+    if (!frontmatterData || typeof frontmatterData !== 'object') {
+      throw new Error('Invalid YAML frontmatter: did not parse to an object');
     }
+    metadata = frontmatterData;
+    content = body;
   }
 
   // Build OpenAI format
@@ -85,12 +92,10 @@ function generateMetadata(skillData) {
   return {
     platform: name,
     format: 'JSON',
-    version: skillData.version || '1.0.0',
+    outputFormat,
+    version: skillData?.version || '1.0.0',
     created: new Date().toISOString(),
-    compatibility: {
-      minVersion: '2.2.0',
-      testedVersions: [require('../../package.json').version],
-    }
+    compatibility: markdownCompatibility('2.2.0'),
   };
 }
 
@@ -125,6 +130,7 @@ function validateSkill(skillContent) {
 
 module.exports = {
   name,
+  outputFormat,
   template,
   formatSkill,
   getInstallPath,

@@ -24,6 +24,7 @@ const geminiAdapter = new MarkdownAdapter({
 // Export the adapter interface
 module.exports = {
   name: geminiAdapter.name,
+  outputFormat: geminiAdapter.outputFormat,
   template: geminiAdapter.template,
   formatSkill: geminiAdapter.formatSkill.bind(geminiAdapter),
   getInstallPath: geminiAdapter.getInstallPath.bind(geminiAdapter),

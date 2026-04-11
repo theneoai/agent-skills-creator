@@ -334,6 +334,13 @@ const ERROR_CODES = {
   VALIDATION_FAILED: 'EVALIDATION_FAILED',
 };
 
+/**
+ * Platforms whose build output is JSON rather than Markdown.
+ * Single Source of Truth — consumed by build.js and platforms/index.js.
+ * Previously duplicated as local constants in both files; now defined once here.
+ */
+const JSON_OUTPUT_PLATFORMS = new Set(['openai', 'mcp']);
+
 module.exports = {
   PATHS,
   REQUIRED_FILES,
@@ -345,4 +352,5 @@ module.exports = {
   SCORING,
   ERROR_CODES,
   PROJECT_ROOT,
+  JSON_OUTPUT_PLATFORMS,
 };

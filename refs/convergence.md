@@ -10,10 +10,10 @@
 >
 > | Tag | Meaning |
 > |-----|---------|
-> | `[ENFORCED]` | AI can execute this fully within a single session/prompt |
-> | `[ASPIRATIONAL]` | Requires external state, code execution, or cross-session persistence that LLMs cannot natively provide |
+> | `[CORE]` | AI can execute this fully within a single session/prompt |
+> | `[EXTENDED]` | Requires external state, code execution, or cross-session persistence that LLMs cannot natively provide |
 >
-> When you see `[ASPIRATIONAL]`, treat the algorithm as **authoritative design intent** but implement
+> When you see `[EXTENDED]`, treat the algorithm as **authoritative design intent** but implement
 > it via natural-language reasoning rather than literal code execution.
 
 ---
@@ -31,9 +31,9 @@ triggers early stopping.**
 
 ---
 
-## §2  Signal 1 — Volatility Check `[ASPIRATIONAL]`
+## §2  Signal 1 — Volatility Check `[EXTENDED]`
 
-> **Note `[ASPIRATIONAL]`**: The Python implementation below is **design documentation**,
+> **Note `[EXTENDED]`**: The Python implementation below is **design documentation**,
 > not executable code. AI implements this signal via natural-language reasoning:
 > *"If the last N scores differ by less than 2 points, declare convergence."*
 
@@ -64,9 +64,9 @@ def volatility_check(score_history: list[float], window: int = 10) -> bool:
 
 ---
 
-## §3  Signal 2 — Plateau Check `[ASPIRATIONAL]`
+## §3  Signal 2 — Plateau Check `[EXTENDED]`
 
-> **Note `[ASPIRATIONAL]`**: AI applies this via reasoning:
+> **Note `[EXTENDED]`**: AI applies this via reasoning:
 > *"If >70% of recent round-to-round deltas are <0.5 pts AND total gain is ≤0, declare plateau."*
 
 **Purpose**: Detect when incremental improvements have become negligible.

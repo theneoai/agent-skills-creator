@@ -116,9 +116,16 @@ use_to_evolve:
 
 **Do NOT use this skill for**:
 
-- **{{ANTI_CASE_1}}**: If the user asks "{{ANTI_TRIGGER_PHRASE_1}}", route to {{ALTERNATIVE_SKILL_1}} instead.
-- **{{ANTI_CASE_2}}**: If the user asks "{{ANTI_TRIGGER_PHRASE_2}}", this skill is not appropriate.
-- **{{ANTI_CASE_3}}**: This skill does not handle {{ANTI_CASE_3_DESCRIPTION}}.
+- **{{ANTI_CASE_1}}**: {{REASON_1}}
+  → Recommended alternative: {{ALTERNATIVE_SKILL_1}}
+- **{{ANTI_CASE_2}}**: {{REASON_2}}
+  → Recommended alternative: {{ALTERNATIVE_SKILL_2}}
+- **{{ANTI_CASE_3}}**: {{REASON_3}}
+  → Recommended alternative: {{ALTERNATIVE_SKILL_3_OR_ESCALATION}}
+
+**The following trigger phrases should NOT activate this skill**:
+- "{{SIMILAR_BUT_DIFFERENT_PHRASE_1}}"
+- "{{SIMILAR_BUT_DIFFERENT_PHRASE_2}}"
 
 ---
 

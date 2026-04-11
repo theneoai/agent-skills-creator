@@ -28,6 +28,7 @@ const claudeAdapter = new MarkdownAdapter({
 // Export the adapter interface
 module.exports = {
   name: claudeAdapter.name,
+  outputFormat: claudeAdapter.outputFormat,
   template: claudeAdapter.template,
   formatSkill: claudeAdapter.formatSkill.bind(claudeAdapter),
   getInstallPath: claudeAdapter.getInstallPath.bind(claudeAdapter),

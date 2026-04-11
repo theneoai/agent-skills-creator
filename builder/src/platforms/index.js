@@ -107,8 +107,8 @@ function generateMetadata(platformName, skillData) {
   return platform.generateMetadata(skillData);
 }
 
-/** Platforms that emit JSON output rather than Markdown */
-const JSON_PLATFORMS = new Set(['openai', 'mcp']);
+// JSON_OUTPUT_PLATFORMS is the canonical SSOT in config — do not redefine here.
+const { JSON_OUTPUT_PLATFORMS: JSON_PLATFORMS } = require('../config');
 
 /**
  * Install skill to platform-specific location

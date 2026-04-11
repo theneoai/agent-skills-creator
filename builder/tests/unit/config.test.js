@@ -231,4 +231,27 @@ describe('Config Module', () => {
       expect(config.ERROR_CODES.VALIDATION_FAILED).toBe('EVALIDATION_FAILED');
     });
   });
+
+  describe('JSON_OUTPUT_PLATFORMS (SSOT)', () => {
+    test('should export JSON_OUTPUT_PLATFORMS as a Set', () => {
+      expect(config.JSON_OUTPUT_PLATFORMS).toBeInstanceOf(Set);
+    });
+
+    test('should contain openai and mcp', () => {
+      expect(config.JSON_OUTPUT_PLATFORMS.has('openai')).toBe(true);
+      expect(config.JSON_OUTPUT_PLATFORMS.has('mcp')).toBe(true);
+    });
+
+    test('should contain exactly 2 platforms', () => {
+      expect(config.JSON_OUTPUT_PLATFORMS.size).toBe(2);
+    });
+
+    test('should NOT contain markdown platforms', () => {
+      expect(config.JSON_OUTPUT_PLATFORMS.has('claude')).toBe(false);
+      expect(config.JSON_OUTPUT_PLATFORMS.has('opencode')).toBe(false);
+      expect(config.JSON_OUTPUT_PLATFORMS.has('openclaw')).toBe(false);
+      expect(config.JSON_OUTPUT_PLATFORMS.has('cursor')).toBe(false);
+      expect(config.JSON_OUTPUT_PLATFORMS.has('gemini')).toBe(false);
+    });
+  });
 });

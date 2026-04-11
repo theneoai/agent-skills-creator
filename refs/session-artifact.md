@@ -12,8 +12,8 @@
 >
 > | Tag | Meaning |
 > |-----|---------|
-> | `[ENFORCED]` | AI can produce this within a single session |
-> | `[ASPIRATIONAL]` | Requires external storage, backend, or cross-session state |
+> | `[CORE]` | AI can produce this within a single session |
+> | `[EXTENDED]` | Requires external storage, backend, or cross-session state |
 
 ---
 
@@ -94,7 +94,7 @@ The Session Artifact is the atomic unit that enables this.
 | `mode_invoked` | enum | Which of the 5+1 modes ran |
 | `feedback_signal` | enum | User feedback observed after skill output |
 
-**`outcome` decision rules** `[ENFORCED]`:
+**`outcome` decision rules** `[CORE]`:
 
 | Condition | Outcome |
 |-----------|---------|
@@ -117,8 +117,8 @@ The Session Artifact is the atomic unit that enables this.
 
 | Field | Values | Description |
 |-------|--------|-------------|
-| `session_summary` | string (8–15 sentences) | Causal-chain narrative `[ENFORCED]` |
-| `prm_signal` | `good \| ok \| poor` | Process Reward Model signal (overall quality of AI execution) `[ENFORCED]` |
+| `session_summary` | string (8–15 sentences) | Causal-chain narrative `[CORE]` |
+| `prm_signal` | `good \| ok \| poor` | Process Reward Model signal (overall quality of AI execution) `[CORE]` |
 | `notable_patterns` | string[] | Observed usage patterns (may be empty) |
 | `improvement_hints` | string[] | Concrete improvement suggestions (may be empty) |
 
@@ -135,7 +135,7 @@ The Session Artifact is the atomic unit that enables this.
 7-field object mapping each unified dimension (from `builder/src/config.js SCORING.dimensions`)
 to a strength rating for this session. Use `"n/a"` when a dimension wasn't exercised.
 
-### SkillRL Lesson Distillation fields `[ENFORCED]`
+### SkillRL Lesson Distillation fields `[CORE]`
 
 Inspired by SkillRL (arxiv:2602.08234): distilling raw trajectories into typed lessons yields
 10-20% token compression while improving reasoning utility in downstream AGGREGATE pipelines.
@@ -145,7 +145,7 @@ Inspired by SkillRL (arxiv:2602.08234): distilling raw trajectories into typed l
 | `lesson_type` | `strategic_pattern \| failure_lesson \| neutral` | Type of lesson this session contributes |
 | `lesson_summary` | string (≤3 sentences) | Distilled, reusable lesson — the "takeaway" |
 
-**`lesson_type` classification rules** `[ENFORCED]`:
+**`lesson_type` classification rules** `[CORE]`:
 
 | Type | Condition | AGGREGATE Use |
 |------|-----------|---------------|
@@ -199,9 +199,9 @@ on next session. Improvement opportunity: add retry logic to error handling sect
 
 ---
 
-## §5  Storage and Lifecycle `[ASPIRATIONAL]`
+## §5  Storage and Lifecycle `[EXTENDED]`
 
-> **`[ASPIRATIONAL]`**: Full pipeline requires external storage backend.
+> **`[EXTENDED]`**: Full pipeline requires external storage backend.
 > Minimum viable: user exports artifact as JSON and provides it as input to AGGREGATE mode.
 
 ### Storage layout (SkillClaw-compatible)
@@ -229,7 +229,7 @@ AGGREGATE server restarts mid-cycle.
 
 ---
 
-## §6  Minimum Viable Flow (no backend required) `[ENFORCED]`
+## §6  Minimum Viable Flow (no backend required) `[CORE]`
 
 When no external storage is available, the COLLECT mode outputs a JSON artifact
 that the user can:

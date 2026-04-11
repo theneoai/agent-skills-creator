@@ -1,14 +1,26 @@
 /**
  * Cursor Platform Adapter
- * 
+ *
  * Adapts skills to the Cursor platform format.
- * Cursor uses a different format with ${...} placeholders instead of {{...}}.
+ * Cursor uses ${...} placeholders (instead of {{...}}) and JSON metadata
+ * blocks instead of YAML frontmatter.
+ *
+ * outputFormat: 'HYBRID' — YAML frontmatter is converted to a JSON code block;
+ * the body content remains Markdown.
+ *
+ * @module builder/src/platforms/cursor
+ * @version 3.1.0 - Use shared frontmatter utility; fix hardcoded testedVersions ['1.0.0']
  */
 
 const path = require('path');
 const os = require('os');
+const { hasFrontmatter, parseFrontmatter } = require('../utils/frontmatter');
+const { markdownCompatibility } = require('../utils/metadata-schema');
 
 const name = 'cursor';
+
+/** Output format identifier — used by index.js and build.js to determine file extension */
+const outputFormat = 'HYBRID';
 
 const template = {
   // Cursor doesn't use YAML frontmatter, uses JSON metadata instead
@@ -26,7 +38,10 @@ const template = {
 };
 
 /**
- * Format skill content for Cursor platform
+ * Format skill content for Cursor platform.
+ * 1. Convert {{...}} → ${...} placeholders
+ * 2. Convert YAML frontmatter → JSON code block
+ *
  * @param {string} skillContent - Raw skill content
  * @returns {string} Formatted skill content
  */
@@ -40,14 +55,14 @@ function formatSkill(skillContent) {
   // Convert {{...}} placeholders to ${...} format (extended: supports hyphens and dots)
   formatted = formatted.replace(/\{\{([\w.-]+)\}\}/g, '${$1}');
 
-  // Convert YAML frontmatter to JSON code block (Cursor doesn't support YAML frontmatter)
-  const frontmatterMatch = formatted.match(/^---\n([\s\S]*?)\n---\n/);
-  if (frontmatterMatch) {
+  // Convert YAML frontmatter to JSON code block using shared utility.
+  // Uses canonical FRONTMATTER_REGEX which handles optional trailing newline —
+  // fixes silent failure when skill files end with `---` without trailing newline.
+  const { frontmatterData, body, raw } = parseFrontmatter(formatted);
+  if (raw && frontmatterData) {
     try {
-      const yaml = require('js-yaml');
-      const yamlData = yaml.load(frontmatterMatch[1]);
-      const jsonContent = JSON.stringify(yamlData, null, 2);
-      formatted = formatted.replace(frontmatterMatch[0], `\`\`\`json\n${jsonContent}\n\`\`\`\n\n`);
+      const jsonContent = JSON.stringify(frontmatterData, null, 2);
+      formatted = `\`\`\`json\n${jsonContent}\n\`\`\`\n\n${body}`;
     } catch (error) {
       console.warn('Failed to convert frontmatter to JSON:', error.message);
     }
@@ -61,13 +76,13 @@ function formatSkill(skillContent) {
  * @returns {string} Installation path
  */
 function getInstallPath() {
-  const homeDir = os.homedir();
-  // Cursor uses .cursor directory
-  return path.join(homeDir, '.cursor', 'skills');
+  return path.join(os.homedir(), '.cursor', 'skills');
 }
 
 /**
- * Generate platform-specific metadata
+ * Generate platform-specific metadata.
+ * Fixed: no longer hardcodes testedVersions to ['1.0.0'].
+ *
  * @param {Object} skillData - Skill data object
  * @returns {Object} Platform metadata
  */
@@ -75,12 +90,11 @@ function generateMetadata(skillData) {
   return {
     platform: name,
     format: 'SKILL.md',
-    version: skillData.version || '1.0.0',
+    outputFormat,
+    version: skillData?.version || '1.0.0',
     created: new Date().toISOString(),
-    compatibility: {
-      minVersion: '1.0.0',
-      testedVersions: ['1.0.0']
-    }
+    // markdownCompatibility() reads version from package.json at call-time (not hardcoded)
+    compatibility: markdownCompatibility('1.0.0'),
   };
 }
 
@@ -112,6 +126,7 @@ function validateSkill(skillContent) {
 
 module.exports = {
   name,
+  outputFormat,
   template,
   formatSkill,
   getInstallPath,
