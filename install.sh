@@ -166,8 +166,12 @@ if [[ "${INSTALL_ALL}" == "true" ]]; then
 elif [[ -n "${PLATFORM}" ]]; then
   TARGETS=("${PLATFORM}")
 else
-  # Auto-detect: install only to platforms that appear to be set up
-  mapfile -t TARGETS < <(detect_platforms | tr ' ' '\n')
+  # Auto-detect: install only to platforms that appear to be set up.
+  # Use a while-read loop instead of mapfile for bash 3.x compatibility (macOS default).
+  TARGETS=()
+  while IFS= read -r _line; do
+    [[ -n "${_line}" ]] && TARGETS+=("${_line}")
+  done < <(detect_platforms | tr ' ' '\n')
   if [[ ${#TARGETS[@]} -eq 0 ]]; then
     info "No AI platforms detected. Defaulting to Claude."
     TARGETS=(claude)

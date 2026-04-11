@@ -982,6 +982,35 @@ from a URL or using local files.  No evaluation or generation — pure deploymen
 | **mcp**  | `~/.mcp/servers/skill-writer/mcp-manifest.json` | MCP JSON Manifest | — |
 | **all**  | all of the above | platform-specific | — |
 
+### Install Options (from Fastest to Most Control)
+
+**Option A — curl one-liner (no git clone required)**
+Auto-detects installed platforms and installs to all of them:
+```bash
+curl -fsSL https://raw.githubusercontent.com/theneoai/skill-writer/main/install.sh | bash
+# Specific platform:
+curl -fsSL https://raw.githubusercontent.com/theneoai/skill-writer/main/install.sh | bash -s -- --platform claude
+# All platforms:
+curl -fsSL https://raw.githubusercontent.com/theneoai/skill-writer/main/install.sh | bash -s -- --all
+```
+
+**Option B — Agent install (paste into AI agent)**
+```
+read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer.md and install
+read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-claude.md and install to claude
+```
+
+**Option C — Shell script (from git clone)**
+```bash
+git clone https://github.com/theneoai/skill-writer.git && cd skill-writer
+./install.sh              # auto-detect + install
+./install.sh --all        # all 6 platforms
+./install.sh --platform claude
+```
+
+**Option D — Manual copy**
+Pre-built files are committed in `platforms/`; copy the right one to your platform's skills directory.
+
 ### Trigger Patterns
 
 ```
@@ -994,6 +1023,7 @@ from a URL or using local files.  No evaluation or generation — pure deploymen
 ```
 
 URL examples:
+- `https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-claude.md`
 - `https://raw.githubusercontent.com/theneoai/skill-writer/main/skill-framework.md`
 - Any raw URL returning a valid skill-writer markdown file
 

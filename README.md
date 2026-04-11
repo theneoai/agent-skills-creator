@@ -43,7 +43,23 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 
 ### Installation
 
-#### Option 1 — Agent Install from Latest Release (Recommended)
+#### Option 1 — curl one-liner (no git clone required)
+
+Auto-detects your installed AI platforms and installs to all of them:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/theneoai/skill-writer/main/install.sh | bash
+```
+
+Install to a specific platform:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/theneoai/skill-writer/main/install.sh | bash -s -- --platform claude
+curl -fsSL https://raw.githubusercontent.com/theneoai/skill-writer/main/install.sh | bash -s -- --platform opencode
+curl -fsSL https://raw.githubusercontent.com/theneoai/skill-writer/main/install.sh | bash -s -- --all
+```
+
+#### Option 2 — Agent Install from Latest Release
 
 Paste one command into your AI agent to install the latest stable release:
 
@@ -60,14 +76,7 @@ Paste one command into your AI agent to install the latest stable release:
 
 Each [GitHub Release](https://github.com/theneoai/skill-writer/releases) includes per-platform assets and ready-to-paste agent commands for that version.
 
-To install from the development branch (always latest, includes companion files for Claude):
-
-```
-read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install
-read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install to claude
-```
-
-#### Option 2 — Shell Script
+#### Option 3 — Shell Script (from git clone)
 
 ```bash
 git clone https://github.com/theneoai/skill-writer.git
@@ -88,35 +97,37 @@ cd skill-writer
 ./install.sh --url https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer.md
 ```
 
-#### Option 3 — Manual Copy
+#### Option 4 — Manual Copy
+
+Pre-built platform files are committed to the repository — no builder step required:
 
 ```bash
 # Claude
-cp skill-framework.md ~/.claude/skills/skill-writer.md
+cp platforms/skill-writer-claude.md ~/.claude/skills/skill-writer.md
 
 # OpenCode
 mkdir -p ~/.config/opencode/skills
-cp skill-framework.md ~/.config/opencode/skills/skill-writer.md
+cp platforms/skill-writer-opencode.md ~/.config/opencode/skills/skill-writer.md
 
 # OpenClaw
 mkdir -p ~/.openclaw/skills
-cp skill-framework.md ~/.openclaw/skills/skill-writer.md
+cp platforms/skill-writer-openclaw.md ~/.openclaw/skills/skill-writer.md
 
 # Cursor
 mkdir -p ~/.cursor/skills
-cp skill-framework.md ~/.cursor/skills/skill-writer.md
+cp platforms/skill-writer-cursor.md ~/.cursor/skills/skill-writer.md
 
 # Gemini
 mkdir -p ~/.gemini/skills
-cp skill-framework.md ~/.gemini/skills/skill-writer.md
+cp platforms/skill-writer-gemini.md ~/.gemini/skills/skill-writer.md
 
 # OpenAI (JSON format)
 mkdir -p ~/.openai/skills
-cp platforms/skill-writer-openai-dev.json ~/.openai/skills/skill-writer.json
+cp platforms/skill-writer-openai.json ~/.openai/skills/skill-writer.json
 
 # MCP (JSON manifest)
 mkdir -p ~/.mcp/servers/skill-writer
-cp platforms/skill-writer-mcp-dev.json ~/.mcp/servers/skill-writer/mcp-manifest.json
+cp platforms/skill-writer-mcp.json ~/.mcp/servers/skill-writer/mcp-manifest.json
 ```
 
 ### Usage Examples
@@ -424,8 +435,8 @@ Recommendations:
 ## UTE (Use-to-Evolve)
 
 Self-improvement protocol that enables skills to evolve through usage. Two-tier architecture:
-- **L1 (Single-user)** `[ENFORCED]`: Post-invocation hook runs per session; persists state to `~/.claude/skills/.ute-state/`
-- **L2 (Collective)** `[ASPIRATIONAL]`: Requires external aggregation infrastructure (SkillClaw-compatible)
+- **L1 (Single-user)** `[CORE]`: Post-invocation hook runs per session; persists state to `~/.claude/skills/.ute-state/`
+- **L2 (Collective)** `[EXTENDED]`: Requires external aggregation infrastructure (SkillClaw-compatible). See `refs/use-to-evolve.md §10`.
 
 ### UTE YAML Block
 
@@ -464,7 +475,7 @@ use_to_evolve:
 
 ### Platform Hook Integration (Claude Code / OpenCode)
 
-UTE state tracking upgrades from `[ASPIRATIONAL]` to `[ENFORCED]` when platform hooks are configured:
+UTE state tracking upgrades from `[EXTENDED]` to `[CORE]` when platform hooks are configured:
 
 ```json
 // ~/.claude/settings.json
@@ -491,7 +502,7 @@ npm install
 
 ### Commands
 
-> **Note**: Run `npm run build` from the project root before using `npm run install:*` scripts — they copy files from the `platforms/` directory created by the build step. In CI, lint and test run without `|| true` and will fail the pipeline on errors.
+> **Note**: Pre-built platform files in `platforms/` are committed as distribution assets — no build step is required for installation. Run `npm run build` only when you modify `skill-framework.md` or `refs/` to regenerate them. In CI, lint and tests run without `|| true` and will fail the pipeline on errors.
 
 #### Build
 ```bash
@@ -562,8 +573,8 @@ skill-writer/
 │   │       └── index.js           # Platform registry
 │   ├── templates/                 # Platform-specific output templates
 │   ├── .eslintrc.json             # ESLint configuration
-│   └── tests/                     # Jest test suite (179 tests)
-├── platforms/                     # Generated platform files (7 platforms, gitignored)
+│   └── tests/                     # Jest test suite (250+ tests)
+├── platforms/                     # Pre-built platform files (7 platforms, committed as distribution assets)
 ├── examples/                      # Certified example skills
 │   ├── api-tester/                # GOLD 920/1000
 │   ├── code-reviewer/             # GOLD 947/1000
@@ -702,7 +713,7 @@ MIT License - See [LICENSE](LICENSE) file for details.
 ### Completed
 
 - [x] Core engine with CREATE, LEAN, EVALUATE, OPTIMIZE, INSTALL, COLLECT modes
-- [x] Builder tool with CLI and Jest test suite (179 tests)
+- [x] Builder tool with CLI and Jest test suite (250+ tests)
 - [x] Support for 7 platforms (OpenCode, OpenClaw, Claude, Cursor, OpenAI, Gemini, MCP)
 - [x] LEAN fast-evaluation mode with [STATIC]/[HEURISTIC] reliability labels
 - [x] UTE 2.0 self-improvement protocol (L1 enforced + L2 collective)
