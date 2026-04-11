@@ -60,6 +60,13 @@
 > **Platform**: Cursor  
 > **Version**: 2.1.0
 
+> ⚠️ **Cursor users — command syntax**: Cursor's command palette may intercept `/create`, `/eval`, etc.
+> If a slash command opens the palette instead of triggering this skill, use the **keyword form**:
+> - `create a skill that...` (not `/create`)
+> - `lean eval` / `quick check` (not `/lean`)
+> - `evaluate this skill` (not `/eval`)
+> - `optimize this skill` (not `/opt`)
+
 A meta-skill that enables Cursor to create, evaluate, and optimize other skills through natural language interaction.
 
 ---

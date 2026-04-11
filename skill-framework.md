@@ -112,10 +112,54 @@ extends:
 3. Accumulate 5+ Session Artifacts, then type: "aggregate skill feedback"
 4. Use the ranked improvement list as input to `/opt`
 
-> **Enforcement Level Key** (used throughout this document):
-> - `[CORE]` — Fully operational in any LLM session. No external backend required.
-> - `[EXTENDED]` — Requires optional external backend (file system, database, GitHub Gist).
->   The framework functions fully without it; these features add persistence and cross-session capabilities.
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  功能标签 / Enforcement Labels (used throughout this document)       │
+│                                                                     │
+│  [CORE]     — 任意 AI 对话即可使用，无需外部工具或后端               │
+│               Works in any LLM session. No backend required.        │
+│                                                                     │
+│  [EXTENDED] — 需要文件系统、Hook 配置或外部后端服务                  │
+│               Requires file system access, hooks, or external store. │
+│               框架不依赖此类功能——它们增加持久化能力，但非必要。      │
+│                                                                     │
+│  不确定有没有后端？→ 假设只有 [CORE]，全部 6 个模式仍可正常使用。    │
+│  Unsure? → Assume [CORE] only. All 6 modes work fully.             │
+└─────────────────────────────────────────────────────────────────────┘
+
+```
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  评分快查 / Scoring Quick Reference                                  │
+│                                                                     │
+│  LEAN    500 pt  速度 <5s   方差 ±20 pt  适用: 迭代中快速检查        │
+│  EVALUATE 1000 pt 速度 ~60s  方差 ±50 pt  适用: 认证/发布/等级声明   │
+│                                                                     │
+│  换算: LEAN分 × 2 ≈ EVALUATE分 (估算值, 误差 ±60 pt)               │
+│  认证等级: PLATINUM≥950 | GOLD≥900 | SILVER≥800 | BRONZE≥700 | FAIL │
+│                                                                     │
+│  何时用 LEAN: CREATE后 / OPTIMIZE每轮 / 快速迭代                    │
+│  何时用 EVALUATE: 推送Registry前 / 声明等级前 / LEAN分近边界(±30pt) │
+└─────────────────────────────────────────────────────────────────────┘
+
+```
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  术语说明 / Key Terms                                                │
+│                                                                     │
+│  Skill Type (skill_tier)     — SkillX 三层技能分类                  │
+│    planning   高层编排，协调其他技能 (e.g. 任务路由器)               │
+│    functional 可复用子程序，有明确 I/O (默认，不确定时选此项)         │
+│    atomic     单步原子操作，有硬性约束 (e.g. 输入校验器)             │
+│    → 影响 EVALUATE Phase 2 各维度权重                               │
+│                                                                     │
+│  Certification Level         — 评测后获得的质量认证等级              │
+│    PLATINUM/GOLD/SILVER/BRONZE/FAIL — 见上方评分快查                │
+│    → 不要将此与 Skill Type 混淆，两者都叫"tier"但含义不同            │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -139,11 +183,15 @@ and non-bypassable security gates.
 See `claude/refs/self-review.md §1` for full spec.
 
 **Red Lines (严禁)**:
-- 严禁 hardcoded credentials (CWE-798) — patterns: `claude/refs/security-patterns.md`
-- 严禁 deliver any skill without passing BRONZE gate (score ≥ 700)
-- 严禁 skip LEAN or EVALUATE security scan before delivery
-- 严禁 proceed past ABORT trigger without explicit human sign-off
-- 严禁 skip elicitation gate (Inversion) before entering PLAN phase
+
+> `严禁` = **STRICTLY FORBIDDEN** — 触发此规则时必须立即中止，不可跳过。
+> When triggered, execution MUST halt immediately. No bypass without explicit human sign-off.
+
+- 严禁 (FORBIDDEN) hardcoded credentials (CWE-798) — patterns: `claude/refs/security-patterns.md`
+- 严禁 (FORBIDDEN) deliver any skill without passing BRONZE gate (score ≥ 700)
+- 严禁 (FORBIDDEN) skip LEAN or EVALUATE security scan before delivery
+- 严禁 (FORBIDDEN) proceed past ABORT trigger without explicit human sign-off
+- 严禁 (FORBIDDEN) skip elicitation gate (Inversion) before entering PLAN phase
 
 ---
 
@@ -164,8 +212,17 @@ No confirmation needed. These commands are LLM-evaluated (not platform CLI comma
 | `/collect` | COLLECT mode | `/采集` |
 
 > **Note**: These slash commands are evaluated by the LLM processing this skill prompt,
-> not by the platform's native command system. If a platform intercepts `/create`,
-> use the keyword form instead: type `create` or `创建`.
+> not by the platform's native command system.
+>
+> **Platform-specific command support**:
+> | Platform | `/command` syntax | Keyword fallback |
+> |----------|-------------------|-----------------|
+> | Claude, OpenCode, OpenClaw, Gemini | ✅ Supported | ✅ Also works |
+> | **Cursor** | ⚠️ May be intercepted by IDE command palette | ✅ Use keywords only |
+> | OpenAI, MCP | — Not applicable | ✅ Use keywords only |
+>
+> **Cursor users**: If `/create` opens a command palette instead of triggering the skill,
+> always use the keyword form: `create a skill`, `lean eval`, `evaluate`, `optimize`.
 
 ### Priority 1 — Keyword Routing
 
@@ -333,6 +390,43 @@ These rules apply regardless of whether `claude/refs/self-review.md` is availabl
 
 **Escalation rule**: After any two consecutive phase failures → escalate to HUMAN_REVIEW immediately rather than attempting further retries.
 
+### HUMAN_REVIEW Protocol — 场景适配 / Scenario-Adapted
+
+When HUMAN_REVIEW is triggered, adapt the output message to the user's context:
+
+**个人用户 / Individual user** (default):
+```
+⚠ HUMAN_REVIEW 触发 — AI 无法自动继续
+Human review required — cannot proceed automatically.
+
+下一步 / Next steps:
+  1. 查看下方标记 ⚠ 的维度得分 / Review ⚠-flagged dimension scores below
+  2. 手动修改技能文件对应章节 / Manually fix the flagged sections
+  3. 修改后重新运行 /eval 确认分数 / Re-run /eval after changes to confirm score
+```
+
+**P0 安全违规 / P0 security violation** (triggered by ABORT rule):
+```
+🚨 ABORT — P0 安全违规检测 / P0 Security Violation Detected
+违规类型 / Violation: [CWE-XXX or ASI0X]
+位置 / Location: [section or line reference]
+
+修复步骤 / Fix steps:
+  1. 移除或修复上述违规 / Remove or fix the violation above
+  2. 修复后输入: /eval --security-recheck 重新扫描
+     After fixing, type: /eval --security-recheck
+  3. 如确认误报，输入: I confirm [CWE-XXX] is a false positive — proceed
+     To override a false positive: I confirm [CWE-XXX] is a false positive — proceed
+```
+
+**团队/企业场景 / Team or enterprise** (if user mentions team context):
+```
+⚠ HUMAN_REVIEW — 建议进行团队审查
+Team review recommended.
+建议通过 PR 流程提交技能文件，附本次 EVALUATE 报告作为 review context。
+Submit skill file via PR with this EVALUATE report attached as context.
+```
+
 ---
 
 ## §5  CREATE Mode
@@ -497,10 +591,23 @@ lean_score ≥ 350 AND no_placeholders AND security_section_present
     → Schedule full EVALUATE within 24 h (recommended, not blocking)
 
 lean_score 300–349 (UNCERTAIN)
-    → Show escalation notice to user:
-      "LEAN score: [N]/500 — too close to BRONZE threshold to certify with confidence.
-       Running full EVALUATE for an authoritative assessment (~60 seconds).
-       [Type /skip to accept LEAN result as-is with TEMP_CERT tag, or wait...]"
+    → Show escalation notice to user (ALWAYS before starting EVALUATE):
+      "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       LEAN 评分完成 / LEAN Complete
+       分数 / Score: [N]/500 (UNCERTAIN — 接近 BRONZE 临界值 / near BRONZE threshold)
+       静态检查 / Static [STATIC]:    [S]/335 (零方差 / zero variance)
+       启发式检查 / Heuristic [HEUR]: [H]/165 (±20 pt 方差 / variance)
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       ⚠ LEAN 分数 UNCERTAIN — 正在启动完整 EVALUATE (~60 秒)
+       ⚠ LEAN UNCERTAIN — launching full EVALUATE (~60 seconds)
+       输入 /skip 跳过，接受 LEAN 结果（附 TEMP_CERT 标记）
+       Type /skip to accept LEAN result with TEMP_CERT tag instead
+
+       [EVALUATE Phase 1/4: 结构解析 / Parse...       ] ████░░░░ 25%"
+      (update progress each phase:)
+       [EVALUATE Phase 2/4: 内容质量 / Text Quality...] ████████ 50%
+       [EVALUATE Phase 3/4: 运行测试 / Runtime...     ] ████████████ 75%
+       [EVALUATE Phase 4/4: 认证 / Certification...   ] ████████████████ 100%"
     → If /skip received → deliver with TEMP_CERT; otherwise proceed with EVALUATE (§8)
 
 lean_score < 300 (FAIL)
@@ -530,7 +637,14 @@ Ask **one question at a time**. Wait for answer before next question.
 5. "有哪些安全或技术约束？ / What security or technical constraints apply?"
 6. "验收标准是什么？ / What are the acceptance criteria?"
 7. "这个skill在哪些场景下**不**应该触发？ / In which scenarios should this skill NOT trigger? (List 2–5 anti-cases)"
+   > 💡 **示例 / Examples**: "不用于生产数据库操作" / "不适用于超过1000条记录的批量处理" / "不用于需要实时数据的场景"
+   > 💡 **卡住了？** 输入 `skip` — 将自动填充通用边界: "Avoid irreversible actions without explicit confirmation"
+   > [Answer validation: SKIP accepted → auto-fill default boundary + WARNING note]
+
 8. "用户会用什么词或短语来触发这个skill？ / What phrases or keywords would a user say to trigger this skill? (List 3–8 examples)"
+   > 💡 **示例 / Examples**: "检查我的代码" / "review this PR" / "code review" / "审查代码" / "scan for issues"
+   > 💡 **卡住了？** 输入 `skip` — 将从技能名称和描述中自动推断触发词
+   > [Answer validation: SKIP accepted → auto-generate triggers from skill name + description]
 
 > **Questions 7 & 8 are new (v3.1.0)**. Research basis:
 > - Q7 (Negative Boundaries): SKILL.md Pattern — without explicit negation, semantically
@@ -539,7 +653,8 @@ Ask **one question at a time**. Wait for answer before next question.
 >   skill body is the decisive routing signal (29–44pp accuracy difference).
 
 > **Answer validation**: Minimal — user must provide at least one example for Q7 and Q8.
-> If user refuses Q7 or Q8, flag with WARNING and continue; add advisory to deliver output.
+> If user types `skip` for Q7 or Q8: auto-fill defaults, flag with WARNING in output,
+> add a reminder: "Review Negative Boundaries before publishing this skill."
 
 > **Template-specific follow-up** (ask after Q6 if applicable):
 > - `api-integration`: "Which HTTP methods / authentication mechanism?"
@@ -662,12 +777,22 @@ OPTIMIZE pre-loop:
      security       [NNN/100] ██████████
      metadata       [NNN/100] ███████░░░
      TOTAL          [NNN/500]
-  3. Present strategy menu:
+  3. Present strategy menu with decision guidance:
      A) Auto       — system picks weakest dimension each round
+                     推荐: 首次优化，或不确定选哪个策略时 (Recommended: first time / unsure)
      B) Focus [dim] — concentrate all rounds on one dimension
+                     推荐: 某维度得分 < 60% 时集中突破 (Recommended: one dim scoring < 60%)
+                     例: B errorHandling / B workflow / B examples
      C) Balanced   — rotate across all dimensions evenly
+                     推荐: 各维度分差不超过 15 pt，整体拉升 (Recommended: dims within 15pt of each other)
      D) Security   — security + systemDesign dimensions first
-     [Enter to confirm A / type B, C, or D + optional dimension name]
+                     推荐: 有 P1/P2 安全警告未解决时 (Recommended: unresolved security warnings)
+
+     > 当前最弱维度 / Weakest dimension: {{WEAKEST_DIM}} ({{WEAKEST_SCORE}}/100)
+     > 建议 / Suggestion: {{STRATEGY_RECOMMENDATION}}
+     > 例如: 若最弱维度 < 60 → 选 B {{WEAKEST_DIM}} | 若各维度分差 < 15 → 选 C
+
+     [Enter to confirm A / type B/C/D + optional dimension name / /stop to exit]
   4. IF skill has no §UTE section → INJECT UTE first (§15)
      ELSE → UPDATE UTE: refresh certified_lean_score to current LEAN score
   5. Initialize session_best = current_score; cumulative_delta = 0
@@ -1239,9 +1364,24 @@ never interrupts the main workflow.
 6. ASSEMBLE — produce complete Session Artifact JSON including lesson_type + lesson_summary
    (see refs/session-artifact.md §2 for schema)
 
-6. DELIVER — output the JSON artifact; offer:
-   a. "Save as <session_id>.json for future AGGREGATE"
-   b. "Push to shared storage: skillclaw push <file>"
+6. DELIVER — output the JSON artifact with persistence instructions:
+
+   **[CORE] 无持久化后端时 (任何会话均适用)**:
+   输出完整 JSON 到对话窗口。提示用户手动保存：
+   ```
+   📄 Session Artifact 已生成 / generated. 请保存到 / Save to:
+      ~/.skill-artifacts/YYYYMMDD_<skill_name>.json
+   运行 mkdir -p ~/.skill-artifacts 然后粘贴下方 JSON。
+   Run: mkdir -p ~/.skill-artifacts  then paste the JSON below.
+   ```
+
+   **[EXTENDED] 有文件系统 / Hook 时**:
+   自动写入 ~/.skill-artifacts/ 目录，无需手动操作。
+   Auto-written to ~/.skill-artifacts/ — no manual step needed.
+
+   **聚合命令 / Aggregate trigger** (收集 2+ artifacts 后):
+   输入 "aggregate skill feedback" / "聚合技能反馈" 分析所有 artifacts
+   → 输出排序优化建议列表，可直接用于 /opt
 ```
 
 ### AGGREGATE mode (multi-session synthesis) `[EXTENDED — basic flow available]`

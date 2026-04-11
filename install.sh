@@ -239,7 +239,13 @@ install_platform() {
     gemini)   install_md_platform gemini   "${HOME}/.gemini/skills" ;;
     mcp)      install_mcp ;;
     openai)
-      warn "[openai] OpenAI requires manual installation via the platform dashboard."
+      local openai_src
+      openai_src="$(resolve_source openai json)"
+      warn "[openai] OpenAI requires manual setup via the platform dashboard."
+      info "  Generated file: ${openai_src}"
+      info "  Upload it at: https://platform.openai.com (Custom GPT → Configure → Actions)"
+      info "  Or use the agent install command:"
+      info "    read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-openai.json and install to openai"
       return 0 ;;
     *)
       err "Unknown platform: ${p}"
@@ -282,6 +288,58 @@ else
   echo "⚠ Installed to ${INSTALLED} platform(s). ${FAILED} failed — see warnings above."
 fi
 echo ""
-echo "Next step: restart each platform to activate skill-writer."
-echo "Then try: /create a skill that summarises git diffs"
+echo "Next steps:"
+echo ""
+
+# Context-sensitive guidance per installed platform
+for p in "${TARGETS[@]}"; do
+  case "${p}" in
+    claude)
+      echo "  [Claude]"
+      echo "    1. Restart Claude to activate skill-writer."
+      echo "    2. Try: /create a skill that summarises git diffs"
+      echo "       Or use keywords: create / 创建 / lean / 快评 / eval / 评测"
+      if [[ -z "${CUSTOM_FILE}" && -d "${SCRIPT_DIR}/refs" ]]; then
+        echo "    ✓ Companion files installed (refs/, templates/, eval/, optimize/)"
+        echo "      → Full feature set available including EVALUATE and COLLECT modes."
+      else
+        echo "    ℹ Companion files (refs/, templates/) NOT installed (curl/remote install)."
+        echo "      LEAN and CREATE modes work fully. For complete features, clone the repo:"
+        echo "      git clone https://github.com/theneoai/skill-writer.git"
+        echo "      cd skill-writer && ./install.sh --platform claude"
+      fi
+      ;;
+    opencode)
+      echo "  [OpenCode]"
+      echo "    1. Restart OpenCode to activate skill-writer."
+      echo "    2. Try: /create a skill that summarises git diffs"
+      ;;
+    openclaw)
+      echo "  [OpenClaw]"
+      echo "    1. Restart OpenClaw to activate skill-writer."
+      echo "    2. Try: create a skill that summarises git diffs"
+      ;;
+    cursor)
+      echo "  [Cursor]"
+      echo "    1. Restart Cursor to activate skill-writer."
+      echo "    ⚠ Cursor may intercept /command syntax. Use keywords instead:"
+      echo "      create a skill / lean eval / evaluate / optimize"
+      ;;
+    gemini)
+      echo "  [Gemini]"
+      echo "    1. Restart Gemini to activate skill-writer."
+      echo "    2. Try: create a skill that summarises git diffs"
+      ;;
+    mcp)
+      echo "  [MCP]"
+      echo "    1. Restart your MCP host to load the skill-writer manifest."
+      echo "    2. The skill is registered at: ~/.mcp/servers/skill-writer/mcp-manifest.json"
+      ;;
+  esac
+  echo ""
+done
+
+echo "Quick reference:"
+echo "  /create → 新建技能    /lean → 快评    /eval → 评测    /opt → 优化"
+echo "  Docs: https://github.com/theneoai/skill-writer#quick-start"
 echo ""

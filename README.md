@@ -35,9 +35,25 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 | [OpenClaw](https://openclaw.ai) | ✅ P0 | `~/.openclaw/skills/` |
 | [Claude](https://claude.ai) | ✅ P0 | `~/.claude/skills/` |
 | [Cursor](https://cursor.sh) | ✅ P1 | `~/.cursor/skills/` |
-| [OpenAI](https://openai.com) | ✅ P1 | `~/.openai/skills/` (JSON) |
+| [OpenAI](https://openai.com) | ✅ P1 | Manual setup via platform dashboard (JSON) |
 | [Gemini](https://gemini.google.com) | ✅ P2 | `~/.gemini/skills/` |
 | [MCP](https://modelcontextprotocol.io) | ✅ P2 | `~/.mcp/servers/skill-writer/` (JSON manifest) |
+
+### Platform Feature Matrix
+
+| Feature | Claude | OpenCode | OpenClaw | Cursor | Gemini | OpenAI | MCP |
+|---------|--------|----------|----------|--------|--------|--------|-----|
+| `/command` syntax | ✅ | ✅ | ✅ | ⚠️ Use keywords | ✅ | — | — |
+| Keyword triggers | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| All 6 modes (CREATE/LEAN/EVALUATE/OPTIMIZE/INSTALL/COLLECT) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Companion files (refs/, templates/, eval/) `[CORE]` | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| UTE Hook persistence `[EXTENDED]` | ✅ | ✅ | ❌ | ❌ | ❌ | — | — |
+| COLLECT auto-persist `[EXTENDED]` | ✅† | ✅† | ❌ | ❌ | ❌ | — | — |
+| YAML frontmatter | ✅ | ✅ | ✅ | ❌* | ✅ | JSON | JSON |
+
+\* Cursor uses `${KEY}` placeholder syntax instead of `{{KEY}}`  
+† Requires platform hooks — see `refs/use-to-evolve.md §8` for setup  
+⚠️ Cursor: Use keywords (`create a skill`, `evaluate`, `optimize`) — IDE command palette may intercept `/` commands
 
 ## Quick Start
 
@@ -121,9 +137,9 @@ cp platforms/skill-writer-cursor.md ~/.cursor/skills/skill-writer.md
 mkdir -p ~/.gemini/skills
 cp platforms/skill-writer-gemini.md ~/.gemini/skills/skill-writer.md
 
-# OpenAI (JSON format)
-mkdir -p ~/.openai/skills
-cp platforms/skill-writer-openai.json ~/.openai/skills/skill-writer.json
+# OpenAI (JSON format — requires manual setup via platform dashboard)
+# The JSON file is at: platforms/skill-writer-openai.json
+# Upload it via https://platform.openai.com (see platform docs for custom GPT setup)
 
 # MCP (JSON manifest)
 mkdir -p ~/.mcp/servers/skill-writer
