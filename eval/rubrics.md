@@ -196,7 +196,157 @@ Scored in Pass 3 (Reconciliation). Integrates all previous phases.
 
 ---
 
-## §7  LEAN Fast Path
+## §7  Score Reliability & Variance Guide
+
+> **Why this matters**: skill-writer's 1000-point pipeline is LLM-executed. The same skill
+> evaluated twice may produce different scores. This section documents expected variance ranges
+> per phase and gives guidance on how to interpret scores with appropriate confidence.
+
+### Phase-Level Reliability
+
+| Phase | Method | Expected Variance | Reliability |
+|-------|--------|-------------------|-------------|
+| **Phase 1** (0–100) | Structural / regex checks | ± 0–5 pts | High — mostly deterministic |
+| **Phase 2** (0–300) | LLM text quality judgment | ± 15–30 pts | Medium — rubric-guided but subjective |
+| **Phase 3** (0–400) | LLM trigger + behavior simulation | ± 20–40 pts | Medium-Low — depends on test input interpretation |
+| **Phase 4** (0–200) | Formula-based (variance gate, F1, MRR) | ± 5–10 pts | High — formula-driven, low LLM judgment |
+| **Total** (0–1000) | Composite | ± 30–60 pts | See tier interpretation below |
+
+### Tier Confidence Interpretation
+
+Given ±30–60 pt total variance, use these **confidence-adjusted tier boundaries**:
+
+| Displayed Score | Confident Tier | Plausible Range |
+|-----------------|----------------|-----------------|
+| ≥ 980 | PLATINUM (certain) | 950–1000 |
+| 930–979 | PLATINUM (likely) / GOLD (possible) | Use 2-run average |
+| 900–929 | GOLD (likely) | ± boundary — re-run to confirm |
+| 830–899 | GOLD/SILVER boundary | Re-run recommended |
+| 800–829 | SILVER (likely) | ± boundary — re-run to confirm |
+| 730–799 | SILVER/BRONZE boundary | Re-run recommended |
+| 700–729 | BRONZE (likely) | ± boundary — re-run to confirm |
+| 660–699 | BRONZE/FAIL boundary | **Always re-run before acting** |
+| < 660 | FAIL (certain) | Optimize before re-evaluating |
+
+### When to Re-Evaluate for Confidence
+
+**Single run is sufficient when**:
+- Score ≥ 960 or ≤ 640 (well within a tier)
+- Phase 4 security scan result is deterministic (P0 violation or CLEAR)
+
+**Run twice and average when**:
+- Score falls within ±30 pts of any tier boundary
+- Phase 3 Trigger Routing accuracy < 85% (ambiguous routing behavior)
+- Variance gate result changes tier (e.g., variance = 18–22 near SILVER/BRONZE cut)
+
+**Run three times and take median when**:
+- Score is 660–740 (FAIL/BRONZE boundary — consequential decision)
+- Upgrading a skill for production deployment
+- OPTIMIZE loop converged but tier is disputed
+
+### Phase 2 Sub-Dimension Variance
+
+Phase 2 has the highest LLM-judgment component. Sub-dimensions ranked by stability:
+
+| Sub-Dimension | Stability | Note |
+|---------------|-----------|------|
+| **Metadata Quality** | High ± 2 pts | Mostly YAML presence checks |
+| **Security Baseline** | High ± 3 pts | Pattern-matching dominant |
+| **Examples** | Medium ± 5 pts | Count is static; quality is LLM |
+| **System Design** | Medium ± 8 pts | Structural clarity judgment |
+| **Workflow Definition** | Medium ± 8 pts | Phase completeness judgment |
+| **Error Handling** | Low ± 12 pts | Adequacy is highly subjective |
+| **Domain Knowledge** | Low ± 15 pts | Content accuracy varies most |
+
+### Reducing Score Variance
+
+To get more reliable scores from a single run:
+
+1. **Provide context**: Tell the evaluator which template type was used (api-integration /
+   data-pipeline / workflow-automation / base). This anchors Domain Knowledge scoring.
+2. **Supply test inputs**: For Phase 3, provide 3 concrete trigger test cases with expected
+   modes. This converts heuristic routing tests to deterministic pass/fail.
+3. **Use LEAN as floor**: Run LEAN first for `[STATIC]` checks (335 pts max, zero variance).
+   If LEAN static score < 270, full EVALUATE will almost certainly FAIL — optimize first.
+
+---
+
+## §8  Tier-Specific Evaluation Weight Adjustments
+
+> **Rationale**: The default Phase 2 sub-dimension weights (§4) are calibrated for
+> `functional` tier skills — the most common case. However, `planning` and `atomic` tier
+> skills have fundamentally different quality signals. Applying the same weights to all
+> three tiers systematically under-scores or over-scores the wrong dimensions.
+>
+> Research basis: SkillX (arxiv:2604.04804) — three-tier hierarchy (Planning / Functional /
+> Atomic) has distinct quality criteria at each level.
+
+### How to Apply Tier Adjustments
+
+1. Read the `skill_tier` field from YAML frontmatter.
+2. If `skill_tier` is absent or `functional` → use **default weights** (§4).
+3. If `skill_tier` is `planning` or `atomic` → replace Phase 2 sub-dimension weights
+   with the tier-specific table below before scoring.
+4. Phase 1, Phase 3, and Phase 4 weights are **not changed** by tier.
+
+### Tier: `planning` — Phase 2 Weight Overrides
+
+Planning skills organize tasks and decompose work. Evaluate **how well they orchestrate**,
+not low-level execution detail.
+
+| Sub-Dimension | Default Weight | Planning Weight | Max (300 pts) | Change |
+|---------------|---------------|----------------|--------------|--------|
+| **System Design** | 20% (60 pts) | **30%** (90 pts) | 90 | ↑ Hierarchy clarity is paramount |
+| **Workflow Definition** | 15% (45 pts) | **25%** (75 pts) | 75 | ↑ Decomposition quality is core value |
+| **Domain Knowledge** | 20% (60 pts) | **20%** (60 pts) | 60 | = Same — domain accuracy still matters |
+| **Error Handling** | 15% (45 pts) | **10%** (30 pts) | 30 | ↓ Delegation patterns replace recovery |
+| **Examples** | 15% (45 pts) | **10%** (30 pts) | 30 | ↓ Composition examples over edge cases |
+| **Security Baseline** | 10% (30 pts) | **5%** (15 pts) | 15 | ↓ Orchestration less attack-surface exposed |
+| **Metadata Quality** | 5% (15 pts) | **0%** (0 pts) | 0 | ↓ Subsumed into System Design score |
+| **Total** | 100% (300 pts) | **100%** (300 pts) | 300 | |
+
+**Planning-specific scoring notes**:
+- System Design: check for clear sub-skill decomposition (`depends_on`, delegation diagram, or explicit sub-task list)
+- Workflow: check that each step names its expected output and handoff condition — not just "do X"
+- Error Handling: check for delegation fallback patterns (which sub-skill handles failure) rather than try/catch
+
+### Tier: `atomic` — Phase 2 Weight Overrides
+
+Atomic skills are execution-oriented primitives. Evaluate **precision, constraints, and
+safety** — not high-level architecture.
+
+| Sub-Dimension | Default Weight | Atomic Weight | Max (300 pts) | Change |
+|---------------|---------------|--------------|--------------|--------|
+| **System Design** | 20% (60 pts) | **10%** (30 pts) | 30 | ↓ Simple identity, minimal architecture needed |
+| **Workflow Definition** | 15% (45 pts) | **15%** (45 pts) | 45 | = Same — step clarity still critical |
+| **Domain Knowledge** | 20% (60 pts) | **15%** (45 pts) | 45 | ↓ Narrower scope reduces domain breadth req |
+| **Error Handling** | 15% (45 pts) | **25%** (75 pts) | 75 | ↑ Atomic ops must handle failure precisely |
+| **Examples** | 15% (45 pts) | **20%** (60 pts) | 60 | ↑ Usage patterns and constraints are core |
+| **Security Baseline** | 10% (30 pts) | **15%** (45 pts) | 45 | ↑ Atomic ops have highest injection surface |
+| **Metadata Quality** | 5% (15 pts) | **0%** (0 pts) | 0 | ↓ Trigger precision scored in Phase 3 instead |
+| **Total** | 100% (300 pts) | **100%** (300 pts) | 300 | |
+
+**Atomic-specific scoring notes**:
+- Error Handling: every input boundary case must be explicitly named (null, empty, out-of-range, adversarial)
+- Examples: must include at least one negative example showing what the skill rejects
+- Security: check that all external inputs are validated before use; no implicit trust of upstream data
+
+### Tier-Adjusted Certification Thresholds
+
+Phase 2 minimum thresholds (used in tier certification) adjust proportionally:
+
+| Tier (skill_tier) | PLATINUM Phase2 Min | GOLD Phase2 Min | SILVER Phase2 Min | BRONZE Phase2 Min |
+|-------------------|--------------------|-----------------|--------------------|-------------------|
+| `functional` (default) | 270 | 255 | 225 | 195 |
+| `planning` | 265 | 250 | 218 | 188 |
+| `atomic` | 275 | 260 | 230 | 200 |
+
+> `atomic` has slightly higher Phase 2 thresholds because atomic skills have a narrower
+> scope — the precision bar is higher for a small, focused primitive than a broad planner.
+
+---
+
+## §10  LEAN Fast Path
 
 Before running Phase 1–4, apply LEAN heuristics (§6 of skill-writer.md).
 
@@ -209,14 +359,15 @@ Before running Phase 1–4, apply LEAN heuristics (§6 of skill-writer.md).
 
 ---
 
-## §8  Evaluation Report Template
+## §11  Evaluation Report Template
 
 ```
 SKILL EVALUATION REPORT
 =======================
 Skill:      <name> v<version>
 Evaluated:  <ISO-8601>
-Evaluator:  skill-writer v2.1.0
+Evaluator:  skill-writer v3.1.0
+Skill Tier: <planning | functional | atomic>   (Phase 2 weights adjusted per rubrics.md §8)
 
 PHASE SCORES
   Phase 1 — Parse & Validate:   XX / 100

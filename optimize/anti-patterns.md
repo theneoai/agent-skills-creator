@@ -367,6 +367,105 @@ regardless of content fraction changed.
 
 ---
 
+---
+
+## Category F — Tier Anti-Patterns
+
+> **Research basis**: SkillX (arxiv:2604.04804) — incorrect tier declaration causes systematic
+> scoring errors and routing failures. Tier misuse is the most common source of phantom GOLD
+> scores on skills that fail in real use.
+
+---
+
+### F1 — Tier Inflation (Claiming `planning` for a `functional` or `atomic` skill)
+
+**Symptom**: Skill declares `skill_tier: planning` but has no sub-skill coordination, no `depends_on` field, and no orchestration workflow.
+
+**Root Cause**: Author chose `planning` to inflate System Design scores (planning tier has 30% weight vs. 20% default).
+
+**Detection**: Skill body contains only one mode with no delegation to other skills + no `depends_on` in YAML.
+
+**Fix**:
+1. Change `skill_tier: planning` to `functional` or `atomic`
+2. Re-evaluate with correct tier weights — System Design score will drop to accurate level
+3. If the skill genuinely orchestrates sub-skills: add explicit delegation steps naming each sub-skill
+
+```yaml
+# BAD (planning tier with no orchestration)
+skill_tier: planning
+# ...
+## §3 EXECUTE Mode
+  Steps: 1. Do the thing directly. 2. Return result.
+
+# GOOD (functional tier for direct execution)
+skill_tier: functional
+```
+
+---
+
+### F2 — Tier Deflation (Claiming `atomic` to avoid Error Handling requirements)
+
+**Symptom**: Skill declares `skill_tier: atomic` but has a multi-step workflow, multiple modes, and complex output formatting.
+
+**Root Cause**: Author chose `atomic` to reduce Error Handling requirements (atomic tier: 25% weight — but only for truly atomic ops; complex skills have more failure surface).
+
+**Detection**: Skill has ≥ 3 modes AND ≥ 5 workflow steps per mode AND complex output structure.
+
+**Fix**: Upgrade to `functional` tier and add proper error handling for each workflow branch.
+
+---
+
+### F3 — Missing `skill_tier` (defaults to `functional` silently)
+
+**Symptom**: LEAN evaluation shows inconsistent scores across runs; tier-adjusted weights not applied; evaluator defaults to `functional`.
+
+**Root Cause**: `skill_tier` field absent from YAML frontmatter.
+
+**Detection**: LEAN check for metadata dimension: `skill_tier` field present (`[STATIC]` check).
+
+**Fix**: Add `skill_tier: planning | functional | atomic` to YAML frontmatter based on the skill's actual scope.
+
+```yaml
+# BAD
+name: my-skill
+version: "1.0.0"
+
+# GOOD
+name: my-skill
+version: "1.0.0"
+skill_tier: functional   # Add this
+```
+
+---
+
+### F4 — `planning` Tier Without `depends_on` or Delegation
+
+**Symptom**: `planning` skill scores high on EVALUATE but fails to route correctly in real use because it tries to do everything itself instead of delegating.
+
+**Root Cause**: The skill was declared `planning` tier but designed as a monolithic `functional` skill.
+
+**Detection**: `skill_tier: planning` AND no `depends_on` YAML field AND no step that says "invoke [sub-skill]" or "delegate to [skill]".
+
+**Fix**: Either (a) add real delegation steps naming the sub-skills, or (b) change `skill_tier` to `functional`.
+
+```yaml
+# BAD: planning tier but no delegation
+skill_tier: planning
+# body: does everything in one skill
+
+# GOOD: planning tier with real delegation
+skill_tier: planning
+depends_on:
+  - name: api-tester
+    skill_id: a1b2c3d4e5f6
+    version_constraint: ">=1.0.0"
+  - name: code-reviewer
+    skill_id: 7f8a9b0c1d2e
+    version_constraint: ">=1.1.0"
+```
+
+---
+
 ## Anti-Pattern Severity Table
 
 | ID | Category | Severity | Auto-route to |
@@ -382,6 +481,10 @@ regardless of content fraction changed.
 | D6c | OWASP ASI05 | WARNING (P1) | S8 — add confirmation gate |
 | E1–E3 | Quality Gates | WARNING | S5 (Add Thresholds) |
 | E4 | Tier Drift | WARNING | S9 (Full Eval required) |
+| F1 | Tier Inflation | WARNING | Correct skill_tier → re-score |
+| F2 | Tier Deflation | WARNING | Upgrade skill_tier → add error handling |
+| F3 | Missing skill_tier | WARNING | Add skill_tier to YAML |
+| F4 | planning without delegation | WARNING | Add depends_on or change tier |
 
 **ERROR = ABORT**: Skill must not be delivered. Fix required before any further evaluation.
 **S8** = Strengthen Security Baseline (OWASP + CWE) — see `optimize/strategies.md §4 S8`

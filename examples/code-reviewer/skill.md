@@ -1,12 +1,36 @@
 ---
 name: code-reviewer
-version: 1.0.0
+version: 1.1.0
 description: Use when performing code reviews, security audits, or quality assessments on codebases. Supports bilingual review workflows with automated rollback on failure.
+description_i18n:
+  en: "Code review, security audit, and quality assessment with bilingual support and automated rollback."
+  zh: "代码审查、安全审计与质量评估，支持中英双语工作流与自动回滚。"
+
 license: MIT
-author: Skill Framework Team
+author:
+  name: Skill Framework Team
 created: "2026-03-31"
-updated: "2026-04-01"
+updated: "2026-04-11"
+
+skill_tier: functional   # Reusable multi-step subroutine: input=code, output=review report
+
 tags: [workflow-automation, security, code-quality, bilingual]
+
+triggers:
+  en:
+    - "review this code"
+    - "code review"
+    - "security audit"
+    - "check code quality"
+    - "scan for vulnerabilities"
+    - "review my PR"
+    - "find code issues"
+  zh:
+    - "代码审查"
+    - "安全审计"
+    - "检查代码质量"
+    - "扫描漏洞"
+
 interface:
   mode:
     type: enum
@@ -16,8 +40,8 @@ interface:
 
 use_to_evolve:
   enabled: true
-  injected_by: "skill-writer v2.0.0"
-  injected_at: "2026-04-01"
+  injected_by: "skill-writer v3.1.0"
+  injected_at: "2026-04-11"
   check_cadence: {lightweight: 10, full_recompute: 50, tier_drift: 100}
   micro_patch_enabled: true
   feedback_detection: true
@@ -26,6 +50,24 @@ use_to_evolve:
   pending_patches: 0
   total_micro_patches_applied: 0
   cumulative_invocations: 0
+---
+
+## Skill Summary
+
+code-reviewer performs structured code reviews, security audits, and quality assessments across any codebase. Use it when you need to review a pull request, audit code for OWASP/CWE vulnerabilities, or get actionable improvement suggestions — in English or Chinese. Designed for developers, tech leads, and security engineers performing systematic code quality gates. This skill does NOT execute code, deploy builds, or write new features — see Negative Boundaries.
+
+---
+
+## §N  Negative Boundaries
+
+**Do NOT use this skill for**:
+
+- **Executing or running code**: If the user asks "run this script" or "execute my tests", route to a code execution skill. This skill reads and reviews only — it does not run anything.
+- **Writing new features or implementations**: If the user asks "add a login function" or "implement OAuth", use a code generation skill. This skill reviews what exists, it doesn't create new code.
+- **Dependency auditing (package managers)**: If the user asks "check my npm packages for vulnerabilities" or "audit my Gemfile", use a dedicated dependency audit tool (npm audit, Dependabot). This skill performs inline code analysis only.
+- **Documentation generation**: If the user asks "generate API docs" or "write JSDoc comments", use the doc-generator skill.
+- **Architecture design reviews**: If the user asks "review my system design" or "evaluate my microservices architecture" (without code files), use a higher-level planning skill.
+
 ---
 
 # Code Reviewer

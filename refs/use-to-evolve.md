@@ -182,6 +182,165 @@ protocol; they differ in *scope* (single-user vs. multi-user) and *persistence r
 
 This is the complete implementation described in §1–§6 above.
 
+---
+
+## §8  Platform Hook Integration `[ENFORCED with hooks backend]`
+
+> This section upgrades UTE's `[ASPIRATIONAL]` cross-session items to `[ENFORCED]` by
+> wiring them to the host platform's hook system. Currently documented for **Claude Code**
+> (session hooks). The same pattern applies to any platform that exposes pre/post-session hooks.
+
+### What Changes With Hooks
+
+| UTE Item | Without Hooks | With Hooks |
+|----------|--------------|-----------|
+| `cumulative_invocations` counter | `[ASPIRATIONAL]` — resets per session | `[ENFORCED]` — persisted to file |
+| Cadence checks (every 10/50/100) | `[ASPIRATIONAL]` — approximate | `[ENFORCED]` — precise count-gated |
+| `last_ute_check` / `pending_patches` | `[ASPIRATIONAL]` — cross-session state lost | `[ENFORCED]` — read/written via hook |
+| Audit trail in `.skill-audit/` | `[ASPIRATIONAL]` — requires filesystem | `[ENFORCED]` — hook writes on session end |
+
+### Claude Code Hook Setup
+
+#### 1. Create the UTE state file
+
+For each UTE-enabled skill, create a JSON state file alongside the skill:
+
+```bash
+# Example: for a skill at ~/.claude/skills/my-skill.md
+touch ~/.claude/skills/.ute-state/my-skill.json
+```
+
+Initial state file contents:
+```json
+{
+  "skill_name": "my-skill",
+  "skill_path": "~/.claude/skills/my-skill.md",
+  "cumulative_invocations": 0,
+  "last_ute_check": null,
+  "pending_patches": 0,
+  "total_micro_patches_applied": 0,
+  "certified_lean_score": 390,
+  "session_log": []
+}
+```
+
+#### 2. Register a Claude Code PostToolUse hook
+
+Add to `~/.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/ute-tracker.js post-use \"$CLAUDE_SKILL_NAME\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/ute-tracker.js session-end"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+#### 3. ute-tracker.js — Minimal hook script
+
+Create `~/.claude/hooks/ute-tracker.js`:
+
+```javascript
+#!/usr/bin/env node
+// UTE state persistence hook for Claude Code
+// Upgrades [ASPIRATIONAL] cross-session tracking to [ENFORCED]
+
+const fs = require('fs');
+const path = require('path');
+
+const STATE_DIR = path.join(process.env.HOME, '.claude', 'skills', '.ute-state');
+const cmd = process.argv[2];       // 'post-use' | 'session-end'
+const skillName = process.argv[3]; // skill identifier from env
+
+function readState(name) {
+  const file = path.join(STATE_DIR, `${name}.json`);
+  if (!fs.existsSync(file)) return null;
+  return JSON.parse(fs.readFileSync(file, 'utf8'));
+}
+
+function writeState(name, state) {
+  fs.mkdirSync(STATE_DIR, { recursive: true });
+  const file = path.join(STATE_DIR, `${name}.json`);
+  fs.writeFileSync(file, JSON.stringify(state, null, 2));
+}
+
+if (cmd === 'post-use' && skillName) {
+  const state = readState(skillName) || { cumulative_invocations: 0, session_log: [] };
+  state.cumulative_invocations += 1;
+
+  // Cadence gate: log when thresholds hit
+  const inv = state.cumulative_invocations;
+  if (inv % 10 === 0)  state.session_log.push({ at: new Date().toISOString(), event: 'lightweight_check_due', inv });
+  if (inv % 50 === 0)  state.session_log.push({ at: new Date().toISOString(), event: 'quality_assessment_due', inv });
+  if (inv % 100 === 0) state.session_log.push({ at: new Date().toISOString(), event: 'tier_drift_check_due', inv });
+
+  writeState(skillName, state);
+}
+
+if (cmd === 'session-end') {
+  // Write session summary to audit trail
+  const auditDir = path.join(process.env.HOME, '.claude', '.skill-audit');
+  fs.mkdirSync(auditDir, { recursive: true });
+  const entry = { session_end: new Date().toISOString(), skills_active: skillName || 'unknown' };
+  const auditFile = path.join(auditDir, 'sessions.jsonl');
+  fs.appendFileSync(auditFile, JSON.stringify(entry) + '\n');
+}
+```
+
+#### 4. How Claude reads UTE state at session start
+
+In your system prompt or session-start hook, inject the current state:
+
+```bash
+# Add to ~/.claude/hooks/session-start.sh
+SKILL_STATE=$(cat ~/.claude/skills/.ute-state/my-skill.json 2>/dev/null || echo '{}')
+echo "UTE_STATE: $SKILL_STATE" >> /tmp/claude-session-context.txt
+```
+
+Then reference in `~/.claude/CLAUDE.md`:
+```markdown
+At session start, read /tmp/claude-session-context.txt.
+If UTE_STATE contains `session_log` entries with `_due` events,
+notify the user and offer to run the corresponding UTE health check.
+```
+
+### Enforcement Status After Hook Integration
+
+With the above setup, these items upgrade from `[ASPIRATIONAL]` to `[ENFORCED]`:
+
+| Item | New Status |
+|------|-----------|
+| `cumulative_invocations` persistence | `[ENFORCED]` — written by PostToolUse hook |
+| Cadence check notifications | `[ENFORCED]` — session_log entries trigger next-session prompt |
+| `last_ute_check` update | `[ENFORCED]` — written by session-end hook |
+| Audit trail | `[ENFORCED]` — sessions.jsonl append on Stop |
+
+**Remaining `[ASPIRATIONAL]` items** (require L2 collective infrastructure):
+- Multi-user artifact aggregation (SkillClaw / SkillRL collective pipeline)
+- Cross-skill tier drift monitoring (requires shared registry backend)
+
+---
+
 ### L2: Collective UTE `[ASPIRATIONAL — requires external tooling]`
 
 > **`[ASPIRATIONAL]`**: L2 requires external storage and the COLLECT + AGGREGATE pipeline.

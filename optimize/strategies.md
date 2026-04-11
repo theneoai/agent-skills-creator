@@ -377,3 +377,72 @@ Lowest-scoring dimension → apply strategy
 
 After 3 cycles at FAIL, or after round 20, stop and escalate.
 Log to audit trail: `{"outcome": "HUMAN_REVIEW", "optimize_cycles": 3}`.
+
+---
+
+## §6  Tier-Aware Strategy Prioritization
+
+> **Research basis**: SkillX (arxiv:2604.04804) — three skill tiers have fundamentally
+> different quality criteria. The same improvement applied to a `planning` skill vs. an
+> `atomic` skill produces different returns. Read `skill_tier` from YAML before selecting
+> the first strategy in the loop.
+
+### Before starting the OPTIMIZE loop
+
+```
+1. Read skill_tier from YAML frontmatter
+2. Apply tier-adjusted Phase 2 weights (eval/rubrics.md §8) when scoring
+3. Use the tier-specific dimension priority order below for the first 3 rounds
+4. After round 3: revert to lowest-score-first if tier targeting is exhausted
+```
+
+### Tier: `planning` — Dimension Priority Order
+
+Focus: decomposition clarity and orchestration quality.
+
+```
+Priority order for rounds 1–3:
+  1st → D3 Workflow Definition  (25% tier weight — highest leverage)
+  2nd → D1 System Design        (30% tier weight — hierarchy clarity)
+  3rd → D2 Domain Knowledge     (20% tier weight — delegation accuracy)
+  4th+ → lowest-score-first (default)
+```
+
+**Planning-specific strategy notes**:
+- S4 (Workflow): Focus on sub-skill decomposition — each step should name its delegated sub-skill
+- S2 (System Design): Add `depends_on` field listing atomic skills this planning skill coordinates
+- Avoid over-investing in D4 Error Handling early — planning skills delegate error recovery to sub-skills
+
+### Tier: `functional` — Dimension Priority Order
+
+Default behavior — no tier-specific adjustments. Use lowest-score-first.
+
+```
+Priority order: lowest-score-first (standard §5 matrix)
+```
+
+### Tier: `atomic` — Dimension Priority Order
+
+Focus: execution precision, constraint completeness, and safety boundary.
+
+```
+Priority order for rounds 1–3:
+  1st → D4 Error Handling   (25% tier weight — highest leverage)
+  2nd → D5 Examples         (20% tier weight — constraint illustration)
+  3rd → D6 Security         (15% tier weight — injection surface)
+  4th+ → lowest-score-first (default)
+```
+
+**Atomic-specific strategy notes**:
+- S5 (Error Handling): Enumerate every input boundary case explicitly (null, empty, adversarial)
+- S3 (Examples): Must include at least one rejection example showing what the atomic op refuses
+- S8 (Security): Check that all external inputs pass validation before any action is taken
+
+### Tier Not Declared (missing `skill_tier` field)
+
+If `skill_tier` is absent, default to `functional` priority order and add a WARNING:
+```
+WARNING: skill_tier not declared. Defaulting to 'functional' weights.
+Add skill_tier: planning | functional | atomic to YAML frontmatter
+for accurate tier-adjusted scoring.
+```

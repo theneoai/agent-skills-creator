@@ -10,8 +10,10 @@ license: MIT
 author:
   name: theneoai
 created: "2026-03-31"
-updated: "2026-03-31"
+updated: "2026-04-11"
 type: api-integration
+
+skill_tier: functional   # Reusable, tool-based subroutine with clear I/O (SkillX three-tier)
 
 tags:
   - api
@@ -19,6 +21,19 @@ tags:
   - validation
   - security
   - automation
+
+triggers:
+  en:
+    - "test this API"
+    - "run API tests"
+    - "validate API response"
+    - "check API endpoint"
+    - "batch test APIs"
+    - "API security scan"
+  zh:
+    - "测试这个API"
+    - "验证API响应"
+    - "批量API测试"
 
 interface:
   input: user-natural-language
@@ -35,8 +50,8 @@ api:
 
 use_to_evolve:
   enabled: true
-  injected_by: "skill-writer v2.0.0"
-  injected_at: "2026-04-01"
+  injected_by: "skill-writer v3.1.0"
+  injected_at: "2026-04-11"
   check_cadence: {lightweight: 10, full_recompute: 50, tier_drift: 100}
   micro_patch_enabled: true
   feedback_detection: true
@@ -45,6 +60,24 @@ use_to_evolve:
   pending_patches: 0
   total_micro_patches_applied: 0
   cumulative_invocations: 0
+---
+
+## Skill Summary
+
+api-tester automates HTTP API testing: it executes requests, validates responses against schemas and status codes, runs security scans (CWE-798/89/78), and generates structured test reports. Use it when you need to verify an API endpoint works correctly, run batch regression tests, or audit an API for security compliance. Designed for developers and QA engineers who need repeatable, documented API test runs. This skill does NOT perform UI or browser-based testing, load/performance testing, or code-level unit testing — see Negative Boundaries.
+
+---
+
+## §N  Negative Boundaries
+
+**Do NOT use this skill for**:
+
+- **Load / performance testing**: If you ask "run 1000 concurrent requests" or "benchmark API throughput", use a dedicated load-testing tool (k6, wrk). This skill executes single requests and small batches, not stress tests.
+- **UI / browser testing**: If the user asks "test my login page" or "check if the button works", route to a browser automation skill. api-tester operates at the HTTP level only.
+- **Unit testing code**: If the user asks "test my Python function" or "write a Jest test", this skill is not appropriate — use a code-testing skill instead.
+- **Generating mock servers**: This skill consumes APIs; it does not create them. Route to an API scaffolding skill for "build me a mock API".
+- **Production traffic replay**: Do not use to replay production logs against live systems without explicit user confirmation. Always confirm the target environment.
+
 ---
 
 ## §1  Identity

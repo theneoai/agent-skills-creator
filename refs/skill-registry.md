@@ -242,7 +242,73 @@ Existing skills without these fields receive an advisory warning; they are not r
 
 ---
 
-## §8  Integration with SkillClaw
+## §8  Semantic Versioning — Breaking Change Matrix
+
+> **Research basis**: Community data shows 60% of production agent failures are caused by
+> unversioned tool / skill changes. This matrix defines what constitutes a MAJOR (breaking)
+> vs. MINOR vs. PATCH change in a skill, so consumers can safely pin versions.
+
+### Version Bump Rules
+
+```
+MAJOR.MINOR.PATCH
+```
+
+| Change Type | Version Bump | Breaking? | Rationale |
+|-------------|-------------|-----------|-----------|
+| **Trigger keyword removed** | MAJOR | ✅ Yes | Consumers relying on that phrase will fail to route |
+| **Trigger keyword renamed** | MAJOR | ✅ Yes | Effectively: remove old + add new |
+| **Output format changed** (new fields, removed fields, type change) | MAJOR | ✅ Yes | Downstream consumers depend on output schema |
+| **Mode removed** | MAJOR | ✅ Yes | Workflows invoking that mode will fail |
+| **Red Line added** (stricter constraint) | MAJOR | ✅ Yes | Existing callers may now be blocked |
+| **Interface.modes changed** | MAJOR | ✅ Yes | Mode routing contract is broken |
+| **New trigger keyword added** | MINOR | No | Extends coverage; backward compatible |
+| **New optional mode added** | MINOR | No | Existing modes unchanged |
+| **New output field added** (additive) | MINOR | No | Existing consumers can ignore new fields |
+| **Security baseline tightened** (advisory → P1) | MINOR | No | More conservative; safe for consumers |
+| **Workflow step added within a mode** | MINOR | No | Output contract unchanged |
+| **Example updated** | PATCH | No | Documentation only |
+| **Trigger keyword added (ZH equivalent)** | PATCH | No | Extends coverage, no removals |
+| **Metadata fields updated** (description, author, dates) | PATCH | No | No behavioral change |
+| **Bug fix** (incorrect output corrected) | PATCH | No | Improves correctness |
+| **UTE cadence thresholds adjusted** | PATCH | No | Internal optimization behavior |
+
+### MAJOR Version Announcement Protocol
+
+When a MAJOR version is published:
+
+1. **Changelog entry** — document every breaking change with old behavior vs. new behavior
+2. **Migration guide** — provide exact changes consumers must make to stay compatible
+3. **Deprecation period** — keep the previous MAJOR version in the registry for ≥ 30 days
+4. **Consumers pinned to old version** — do NOT receive automatic updates; must opt in
+
+```yaml
+# Registry entry for a breaking change
+{
+  "version": "2.0.0",
+  "change_summary": "BREAKING: Removed SCAN mode; merged into REVIEW mode. Update callers to use mode=REVIEW with scan=true parameter.",
+  "breaking_changes": [
+    "mode SCAN removed — use REVIEW with {scan: true}",
+    "output field 'scan_result' renamed to 'security_findings'"
+  ],
+  "migration_guide": "https://github.com/.../MIGRATION-v2.md"
+}
+```
+
+### Skill Tier Change Rules
+
+`skill_tier` changes require special handling:
+
+| Tier Change | Version Bump | Note |
+|-------------|-------------|------|
+| `atomic` → `functional` | MINOR | Skill gained new capabilities; backward compatible |
+| `functional` → `planning` | MINOR | Higher-level orchestration added |
+| `planning` → `functional` | MAJOR | Scope reduction — may remove orchestration capabilities |
+| `functional` → `atomic` | MAJOR | Scope reduction — callers expecting rich workflow may fail |
+
+---
+
+## §9  Integration with SkillClaw
 
 Skills published via the SHARE registry are directly consumable by a SkillClaw
 deployment. The `skills/` directory layout and `registry.json` format are intentionally

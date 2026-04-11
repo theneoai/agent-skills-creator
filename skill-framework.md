@@ -128,15 +128,38 @@ User Input
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Confidence formula** `[ASPIRATIONAL — use as heuristic guide, not literal computation]`:
+**Routing Decision Tree** `[ENFORCED — apply in order, stop at first match]`:
+
 ```
-confidence = primary_match×0.5 + secondary_match×0.2
-           + context_match×0.2 + no_negative×0.1
-language_weight: EN-input→EN×1.0,ZH×0.3 | ZH-input→ZH×1.0,EN×0.3 | mixed→both×1.0
+Step 1 — Primary keyword match (most important signal):
+  Does the input contain a clear mode keyword from the ROUTE table above?
+  YES → confidence = HIGH
+  NO  → continue to Step 2
+
+Step 2 — Context clues:
+  Does the surrounding context (prior conversation, file shared) imply a mode?
+  e.g. user shares a skill.md file + asks to "check it" → EVALUATE implied
+  YES → confidence = MEDIUM
+  NO  → continue to Step 3
+
+Step 3 — Negative signals:
+  Does the input explicitly exclude a mode?
+  e.g. "don't evaluate, just create" → EVALUATE blocked
+  YES (exclusion found) → remove that mode from candidates; re-evaluate
+  NO  → continue to Step 4
+
+Step 4 — Language weight:
+  EN input: EN keywords count 1.0×, ZH keywords count 0.3×
+  ZH input: ZH keywords count 1.0×, EN keywords count 0.3×
+  Mixed:    both count 1.0×
+
+Decision:
+  HIGH confidence (clear keyword match, no ambiguity)     → AUTO-ROUTE
+  MEDIUM confidence (context clue but no direct keyword) → CONFIRM before route
+  LOW confidence (no keyword, weak context, or conflict)  → GRACEFUL DEGRADATION (§3)
+
+Tie-break rule: If two modes score equally, ask the user one clarifying question.
 ```
-> AI uses this formula as a **reasoning scaffold**, not a precise calculation.
-> In practice: if the primary trigger keyword matches clearly → HIGH confidence;
-> if ambiguous → MEDIUM; if the request could mean multiple things → LOW → ask user.
 
 ---
 
@@ -193,15 +216,14 @@ Every mode executes via Plan-Execute-Summarize:
 │  PLAN                                                    │
 │  Multi-pass self-review → consensus on approach           │
 │  Build cognitive graph of steps                          │
-│  See: claude/refs/self-review.md                         │
+│  Extended spec: claude/refs/self-review.md               │
 └──────────────────────────────┬───────────────────────────┘
                                │ plan reviewed
                                ▼
 ┌──────────────────────────────────────────────────────────┐
 │  EXECUTE                                                 │
-│  Implement plan with error recovery fallback             │
+│  Implement plan with error recovery (rules below)        │
 │  Hard checkpoint after each phase                        │
-│  See: claude/refs/self-review.md §4 (error recovery)    │
 └──────────────────────────────┬───────────────────────────┘
                                │ execution complete
                                ▼
@@ -212,6 +234,22 @@ Every mode executes via Plan-Execute-Summarize:
 │  Route: CERTIFIED | TEMP_CERT | HUMAN_REVIEW | ABORT     │
 └──────────────────────────────────────────────────────────┘
 ```
+
+### Inline Error Recovery Rules `[ENFORCED — no companion file required]`
+
+These rules apply regardless of whether `claude/refs/self-review.md` is available:
+
+| Error Type | Recovery Action |
+|-----------|----------------|
+| **Phase output missing** (e.g. GENERATE produced no skill text) | Retry once with explicit output instruction; if still missing → HUMAN_REVIEW |
+| **Security P0 detected mid-phase** | ABORT immediately; halt all subsequent phases |
+| **LEAN score < 300 after GENERATE** | Do NOT deliver; auto-route to targeted OPTIMIZE for lowest dimension |
+| **Checkpoint gate fails** (e.g. placeholders remain after Phase 4) | Re-run the failed phase once; if still failing → flag TEMP_CERT + advisory |
+| **Companion file unavailable** (refs/ not loaded) | Proceed with inline rules only; note "companion file unavailable" in output; do NOT abort |
+| **User provides no answer to elicitation Q** (§7) | Skip with default + WARNING; do NOT block if user skips > 2 questions |
+| **External fetch fails** (INSTALL mode) | Retry once after 2s; if still fails → ask user for local path |
+
+**Escalation rule**: After any two consecutive phase failures → escalate to HUMAN_REVIEW immediately rather than attempting further retries.
 
 ---
 
@@ -257,20 +295,46 @@ Template files: `claude/templates/<type>.md`
 
 **Purpose**: Rapid triage without LLM calls. Use for quick checks or high-volume screening.
 
+### Check Reliability Tiers
+
+Each LEAN check is labeled by its execution method:
+
+- **`[STATIC]`** — Deterministic regex / structural match. Same skill → same result every run.
+  Score variance: ±0 pts. These checks are fully trustworthy.
+- **`[HEURISTIC]`** — Requires LLM judgment to assess adequacy or quality.
+  Score variance: ±5–15 pts per dimension. Treat as an estimate, not a precise score.
+
+> **Practical implication**: If two LEAN runs produce scores within ±20 pts, consider them
+> equivalent. Differences beyond ±30 pts indicate a genuinely borderline skill — escalate to
+> full EVALUATE for authoritative scoring.
+
 ### Scoring (500-point heuristic → maps to 1000-point scale)
 
 LEAN checks map directly to the 7 unified dimensions (see `config.SCORING.dimensions`):
 
-| Dimension | LEAN Check | Points |
-|-----------|-----------|--------|
-| **systemDesign** (max 95) | Identity section present + Red Lines / 严禁 text | 55 + 40 |
-| **domainKnowledge** (max 95) | Template accurately used + field specificity visible | 55 + 40 |
-| **workflow** (max 75) | ≥ 3 mode sections (`## §N`) + Quality Gates table | 45 + 30 |
-| **errorHandling** (max 75) | Error/recovery section present + escalation paths documented | 45 + 30 |
-| **examples** (max 75) | ≥ 2 code-block usage examples + trigger keywords (EN + ZH) | 45 + 30 |
-| **security** (max 45) | Security Baseline section + no hardcoded secrets pattern + ASI01 clear | 25 + 10 + 10 |
-| **metadata** (max 40) | YAML frontmatter (name, version, interface) + trigger phrases (3–8) + Negative Boundaries section | 15 + 15 + 10 |
-| **Total** | | **500** |
+| Dimension | LEAN Check | Points | Reliability |
+|-----------|-----------|--------|-------------|
+| **systemDesign** (max 95) | Identity section present (`## §1` or `## Identity`) | 55 | `[STATIC]` |
+| | Red Lines / 严禁 text present in document | 40 | `[STATIC]` |
+| **domainKnowledge** (max 95) | Template type correctly matched (API/pipeline/workflow keywords present) | 55 | `[HEURISTIC]` |
+| | Field specificity visible (concrete values, not generic placeholders) | 40 | `[HEURISTIC]` |
+| **workflow** (max 75) | ≥ 3 `## §N` pattern sections (regex: `^## §\d`) | 45 | `[STATIC]` |
+| | Quality Gates table with numeric thresholds present | 30 | `[STATIC]` |
+| **errorHandling** (max 75) | Error/recovery section present (keyword: error\|recovery\|rollback\|失败) | 45 | `[STATIC]` |
+| | Escalation paths documented (keyword: escalat\|human\|HUMAN_REVIEW\|升级) | 30 | `[HEURISTIC]` |
+| **examples** (max 75) | ≥ 2 fenced code blocks (` ``` ` count ≥ 4) | 45 | `[STATIC]` |
+| | Trigger keywords present in EN + ZH (min 1 of each language) | 30 | `[STATIC]` |
+| **security** (max 45) | Security Baseline section present (keyword: security\|安全\|CWE\|OWASP) | 25 | `[STATIC]` |
+| | No hardcoded secrets pattern (regex: `password\s*=\|api_key\s*=\|token\s*=`) | 10 | `[STATIC]` |
+| | ASI01 Prompt Injection: no unguarded `{user_input}` interpolation in commands | 10 | `[HEURISTIC]` |
+| **metadata** (max 40) | YAML frontmatter present with `name`, `version`, `interface` fields | 15 | `[STATIC]` |
+| | `triggers` field with ≥ 3 EN + ≥ 2 ZH phrases | 15 | `[STATIC]` |
+| | Negative Boundaries section present ("Do NOT use for" or "严禁触发") | 10 | `[STATIC]` |
+| **Total** | | **500** | |
+
+> **Static-only sub-score**: Sum of all `[STATIC]` checks = 335 pts max.
+> If a skill scores ≥ 300 on static checks alone, it passes structural baseline regardless
+> of LLM-evaluated dimensions. This provides a reliable floor score independent of model variance.
 
 > **Metadata weight increase** (from 25→40 pts): Research basis — SkillRouter (arxiv:2603.22455)
 > found that trigger phrase coverage in skill body is the decisive routing signal. Negative
@@ -373,18 +437,27 @@ Ask **one question at a time**. Wait for answer before next question.
 ```
 variance = | (phase2_score / 3) - (phase3_score / 4) |
 ```
+> **Why divide by 3 and 4?** This normalizes both scores to "points per point available":
+> Phase 2 max = 300, so dividing by 3 gives a value in the 0–100 range.
+> Phase 3 max = 400, so dividing by 4 also gives 0–100 range.
+> The formula then measures the gap between text quality density and runtime density.
+> A skill scoring 270/300 on text (90%) but 280/400 on runtime (70%) has variance = |90 − 70| = 20.
+
 High variance = artifact looks good on paper but fails runtime (or vice versa).
 
 ### Evaluation Workflow
 
 ```
 1. LEAN pre-check (§6) → if UNCERTAIN or FAIL → full pipeline
-2. Phase 1: Parse — YAML, required sections, trigger presence, no placeholders
-3. Phase 2: Text — 6 sub-dimensions (see rubrics.md §2)
-4. Phase 3: Runtime — benchmark test cases (claude/eval/benchmarks.md)
-5. Phase 4: Certification — compute variance, run security scan, check gates
-6. REPORT — per-phase scores + tier + issues list
-7. ROUTE:
+2. READ skill_tier from YAML frontmatter (planning | functional | atomic)
+   → If present: apply tier-adjusted Phase 2 weights (claude/eval/rubrics.md §8)
+   → If absent or 'functional': use default Phase 2 weights (rubrics.md §4)
+3. Phase 1: Parse — YAML, required sections, trigger presence, no placeholders
+4. Phase 2: Text — 7 sub-dimensions with tier-adjusted weights
+5. Phase 3: Runtime — benchmark test cases (claude/eval/benchmarks.md)
+6. Phase 4: Certification — compute variance, run security scan, check tier-adjusted gates
+7. REPORT — per-phase scores + tier + issues list (include skill_tier in report header)
+8. ROUTE:
      CERTIFIED → deliver
      FAIL       → auto-route to OPTIMIZE (§9)
 ```
@@ -401,6 +474,15 @@ Full protocol: `claude/refs/self-review.md §2`
 ---
 
 ## §9  OPTIMIZE Mode — 7-Dimension 9-Step Loop
+
+### Scoring Scale in OPTIMIZE Loop
+
+> **OPTIMIZE uses the LEAN 500-point scale for all re-scoring** (Steps 1 and 6).
+> Reason: LEAN is fast and consistent enough for iteration feedback. Full 1000-pt EVALUATE
+> runs only at: (a) loop start if no prior EVALUATE exists, and (b) optionally post-convergence.
+>
+> Conversion: lean_score × 2 = estimated full score. Bronze proxy: lean ≥ 350.
+> The VERIFY step (Step 10) also uses LEAN 500-pt scale.
 
 ### 7 Dimensions (unified with LEAN and EVALUATE)
 

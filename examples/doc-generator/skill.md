@@ -11,8 +11,10 @@ author:
   name: Skill Framework Team
   email: team@skillframework.dev
 created: "2026-03-31"
-updated: "2026-03-31"
+updated: "2026-04-11"
 type: data-pipeline
+
+skill_tier: functional   # Reusable data pipeline: input=code/data sources, output=documentation
 
 tags:
   - data
@@ -20,6 +22,21 @@ tags:
   - documentation
   - code-analysis
   - multilingual
+
+triggers:
+  en:
+    - "generate documentation"
+    - "generate docs"
+    - "create API docs"
+    - "document this code"
+    - "write README"
+    - "batch document"
+    - "convert docs to markdown"
+  zh:
+    - "生成文档"
+    - "生成API文档"
+    - "文档化这段代码"
+    - "批量生成文档"
 
 interface:
   input: multimodal       # Supports code files, markdown, JSON, images
@@ -34,8 +51,8 @@ pipeline:
 
 use_to_evolve:
   enabled: true
-  injected_by: "skill-writer v2.0.0"
-  injected_at: "2026-04-01"
+  injected_by: "skill-writer v3.1.0"
+  injected_at: "2026-04-11"
   check_cadence: {lightweight: 10, full_recompute: 50, tier_drift: 100}
   micro_patch_enabled: true
   feedback_detection: true
@@ -44,6 +61,24 @@ use_to_evolve:
   pending_patches: 0
   total_micro_patches_applied: 0
   cumulative_invocations: 0
+---
+
+## Skill Summary
+
+doc-generator extracts, transforms, validates, and formats documentation from code files, API specs, and data sources using an ETVF pipeline. Use it when you need to generate API reference docs, README files, or convert existing docs to markdown — for single files or batch processing entire projects. Designed for developers and technical writers who need consistent, structured documentation output. This skill does NOT write new code comments or features, review code quality, or perform UI testing — see Negative Boundaries.
+
+---
+
+## §N  Negative Boundaries
+
+**Do NOT use this skill for**:
+
+- **Writing inline code comments**: If the user asks "add JSDoc comments to my functions", use a code annotation skill. This skill extracts and formats existing documentation, it doesn't write comments into source files.
+- **Code review or quality assessment**: If the user asks "review my code" or "check for bugs", route to the code-reviewer skill.
+- **Generating test cases**: If the user asks "write tests for this API", use a test generation skill.
+- **Content writing / marketing copy**: If the user asks "write a blog post about my API", use a content generation skill. This skill produces technical reference documentation only.
+- **Real-time API introspection**: This skill processes files you provide. It cannot connect to live APIs and auto-discover endpoints — provide an OpenAPI spec or code files as input.
+
 ---
 
 ## §1  Identity
