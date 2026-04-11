@@ -156,12 +156,23 @@ const PLATFORMS = {
 };
 
 /**
- * Unified 7-dimension scoring specification.
+ * Unified 7-dimension scoring specification — canonical Single Source of Truth.
  *
- * Design goal: LEAN, EVALUATE, and OPTIMIZE all operate on the same 7 dimensions.
- * - LEAN: each dimension scored 0–50 pt  → max 350 pt (×2 → reported as /700 on 1000-scale)
- * - EVALUATE: each dimension scored at full weight → max 1000 pt
- * - OPTIMIZE: tracks per-dimension deltas; lowest-scoring dimension drives strategy selection
+ * All three evaluation modes use this schema:
+ *   - LEAN    : each dimension scored 0–leanMax → total 500 pts  (heuristic, no LLM)
+ *   - EVALUATE: Phase 2 Text Quality uses these 7 dimensions → total 300 pts
+ *               (weight × 300 = per-dimension max in Phase 2)
+ *               Phase 4 security scan is a *separate* gate on top of the security dimension.
+ *   - OPTIMIZE: tracks per-dimension score deltas; weakest dimension drives strategy selection.
+ *
+ * Correspondence with eval/rubrics.md Phase 2 table (authoritative version synced here):
+ *   systemDesign    ↔ "System Design"      (20%, 60 pts)
+ *   domainKnowledge ↔ "Domain Knowledge"   (20%, 60 pts)
+ *   workflow        ↔ "Workflow Definition" (15%, 45 pts)
+ *   errorHandling   ↔ "Error Handling"     (15%, 45 pts)
+ *   examples        ↔ "Examples"           (15%, 45 pts)
+ *   security        ↔ "Security Baseline"  (10%, 30 pts)
+ *   metadata        ↔ "Metadata Quality"   ( 5%, 15 pts)
  *
  * Enforcement level: [ENFORCED] for dimension names & weights; [ASPIRATIONAL] for cross-session aggregation.
  */

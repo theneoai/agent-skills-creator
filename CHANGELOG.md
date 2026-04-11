@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-04-11
+
+### 🐛 Fixed
+
+- **Variable shadowing in `embedder.js`** — `embedCreateMode`, `embedEvaluateMode`, `embedOptimizeMode`, and `embedSharedResources` all used `const config = DEFAULT_CONFIG` which shadowed the module-level `config` import; renamed to `platformCfg` throughout
+- **Input mutation bug in `opencode.js`** — `skillContent +=` mutated the function parameter; replaced with immutable local variable `formatted`
+- **`validateEmbeddedContent` narrow regex** — placeholder detection used `/\{\{\w+\}\}/g` which missed `{{OUTER-KEY}}` and `{{outer.key}}` style markers; now uses `/\{\{[\w.-]+\}\}/g` with deduplication
+- **`validate.js` missing JSON output checks** — only `.md` files were validated; now also validates `.json` outputs for MCP (schema_version, name, tools[]) and OpenAI (name, instructions)
+- **`validate.js` placeholder regex** — upgraded from `/\{\{[A-Z_0-9]+\}\}/` to `/\{\{[\w.-]+\}\}/` to match extended placeholder patterns in generated files
+- **MCP adapter empty description** — `mcp.formatSkill()` now falls back to inline body extraction when YAML frontmatter is absent (H1 title → kebab-case name; blockquote/first paragraph → description)
+- **`openclaw.js` REQUIRED_SECTIONS mis-alignment** — `## §1 Identity` was listed as required but never injected by `formatSkill()`; removed from REQUIRED_SECTIONS (adapter guarantees only sections it injects: §4 LoongFlow, §9 Self-Review)
+- **CLI validate exit code** — `skill-writer-builder validate` now exits with code 1 when `result.valid === false`, enabling CI pipeline integration
+
+### ✨ Added
+
+- **MCP platform support** — 7th platform adapter (`builder/src/platforms/mcp.js`) generating JSON manifests conforming to Model Context Protocol schema v1.0; includes `schema_version`, `tools[]`, `capabilities`, and `resources[]`
+- **`MarkdownAdapter` base class** — shared base for Claude, Gemini adapters; extended to OpenCode via `OpenCodeAdapter extends MarkdownAdapter`
+- **Integration test suite** (`builder/tests/unit/integration.test.js`) — 30 new end-to-end tests covering the full `reader → embedder → adapter` pipeline for all 7 platforms
+- **Adapter tests for all 7 platforms** — added full test coverage for OpenCode (11 tests), OpenClaw (12), Cursor (9), OpenAI (10)
+
+### 🔧 Changed
+
+- **`opencode.js` refactored to `OpenCodeAdapter extends MarkdownAdapter`** — eliminates ~100 lines of duplicate code; XDG install path (`~/.config/opencode/skills`) preserved via `getInstallPath()` override
+- **`MarkdownAdapter.generateMetadata()` dynamic version** — `testedVersions` array now reads current version from `package.json` dynamically instead of a hardcoded list
+- **Scoring alignment** — `eval/rubrics.md` Phase 2 updated to match `config.js` canonical 7-dimension schema: Workflow Definition reduced from 20% (60 pts) to 15% (45 pts); former "Metadata Quality" (10%, 30 pts) split into "Security Baseline" (10%, 30 pts) + "Metadata Quality" (5%, 15 pts); Phase 2 total unchanged at 300 pts
+- **`config.js` SCORING documentation** — added precise dimension ↔ rubric mapping table; clarified Phase 2 vs Phase 4 security gate distinction
+- **`ARCHITECTURE-REVIEW.md` updated to v2.2.0** — documents all fixes, test expansion, and adds §10 (v2.2.0 architecture improvements)
+
+### 📊 Metrics
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Unit tests | 0 structured | **176 (all passing)** |
+| Adapter test coverage | Claude, Gemini, MCP | **All 7 platforms** |
+| Integration tests | None | **30 end-to-end** |
+| Platforms supported | 6 | **7 (+ MCP)** |
+| `opencode.js` LOC | ~158 | **~115 (−27%)** |
+| validate JSON output coverage | 0% | **100%** |
+
+---
+
 ## [2.1.0] - 2026-04-04
 
 ### 🔧 Simplified

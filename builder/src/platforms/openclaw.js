@@ -25,11 +25,17 @@ const OPENCLAW_METADATA = {
   runtime: { timeout: 30000, maxRetries: 3, checkpointInterval: 10 },
 };
 
-/** Sections that OpenClaw mandates in the skill body */
+/**
+ * Sections that OpenClaw mandates in the skill body.
+ *
+ * NOTE: Only list sections that formatSkill() INJECTS when absent.
+ * §1 (Identity/Overview) comes from the source skill and is not injected,
+ * so it is NOT included here — its presence is a source-skill concern, not
+ * an adapter guarantee.
+ */
 const REQUIRED_SECTIONS = [
-  '## §1 Identity',
-  '## §4 LoongFlow Orchestration',
-  '## §9 Self-Review Protocol',
+  '## §4 LoongFlow Orchestration',  // injected by formatSkill if missing
+  '## §9 Self-Review Protocol',     // injected by formatSkill if missing
 ];
 
 /** Sections that are strongly recommended but not blocking */

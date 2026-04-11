@@ -203,6 +203,292 @@ describe('MCP Adapter', () => {
   });
 });
 
+describe('OpenCode Adapter (extends MarkdownAdapter)', () => {
+  const opencode = require('../../src/platforms/opencode');
+
+  test('should have name = opencode', () => {
+    expect(opencode.name).toBe('opencode');
+  });
+
+  test('should expose all required adapter methods', () => {
+    expect(typeof opencode.formatSkill).toBe('function');
+    expect(typeof opencode.getInstallPath).toBe('function');
+    expect(typeof opencode.generateMetadata).toBe('function');
+    expect(typeof opencode.validateSkill).toBe('function');
+  });
+
+  test('install path should reference .config/opencode/skills', () => {
+    const p = opencode.getInstallPath();
+    expect(p).toContain('.config');
+    expect(p).toContain('opencode');
+    expect(p).toContain('skills');
+  });
+
+  test('formatSkill should accept valid content and return string', () => {
+    const result = opencode.formatSkill(VALID_SKILL);
+    expect(typeof result).toBe('string');
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  test('formatSkill should append **Triggers** block when absent', () => {
+    const result = opencode.formatSkill(VALID_SKILL);
+    expect(result).toContain('**Triggers**:');
+  });
+
+  test('formatSkill should not duplicate **Triggers** block when already present', () => {
+    const withTriggers = VALID_SKILL + '\n\n**Triggers**:\n- test trigger\n';
+    const result = opencode.formatSkill(withTriggers);
+    const count = (result.match(/\*\*Triggers\*\*:/g) || []).length;
+    expect(count).toBe(1);
+  });
+
+  test('formatSkill should throw on missing frontmatter', () => {
+    expect(() => opencode.formatSkill('# No frontmatter\n\nContent')).toThrow();
+  });
+
+  test('formatSkill should not mutate the input string', () => {
+    const original = VALID_SKILL;
+    const copy = String(original);
+    opencode.formatSkill(original);
+    expect(original).toBe(copy);
+  });
+
+  test('generateMetadata should include testedVersions array', () => {
+    const meta = opencode.generateMetadata({ version: '2.0.0' });
+    expect(meta.platform).toBe('opencode');
+    expect(Array.isArray(meta.compatibility.testedVersions)).toBe(true);
+    expect(meta.compatibility.testedVersions.length).toBeGreaterThan(0);
+  });
+
+  test('validateSkill should pass valid content', () => {
+    const result = opencode.validateSkill(VALID_SKILL);
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  test('validateSkill should fail on missing frontmatter', () => {
+    const result = opencode.validateSkill('# No frontmatter\n\nContent');
+    expect(result.valid).toBe(false);
+    expect(result.errors.some(e => /frontmatter/i.test(e))).toBe(true);
+  });
+});
+
+describe('OpenClaw Adapter', () => {
+  const openclaw = require('../../src/platforms/openclaw');
+
+  test('should have name = openclaw', () => {
+    expect(openclaw.name).toBe('openclaw');
+  });
+
+  test('install path should reference .openclaw/skills', () => {
+    const p = openclaw.getInstallPath();
+    expect(p).toContain('.openclaw');
+    expect(p).toContain('skills');
+  });
+
+  test('formatSkill should inject metadata.openclaw into frontmatter', () => {
+    const result = openclaw.formatSkill(VALID_SKILL);
+    expect(result).toContain('openclaw:');
+  });
+
+  test('formatSkill should inject LoongFlow section when absent', () => {
+    const result = openclaw.formatSkill(VALID_SKILL);
+    expect(result).toContain('LoongFlow');
+  });
+
+  test('formatSkill should inject Self-Review section when absent', () => {
+    const result = openclaw.formatSkill(VALID_SKILL);
+    expect(result).toContain('Self-Review Protocol');
+  });
+
+  test('formatSkill should inject UTE section when absent', () => {
+    const result = openclaw.formatSkill(VALID_SKILL);
+    expect(result).toContain('UTE Injection');
+  });
+
+  test('formatSkill should not duplicate sections already present', () => {
+    // Run formatSkill twice — idempotent
+    const once = openclaw.formatSkill(VALID_SKILL);
+    const twice = openclaw.formatSkill(once);
+    const loongFlowCount = (twice.match(/LoongFlow/g) || []).length;
+    // Should appear the same number of times as after first pass
+    expect((once.match(/LoongFlow/g) || []).length).toBe(loongFlowCount);
+  });
+
+  test('formatSkill should throw on missing frontmatter', () => {
+    expect(() => openclaw.formatSkill('# No frontmatter\n\nContent')).toThrow();
+  });
+
+  test('validateSkill should report error for missing metadata.openclaw', () => {
+    const result = openclaw.validateSkill(VALID_SKILL);
+    // VALID_SKILL has no openclaw metadata block → should be an error
+    expect(result.errors.some(e => /openclaw/i.test(e))).toBe(true);
+  });
+
+  test('validateSkill passes after formatSkill enriches the content', () => {
+    const enriched = openclaw.formatSkill(VALID_SKILL);
+    const result = openclaw.validateSkill(enriched);
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  test('fromOpenCode should convert opencode content to openclaw format', () => {
+    const result = openclaw.fromOpenCode(VALID_SKILL);
+    expect(result).toContain('openclaw:');
+  });
+
+  test('generateMetadata should reference openclaw format', () => {
+    const meta = openclaw.generateMetadata({ version: '1.0.0' });
+    expect(meta.platform).toBe('openclaw');
+    expect(meta.format).toBe('AgentSkills');
+  });
+});
+
+describe('Cursor Adapter', () => {
+  const cursor = require('../../src/platforms/cursor');
+
+  test('should have name = cursor', () => {
+    expect(cursor.name).toBe('cursor');
+  });
+
+  test('install path should reference .cursor/skills', () => {
+    const p = cursor.getInstallPath();
+    expect(p).toContain('.cursor');
+    expect(p).toContain('skills');
+  });
+
+  test('formatSkill should convert {{KEY}} placeholders to ${KEY}', () => {
+    const content = `---
+name: test
+version: 1.0.0
+description: test
+---
+Hello {{NAME}}, version {{VERSION}}`;
+    const result = cursor.formatSkill(content);
+    expect(result).not.toContain('{{NAME}}');
+    expect(result).not.toContain('{{VERSION}}');
+    expect(result).toContain('${NAME}');
+    expect(result).toContain('${VERSION}');
+  });
+
+  test('formatSkill should convert YAML frontmatter to JSON code block', () => {
+    const result = cursor.formatSkill(VALID_SKILL);
+    expect(result).toContain('```json');
+    expect(result).not.toMatch(/^---/);
+  });
+
+  test('formatSkill should produce valid JSON in the code block', () => {
+    const result = cursor.formatSkill(VALID_SKILL);
+    const jsonBlock = result.match(/```json\n([\s\S]*?)\n```/);
+    expect(jsonBlock).not.toBeNull();
+    expect(() => JSON.parse(jsonBlock[1])).not.toThrow();
+  });
+
+  test('formatSkill should return string for valid input', () => {
+    const result = cursor.formatSkill(VALID_SKILL);
+    expect(typeof result).toBe('string');
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  test('formatSkill should throw on empty input', () => {
+    expect(() => cursor.formatSkill('')).toThrow();
+    expect(() => cursor.formatSkill(null)).toThrow();
+  });
+
+  test('validateSkill should warn if no ${} placeholders', () => {
+    const noPlaceholders = `---
+name: test
+version: 1.0.0
+description: test
+---
+No placeholders here.`;
+    // After formatSkill converts frontmatter → JSON block, there are no ${}
+    // validateSkill checks the RAW content — content without ${} gets a warning
+    const result = cursor.validateSkill(noPlaceholders);
+    expect(result.valid).toBe(true); // no errors, only warnings
+    expect(result.warnings.length).toBeGreaterThan(0);
+  });
+
+  test('generateMetadata should return cursor platform name', () => {
+    const meta = cursor.generateMetadata({ version: '1.0.0' });
+    expect(meta.platform).toBe('cursor');
+  });
+});
+
+describe('OpenAI Adapter', () => {
+  const openai = require('../../src/platforms/openai');
+
+  test('should have name = openai', () => {
+    expect(openai.name).toBe('openai');
+  });
+
+  test('install path should reference .openai/skills', () => {
+    const p = openai.getInstallPath();
+    expect(p).toContain('.openai');
+    expect(p).toContain('skills');
+  });
+
+  test('formatSkill should return valid JSON string', () => {
+    const result = openai.formatSkill(VALID_SKILL);
+    expect(() => JSON.parse(result)).not.toThrow();
+  });
+
+  test('formatSkill should extract name from frontmatter', () => {
+    const result = openai.formatSkill(VALID_SKILL);
+    const obj = JSON.parse(result);
+    expect(obj.name).toBe('test-skill');
+  });
+
+  test('formatSkill should extract description from frontmatter', () => {
+    const result = openai.formatSkill(VALID_SKILL);
+    const obj = JSON.parse(result);
+    expect(obj.description).toBe('A test skill');
+  });
+
+  test('formatSkill should include instructions field with skill body', () => {
+    const result = openai.formatSkill(VALID_SKILL);
+    const obj = JSON.parse(result);
+    expect(typeof obj.instructions).toBe('string');
+    expect(obj.instructions.length).toBeGreaterThan(0);
+  });
+
+  test('formatSkill should include metadata.platform = openai', () => {
+    const result = openai.formatSkill(VALID_SKILL);
+    const obj = JSON.parse(result);
+    expect(obj.metadata.platform).toBe('openai');
+  });
+
+  test('formatSkill should throw on empty input', () => {
+    expect(() => openai.formatSkill('')).toThrow();
+    expect(() => openai.formatSkill(null)).toThrow();
+  });
+
+  test('validateSkill should pass valid JSON', () => {
+    const formatted = openai.formatSkill(VALID_SKILL);
+    const result = openai.validateSkill(formatted);
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  test('validateSkill should fail on invalid JSON', () => {
+    const result = openai.validateSkill('{broken json');
+    expect(result.valid).toBe(false);
+    expect(result.errors.some(e => /JSON/i.test(e))).toBe(true);
+  });
+
+  test('validateSkill should fail when required fields are missing', () => {
+    const incomplete = JSON.stringify({ name: 'test' });
+    const result = openai.validateSkill(incomplete);
+    expect(result.valid).toBe(false);
+  });
+
+  test('generateMetadata should return openai platform name', () => {
+    const meta = openai.generateMetadata({ version: '1.0.0' });
+    expect(meta.platform).toBe('openai');
+    expect(meta.format).toBe('JSON');
+  });
+});
+
 describe('Platform Registry', () => {
   test('should support all 7 platforms including mcp', () => {
     const supported = platforms.getSupportedPlatforms();

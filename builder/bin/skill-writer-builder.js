@@ -52,7 +52,11 @@ program
   .description('Validate core engine structure and content')
   .action(async () => {
     try {
-      await validate();
+      const result = await validate();
+      // Propagate validation failure to the shell so CI pipelines can detect it
+      if (!result.valid) {
+        process.exit(1);
+      }
     } catch (error) {
       console.error(chalk.red('Validation failed:'), error.message);
       process.exit(1);

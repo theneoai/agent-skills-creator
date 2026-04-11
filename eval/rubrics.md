@@ -62,16 +62,22 @@ Heuristic checks only. Fast, no LLM.
 
 ## §4  Phase 2 — Text Quality (0–300 pts)
 
-Static analysis across 6 sub-dimensions. Scored in Pass 1.
+Static analysis across **7 sub-dimensions** (canonical schema: `builder/src/config.js SCORING.dimensions`).
+Scored in Pass 1.
 
 | Sub-Dimension | Max | Weight | What to Check |
 |---------------|-----|--------|--------------|
 | **System Design** | 60 | 20% | Clear identity, role hierarchy, design pattern named |
 | **Domain Knowledge** | 60 | 20% | Template-specific accuracy (API fields, pipeline stages, workflow steps) |
-| **Workflow Definition** | 60 | 20% | Phase sequence complete, exit criteria per phase, loop gates explicit |
+| **Workflow Definition** | 45 | 15% | Phase sequence complete, exit criteria per phase, loop gates explicit |
 | **Error Handling** | 45 | 15% | Recovery paths named, escalation triggers defined, timeout values set |
 | **Examples** | 45 | 15% | ≥ 2 examples, both EN and ZH or bilingual triggers, output shown |
-| **Metadata Quality** | 30 | 10% | YAML complete, version semver, author, dates, description bilingual |
+| **Security Baseline** | 30 | 10% | Security section present, CWE reference, no hardcoded-credential patterns in text |
+| **Metadata Quality** | 15 | 5% | YAML complete, version semver, author, dates, description bilingual |
+
+> **Note on Security dimension**: Phase 4 (Certification) additionally runs an automated CWE pattern
+> scan. Phase 2 checks whether security *documentation* in the skill text is adequate; Phase 4
+> checks the generated skill content itself. Both deductions are applied independently.
 
 ### Scoring Rubric per Sub-Dimension
 

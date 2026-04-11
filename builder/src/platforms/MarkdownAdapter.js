@@ -1,15 +1,28 @@
 /**
  * Platform Adapter Base Class
- * 
+ *
  * Shared base class for Markdown-based platform adapters (Claude, Gemini, OpenCode, OpenClaw).
  * Eliminates code duplication between adapters.
- * 
+ *
  * @module builder/src/platforms/MarkdownAdapter
- * @version 2.1.0
+ * @version 2.2.0
  */
 
 const path = require('path');
 const os = require('os');
+
+// Read builder version once so generateMetadata doesn't re-require on every call.
+let _builderVersion;
+function getBuilderVersion() {
+  if (!_builderVersion) {
+    try {
+      _builderVersion = require('../../package.json').version;
+    } catch {
+      _builderVersion = '0.0.0';
+    }
+  }
+  return _builderVersion;
+}
 
 /**
  * Base class for Markdown-based platform adapters
@@ -94,11 +107,13 @@ tags: {{tags}}
   }
 
   /**
-   * Generate platform-specific metadata
+   * Generate platform-specific metadata.
+   * Uses the builder's own package.json version as the highest tested version.
    * @param {Object} skillData - Skill data object
    * @returns {Object} Platform metadata
    */
   generateMetadata(skillData) {
+    const builderVersion = getBuilderVersion();
     return {
       platform: this.name,
       format: 'SKILL.md',
@@ -106,7 +121,9 @@ tags: {{tags}}
       created: new Date().toISOString(),
       compatibility: {
         minVersion: '1.0.0',
-        testedVersions: ['1.0.0', '2.0.0', '2.1.0'],
+        testedVersions: ['1.0.0', '2.0.0', '2.1.0', builderVersion].filter(
+          (v, i, arr) => arr.indexOf(v) === i   // deduplicate
+        ),
       },
     };
   }
