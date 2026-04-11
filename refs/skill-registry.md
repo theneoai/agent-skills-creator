@@ -1,0 +1,236 @@
+# Skill Registry Specification
+
+> **Purpose**: Canonical format for skill identity, versioning, and shared distribution.
+> **Load**: When §16 (INSTALL / SHARE) of `claude/skill-writer.md` is accessed.
+> **Inspired by**: SkillClaw's skill registry with deterministic IDs and version history.
+> **Enforcement**: `[ENFORCED]` for ID generation and format; `[ASPIRATIONAL]` for remote sync.
+
+---
+
+## §1  Concept
+
+The Skill Registry provides:
+1. **Deterministic identity** — each skill has a stable ID derived from its name
+2. **Version history** — up to 20 recent versions tracked per skill
+3. **Distribution metadata** — enables push/pull/sync across teams and backends
+4. **Conflict resolution** — SHA-256 comparison + merge protocol for concurrent edits
+
+The registry is the backbone of the SHARE mode (push/pull skills to cloud storage).
+
+---
+
+## §2  Skill ID Scheme
+
+Every skill has a deterministic ID based on its canonical name:
+
+```
+skill_id = SHA-256(skill_name)[:12]   (lowercase hex)
+
+Examples:
+  "api-tester"    → SHA-256("api-tester")[:12]    = "a1b2c3d4e5f6"
+  "code-reviewer" → SHA-256("code-reviewer")[:12] = "7f8a9b0c1d2e"
+  "doc-generator" → SHA-256("doc-generator")[:12] = "3e4f5a6b7c8d"
+```
+
+**Properties**:
+- Same name always produces the same ID — enables idempotent push/pull
+- 12 hex characters = 48 bits — collision probability negligible for skill libraries < 10M skills
+- Compatible with SkillClaw's registry format
+
+### Adding `skill_id` to YAML frontmatter
+
+When a skill is registered (on first SHARE push or explicit registration), add to frontmatter:
+
+```yaml
+skill_id: "a1b2c3d4e5f6"   # SHA-256(name)[:12]
+```
+
+**AI approximation** `[ENFORCED via convention]`: Since AI cannot compute SHA-256, use
+this deterministic abbreviation: take the first 12 characters of
+`base64(skill_name).replace(/[^a-z0-9]/g, '').toLowerCase()`. This is a stable
+approximation sufficient for local tracking; true SHA-256 is computed server-side on push.
+
+---
+
+## §3  Registry File Format
+
+The registry is stored as `registry.json` in the shared storage root:
+
+```json
+{
+  "schema_version": "1.0",
+  "registry_updated": "<ISO-8601>",
+  "skills": [
+    {
+      "id": "a1b2c3d4e5f6",
+      "name": "api-tester",
+      "current_version": "1.2.0",
+      "created_at": "2026-04-01",
+      "updated_at": "2026-04-10",
+      "certified_tier": "GOLD",
+      "lean_score": 920,
+      "platforms": ["claude", "opencode", "openclaw"],
+      "tags": ["api", "testing", "http"],
+      "history": [
+        {
+          "version": "1.2.0",
+          "score": 920,
+          "tier": "GOLD",
+          "date": "2026-04-10",
+          "change_summary": "Added retry logic and ZH trigger support",
+          "sha256": "<SHA-256 of skill file content>"
+        },
+        {
+          "version": "1.1.0",
+          "score": 895,
+          "tier": "GOLD",
+          "date": "2026-04-05",
+          "change_summary": "Improved error handling section",
+          "sha256": "<SHA-256 of skill file content>"
+        }
+      ]
+    }
+  ]
+}
+```
+
+**History limit**: Maximum 20 entries per skill. When the 21st version is added, drop the oldest entry.
+
+---
+
+## §4  Storage Layout
+
+```
+storage-root/
+├── registry.json              # Master skill registry
+├── skills/                    # Published skill files
+│   ├── a1b2c3d4e5f6/          # One directory per skill_id
+│   │   ├── current.md         # Latest version (symlink or copy)
+│   │   ├── v1.2.0.md          # Pinned versions
+│   │   ├── v1.1.0.md
+│   │   └── v1.0.0.md
+│   └── 7f8a9b0c1d2e/
+│       ├── current.md
+│       └── v2.0.0.md
+└── sessions/                  # COLLECT mode session artifacts (see refs/session-artifact.md)
+    └── 2026-04-11-a3f9c2.json
+```
+
+**Supported backends** `[ASPIRATIONAL — requires external tooling]`:
+- `local://`  — local filesystem (default; zero config)
+- `s3://`     — AWS S3 or any S3-compatible store
+- `oss://`    — Alibaba Cloud OSS
+- `http://`   — custom REST API implementing the SHARE protocol
+
+---
+
+## §5  SHARE Protocol — CLI Commands
+
+The SHARE mode extends INSTALL with remote synchronization:
+
+```
+# Push local skill to shared storage
+skillclaw push <skill-file.md> --storage <backend-url>
+
+# Pull skill from shared storage by name or ID
+skillclaw pull <skill-name-or-id> --storage <backend-url>
+
+# Two-way sync: push updated skills, pull newer versions
+skillclaw sync --storage <backend-url>
+
+# Browse available skills in shared registry
+skillclaw list --storage <backend-url> [--tag <tag>] [--tier <tier>]
+```
+
+### Push workflow
+
+```
+1. READ   — load local skill file and extract frontmatter
+2. ENSURE — generate or verify skill_id (§2)
+3. SCORE  — run LEAN eval; include score in registry entry
+4. COMPARE — fetch registry.json from backend
+   IF skill_id exists in registry:
+     COMPARE sha256 of current.md vs local file
+     IF different → conflict detected → §6 conflict resolution
+     IF same → "already up to date"
+   ELSE:
+     INSERT new entry into registry
+5. UPLOAD — write skill file to skills/<skill_id>/v<version>.md
+6. UPDATE — update registry.json with new version entry
+7. REPORT — show "pushed <name> v<version> → <backend>"
+```
+
+### Pull workflow
+
+```
+1. LOOKUP — search registry.json by name or id
+2. SELECT — choose version (default: current)
+3. DOWNLOAD — fetch skills/<skill_id>/v<version>.md
+4. INSTALL — write to local platform skills directory (§16 INSTALL mode)
+5. REPORT — show "pulled <name> v<version> from <backend>"
+```
+
+---
+
+## §6  Conflict Resolution Protocol
+
+When two users push different versions of the same skill concurrently:
+
+```
+CONFLICT DETECTED
+  Local  SHA-256: <hash_a>
+  Remote SHA-256: <hash_b>
+  Skill: <name> v<version>
+
+Resolution strategy:
+  1. DIFF — show structural diff: which §-sections changed in each version
+  2. ASSESS — AI assesses which changes are complementary vs. conflicting:
+       Complementary: version A adds Error Handling; version B adds ZH triggers
+       Conflicting:   both versions rewrote the Workflow section differently
+
+  3a. IF complementary → AUTO-MERGE:
+       Merge additive changes; use higher-scoring version's core content
+       Run LEAN eval on merged result; if score ≥ min(A_score, B_score) → accept
+
+  3b. IF conflicting → HUMAN-MERGE:
+       Present both versions to user
+       User selects which sections to keep from each
+       AI applies selections and runs LEAN eval
+
+  4. PUSH merged version as next patch version (e.g., v1.2.1)
+  5. LOG conflict event in registry entry
+```
+
+---
+
+## §7  Version Compatibility with Existing YAML
+
+Skills already using the skill-writer format add `skill_id` as an optional field.
+No breaking changes to existing skills.
+
+```yaml
+# Existing field (required)
+name: api-tester
+version: "1.2.0"
+
+# New field (added on first registry push)
+skill_id: "a1b2c3d4e5f6"
+```
+
+**Migration**: Run `skillclaw register` on existing skills to compute and inject `skill_id`.
+
+---
+
+## §8  Integration with SkillClaw
+
+Skills published via the SHARE registry are directly consumable by a SkillClaw
+deployment. The `skills/` directory layout and `registry.json` format are intentionally
+compatible with SkillClaw's storage spec.
+
+| SkillClaw concept | skill-writer registry equivalent |
+|-------------------|----------------------------------|
+| `skills/` directory | `skills/<skill_id>/` |
+| Deterministic skill ID | `SHA-256(name)[:12]` |
+| Version history | `history[]` array (20-entry limit) |
+| SHA-256 conflict detection | `sha256` field per version entry |
+| LLM-based merge | Conflict Resolution Protocol (§6) |

@@ -37,6 +37,10 @@ const REQUIRED_FILES = [
   { path: path.join(PATHS.refs, 'security-patterns.md'), label: 'refs/security-patterns.md', mustEmbed: true },
   { path: path.join(PATHS.refs, 'evolution.md'), label: 'refs/evolution.md', mustEmbed: true },
   { path: path.join(PATHS.refs, 'convergence.md'), label: 'refs/convergence.md', mustEmbed: true },
+  // Refs - v3.0 additions (SkillClaw collective evolution)
+  { path: path.join(PATHS.refs, 'session-artifact.md'), label: 'refs/session-artifact.md', mustEmbed: true },
+  { path: path.join(PATHS.refs, 'edit-audit.md'), label: 'refs/edit-audit.md', mustEmbed: true },
+  { path: path.join(PATHS.refs, 'skill-registry.md'), label: 'refs/skill-registry.md', mustEmbed: true },
   // Eval - must be embedded
   { path: path.join(PATHS.eval, 'rubrics.md'), label: 'eval/rubrics.md', mustEmbed: true },
   { path: path.join(PATHS.eval, 'benchmarks.md'), label: 'eval/benchmarks.md', mustEmbed: true },
@@ -81,6 +85,33 @@ const PLACEHOLDERS = {
   // Cursor pattern: ${KEY}
   cursor: /\$\{([A-Z_0-9]+)\}/g,
 };
+
+/**
+ * Author-time placeholders that are intentionally preserved in generated platform files.
+ * These appear in embedded skill templates (base, api-integration, data-pipeline,
+ * workflow-automation) as demonstration content for skill authors to fill in.
+ * They are NOT build errors — they are "fill me in when you use this template" markers.
+ *
+ * Validate should ignore these when checking generated skill files.
+ */
+const AUTHOR_PLACEHOLDERS = new Set([
+  // Generic template slots
+  'PLACEHOLDER', 'SKILL_NAME', 'WORKFLOW_NAME',
+  // API integration template
+  'API_NAME', 'ENDPOINT_1_PATH', 'AUTH_ENV_VAR', 'PARAM_1',
+  'OUTPUT_FIELD_1', 'OUTPUT_FIELD_2', 'TYPE_1', 'TYPE_2', 'TYPE_3',
+  'EXAMPLE_1_OUTPUT', 'EXAMPLE_2_OUTPUT', 'LANG',
+  // Data pipeline template
+  'INPUT_FORMAT', 'OUTPUT_FORMAT', 'DURATION',
+  'OUT_FIELD_1', 'OUT_FIELD_2', 'OUT_FIELD_3',
+  'TRANSFORM_STEP_1', 'TRANSFORM_STEP_2',
+  'EXAMPLE_TARGET', 'EXAMPLE_VALUE',
+  'EXAMPLE_RESULT_1', 'EXAMPLE_RESULT_2',
+  // Workflow automation template
+  'STEP_NAME', 'STEP_1_NAME', 'STEP_2_NAME', 'STEP_3_NAME', 'STEP_N_NAME',
+  'STEP_COUNT', 'STEP_1_ACTION', 'STEP_2_ACTION', 'STEP_3_ACTION',
+  'MODE_1', 'MODE_2',
+]);
 
 /**
  * Section markers
@@ -266,6 +297,7 @@ module.exports = {
   REQUIRED_FILES,
   REQUIRED_UTE_FIELDS,
   PLACEHOLDERS,
+  AUTHOR_PLACEHOLDERS,
   SECTIONS,
   PLATFORMS,
   SCORING,

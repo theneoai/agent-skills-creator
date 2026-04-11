@@ -535,3 +535,332 @@ scoring.md 规范保持不变（v2.2.0 已统一 7 维度，详见 `builder/src/
 | 📋 P2 | 按需模式加载（减少 prompt 长度） | 未开始 |
 | 📋 P2 | 外部持久化接口（audit trail / UTE 计数器） | 未开始 |
 5. **明确模式流转规则** — 在 §2 Mode Router 中添加允许/禁止的模式转换路径
+
+---
+
+## 十、SkillClaw 研究精华提炼
+
+> **来源**: SkillClaw — Collective Skill Evolution for Agent Ecosystems
+> **论文**: arxiv.org/abs/2604.08377 | **代码**: github.com/AMAP-ML/SkillClaw
+> **核心命题**: 集体智慧（多用户经验蒸馏）优于模型规模扩张——在 WildClawBench 上验证
+
+---
+
+### 10.1 SkillClaw 核心架构解析
+
+SkillClaw 由三个可互换组件构成，共享统一存储后端（本地 / S3 / 阿里云 OSS）和统一技能格式（SKILL.md）：
+
+```
+用户与 Agent 的真实交互
+        │
+        ▼
+┌─────────────────────────────────────────────────────┐
+│  Client Proxy（客户端代理）                          │
+│  • 透明拦截 /v1/chat/completions, /v1/messages       │
+│  • 记录完整会话轨迹（含工具调用、结果、PRM 分数）    │
+│  • 上传至共享存储 sessions/ 目录（队列语义）         │
+└───────────────────────┬─────────────────────────────┘
+                        │ 异步触发
+          ┌─────────────┴──────────────┐
+          ▼                            ▼
+┌─────────────────────┐    ┌──────────────────────────┐
+│ Workflow Evolve     │    │ Agent Evolve Server       │
+│ Server（确定性）    │    │（自主性）                 │
+│                     │    │                           │
+│ 固定 3 阶段管道:    │    │ OpenClaw Agent            │
+│  1. Summarize       │    │ • 自主决定读/分析/写      │
+│  2. Aggregate       │    │ • 直接写入 SKILL.md       │
+│  3. Execute         │    │ • 支持 Fresh/No-Fresh     │
+│                     │    │   多轮记忆模式            │
+└─────────────────────┘    └──────────────────────────┘
+          │                            │
+          └────────────┬───────────────┘
+                       ▼
+              共享存储（技能库）
+              • SHA-256 冲突检测
+              • LLM-based 冲突合并
+              • 版本历史（20 条上限）
+```
+
+### 10.2 三阶段蒸馏管道详解（Workflow Evolve Server）
+
+```
+Sessions Queue（共享存储 sessions/ 目录）
+        │
+        ▼  Stage 1: Summarize（summarizer.py）
+        │  ├─ 程序化轨迹: 每步记录用户意图、工具调用、结果、PRM 分数
+        │  └─ LLM 分析: 生成 8-15 句因果链摘要，识别技能效果与失败根因
+        │
+        ▼  Stage 2: Aggregate（aggregation.py）
+        │  ├─ 按技能维度分组: 引用了技能 X 的会话 → X 的组
+        │  └─ "无技能桶": 未引用任何已知技能的会话 → 新技能候选
+        │
+        ▼  Stage 3: Execute（execution.py）
+           ├─ 技能组: LLM 自主决定 改进内容 / 优化描述 / 跳过
+           └─ 无技能组: LLM 自主决定 创建新技能 / 跳过
+```
+
+**关键可靠性机制**：
+- **队列语义**: 会话保留至演进成功，自动重试，服务器重启恢复
+- **编辑审计防漂移**: 50% 以上内容改写被拒绝（防止核心技能被破坏性覆写）
+- **技能注册表**: 确定性 ID（`SHA-256[:12]` of name），版本追踪，20 条历史上限
+
+---
+
+### 10.3 与 skill-writer 现状的差距映射
+
+| 能力维度 | skill-writer 现状 | SkillClaw 解法 | 差距等级 |
+|----------|------------------|----------------|----------|
+| **演进来源** | 单用户、显式触发 OPTIMIZE | 多用户、被动会话采集 | 🔴 核心差距 |
+| **演进管道** | 无（UTE 为 ASPIRATIONAL）| 确定性 3 阶段蒸馏 | 🔴 核心差距 |
+| **技能分发** | 安装到本地路径 | Push/Pull 共享存储 | 🔴 核心差距 |
+| **演进策略** | 单一 OPTIMIZE 循环 | 双轨：Workflow + Agent | 🟡 可扩展 |
+| **冲突处理** | 无 | SHA-256 + LLM 合并 | 🟡 可扩展 |
+| **漂移防护** | 无 | 50% 改写拒绝 | 🟡 可扩展 |
+| **技能注册** | 无 | 确定性 ID + 版本历史 | 🟡 可扩展 |
+| **质量信号** | 用户会话内反馈 | PRM 分数（每步骤） | 🟢 可借鉴 |
+| **多轮记忆** | 无（会话间无记忆） | Fresh / No-Fresh 模式 | 🟢 可借鉴 |
+| **基准评测** | 无真实使用基准 | WildClawBench（真实数据）| 🟢 可借鉴 |
+
+---
+
+### 10.4 产品设计增强建议
+
+#### 10.4.1 新增 COLLECT 模式（技能采集）
+
+**定位**: UTE 的"上游数据层"——将单用户被动观察升级为结构化会话记录。
+
+**工作流**:
+```
+用户正常与技能交互
+        │
+        ▼
+  技能执行后，AI 生成结构化会话摘要:
+  {
+    "skill_id": "SHA-256[:12]",
+    "session_summary": "8-15句因果链摘要",
+    "outcome": "success | failure | ambiguous",
+    "trigger_used": "实际触发词",
+    "tool_calls": [...],
+    "prm_signal": "good | ok | poor"   // 对现有 UTE 反馈信号的量化
+  }
+        │
+  用户可选择 "导出会话数据" → JSON 文件
+  可选集成: 上传到共享存储后端
+```
+
+**触发词**: "record this session" / "记录此次使用" / "export skill usage"
+
+**与 UTE 的关系**: COLLECT 是 UTE 的结构化扩展。现有 UTE 做的是会话内非结构化观察；COLLECT 产出机器可读的会话记录，为 AGGREGATE 提供输入。
+
+#### 10.4.2 新增 AGGREGATE 模式（跨会话聚合）
+
+**定位**: 从多个 COLLECT 导出的会话摘要中蒸馏出改进信号。
+
+**工作流（映射 SkillClaw 三阶段）**:
+
+| SkillClaw 阶段 | skill-writer 对应 | AI 可实现性 |
+|---------------|-----------------|------------|
+| Summarize | 读取 N 个会话 JSON，合并摘要 | `[ENFORCED]` |
+| Aggregate | 按技能维度分组，识别"无技能桶" | `[ENFORCED]` |
+| Execute | 提出 micro-patch 清单或 OPTIMIZE 建议 | `[ENFORCED]` |
+
+**输入**: 1-N 个 COLLECT 导出的 JSON 文件（用户粘贴或上传路径）
+**输出**: 排优先级的改进建议列表 → 触发 OPTIMIZE 或 CREATE（无技能桶）
+
+**触发词**: "aggregate skill feedback" / "聚合技能反馈" / "analyze usage sessions"
+
+#### 10.4.3 增强 INSTALL 模式 → 支持 SHARE（技能共享）
+
+在现有 INSTALL（本地部署）基础上，增加 SHARE 子模式：
+
+```
+SHARE 子命令:
+  push  <skill-file> --storage <url>   # 推送技能到共享存储
+  pull  <skill-id>   --storage <url>   # 从共享存储拉取技能
+  sync  --storage <url>                # 双向同步
+  list  --storage <url>                # 浏览远程技能库
+```
+
+**技能 ID 规范**（借鉴 SkillClaw）:
+```
+skill_id = SHA-256(skill_name)[:12]
+version  = semver（来自 YAML frontmatter）
+history  = 最多 20 条版本记录
+```
+
+#### 10.4.4 OPTIMIZE 模式增强：双轨演进策略
+
+借鉴 SkillClaw 的 Workflow vs Agent 双轨，在 OPTIMIZE 中引入策略选择：
+
+| 策略 | 描述 | 适用场景 |
+|------|------|----------|
+| **Workflow 演进**（现有）| 固定 9 步循环，结构化 diff 输出 | 可预测改进，版本控制友好 |
+| **Agent 演进**（新增）| AI 自主决定分析路径和修改范围，直接重写 | 创造性重构，突破渐进局部最优 |
+
+**Fresh / No-Fresh 模式**（借鉴 SkillClaw Agent Evolve Server）:
+- `--fresh`: 每轮独立，无记忆（默认，防止路径依赖）
+- `--no-fresh`: 保留前轮分析笔记，用于多轮深度优化
+
+**触发词**: "optimize with agent strategy" / "深度优化（Agent 模式）" / "optimize fresh"
+
+#### 10.4.5 评估维度扩展：真实使用质量
+
+在现有 1000 分评估体系的 Phase 3（运行时测试）中，增加**使用质量维度**（借鉴 WildClawBench）：
+
+| 新增子维度 | 分值 | 评估内容 |
+|-----------|------|---------|
+| 触发准确率 | +20 | 用户自然语言能否准确命中技能 |
+| 输出一致性 | +20 | 同类任务输出格式是否稳定 |
+| 失败优雅性 | +20 | 超出技能范围时是否给出明确边界说明 |
+
+> 注: 这些维度在 CREATE 阶段即可通过自审协议检查，不依赖真实用户数据。
+
+---
+
+### 10.5 架构设计增强建议
+
+#### 10.5.1 存储后端接口规范（Storage Backend Interface）
+
+为 COLLECT / SHARE 功能定义统一存储抽象，支持插拔：
+
+```
+refs/storage-backends.md（新建）
+
+支持后端:
+  local://   本地文件系统（默认，零配置）
+  s3://      AWS S3 或任意 S3 兼容存储
+  oss://     阿里云 OSS
+  http://    自定义 REST API
+
+目录结构（与 SkillClaw 兼容）:
+  storage-root/
+  ├── skills/          # 技能文件（按 skill_id/version）
+  ├── sessions/        # COLLECT 导出的会话记录（队列）
+  └── registry.json    # 技能注册表（ID → name → version history）
+```
+
+**与现有架构的关系**: Builder 的 platforms/ 目录对应 `skills/`；新增 sessions/ 和 registry.json 为 COLLECT/SHARE 提供基础设施。
+
+#### 10.5.2 技能注册表规范（Skill Registry Spec）
+
+```yaml
+# registry.json schema（新增到 refs/）
+skill_registry:
+  version: "1.0"
+  skills:
+    - id: "a1b2c3d4e5f6"          # SHA-256[:12] of skill name
+      name: "api-tester"
+      current_version: "1.2.0"
+      created_at: "2026-04-01"
+      updated_at: "2026-04-10"
+      certified_tier: "GOLD"
+      lean_score: 920
+      history:                     # 最多 20 条
+        - version: "1.1.0"
+          score: 895
+          date: "2026-04-05"
+          change_summary: "Added auth header support"
+```
+
+**冲突解决协议**（借鉴 SkillClaw）:
+1. 上传前计算本地技能 SHA-256
+2. 与远端版本 SHA-256 对比
+3. 不一致 → 触发 LLM-based 三方合并（base + local + remote）
+4. 合并结果通过 LEAN 评估确认质量无下降
+
+#### 10.5.3 会话记录格式规范（Session Artifact Spec）
+
+```
+refs/session-artifact.md（新建）
+
+COLLECT 模式导出的标准格式:
+{
+  "schema_version": "1.0",
+  "skill_id": "a1b2c3d4e5f6",
+  "skill_name": "api-tester",
+  "skill_version": "1.2.0",
+  "session_id": "<timestamp>-<random>",
+  "recorded_at": "ISO-8601",
+  "outcome": "success | failure | partial | ambiguous",
+  "trigger_used": "用户实际输入的触发词",
+  "feedback_signal": "approval | correction | rephrasing | abandon | neutral",
+  "session_summary": "8-15 句因果链摘要（AI 生成）",
+  "prm_signal": "good | ok | poor",    // 对 AI 执行过程的整体质量判断
+  "notable_patterns": ["pattern1", "pattern2"],
+  "improvement_hints": ["hint1", "hint2"]
+}
+```
+
+#### 10.5.4 编辑审计防漂移规则（Edit Audit Guard）
+
+借鉴 SkillClaw 的"50% 改写拒绝"机制，在 OPTIMIZE 和 UTE 中加入：
+
+```
+refs/edit-audit.md（新建）
+
+防漂移规则:
+  MICRO_PATCH: ≤5% 内容变更（当前已有）
+  MINOR_OPTIMIZE: 5-30% 变更（允许，常规优化）
+  MAJOR_OPTIMIZE: 30-50% 变更（警告，需用户确认）
+  REWRITE_GUARD: >50% 变更 → 阻止，改为建议 CREATE 新技能
+
+判定方法（AI 可实现）:
+  对比 OPTIMIZE 前后，统计新增/删除/修改的
+  §-section 数量和关键内容块，估算变更比例。
+  >50% → 输出警告："此修改规模等同重写，建议 CREATE 新技能而非覆盖现有技能"
+```
+
+#### 10.5.5 UTE 2.0：升级为集体演进协议
+
+将现有 `refs/use-to-evolve.md` 扩展，区分两个层次：
+
+| 层次 | 名称 | 范围 | 可实现性 |
+|------|------|------|---------|
+| **L1: 单用户 UTE**（现有）| 单会话观察 + micro-patch 提议 | 单用户、单会话 | `[ENFORCED]` |
+| **L2: 集体 UTE**（新增）| COLLECT → AGGREGATE → OPTIMIZE 管道 | 多用户、跨会话 | `[ASPIRATIONAL]`（需外部工具链）|
+
+L2 集体 UTE 的 `[ASPIRATIONAL]` 实现路径：
+- **最小可行**: 用户手动导出多个 COLLECT JSON → 粘贴给 AI → 触发 AGGREGATE 模式
+- **完整实现**: 部署 SkillClaw-compatible Evolve Server，自动采集和处理
+
+---
+
+### 10.6 演进路线图更新（补充 SkillClaw 启示）
+
+#### v3.0.0 新增任务（原中期路线图补充）
+
+5. **定义 Session Artifact 规范** — `refs/session-artifact.md`，为 COLLECT 模式和未来后端集成奠基
+6. **添加 COLLECT 模式** — 结构化会话记录，UTE 的上游数据层
+7. **添加编辑审计防漂移规则** — `refs/edit-audit.md`，防止 OPTIMIZE 演变为破坏性改写
+8. **定义 Skill Registry 规范** — `refs/skill-registry.md`，包含 ID 方案、版本历史格式、冲突解决协议
+
+#### v4.0.0 新增任务（原长期路线图补充）
+
+5. **AGGREGATE 模式** — 多会话 JSON 聚合蒸馏，SkillClaw Workflow Evolve Server 的 prompt-based 等价实现
+6. **SHARE 模式（INSTALL 扩展）** — push / pull / sync 技能到共享存储后端
+7. **OPTIMIZE 双轨策略** — Workflow（确定性）vs Agent（自主）+ Fresh/No-Fresh 模式
+8. **存储后端接口** — 插拔式后端（local / S3 / OSS / HTTP），与 SkillClaw 生态兼容
+9. **SkillClaw 互操作性** — skill-writer 产出的技能可直接部署到 SkillClaw 的 `skills/` 存储，共享注册表格式
+
+---
+
+### 10.7 架构兼容性分析
+
+**skill-writer 现有架构与 SkillClaw 的天然契合点**：
+
+| skill-writer 组件 | SkillClaw 对应 | 兼容性 |
+|------------------|----------------|--------|
+| `skill-framework.md`（技能格式）| `SKILL.md`（技能格式）| ✅ 高度兼容，均为 Markdown + YAML frontmatter |
+| `refs/use-to-evolve.md`（UTE）| Client Proxy 记录逻辑 | ✅ UTE L1 是 Client Proxy 的 prompt-based 子集 |
+| OPTIMIZE 9 步循环 | Workflow Evolve Server Execute 阶段 | ✅ 可直接映射 |
+| Builder platforms/ 输出 | SkillClaw `skills/` 存储 | ✅ 格式兼容，需统一 ID 方案 |
+| INSTALL 模式 | `skillclaw pull` 命令 | ✅ 功能重叠，可协同 |
+
+**需要解决的不兼容点**：
+
+| 不兼容点 | skill-writer | SkillClaw | 建议解决方案 |
+|----------|-------------|-----------|-------------|
+| 技能 ID | 文件名（任意字符串）| `SHA-256[:12]` of name | 在 YAML frontmatter 新增 `skill_id` 字段 |
+| 版本格式 | semver（`1.2.0`）| semver + history array | 添加 `version_history` 字段到 UTE frontmatter |
+| 存储路径 | 各平台独立路径 | 统一 `skills/` 目录 | SHARE 模式增加路径映射层 |

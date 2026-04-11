@@ -15,7 +15,7 @@ const glob = require('glob');
 const config = require('../config');
 
 // Use configuration from centralized config
-const { PATHS, REQUIRED_FILES, REQUIRED_UTE_FIELDS, PLACEHOLDERS } = config;
+const { PATHS, REQUIRED_FILES, REQUIRED_UTE_FIELDS, PLACEHOLDERS, AUTHOR_PLACEHOLDERS } = config;
 
 /**
  * Main validate function
@@ -183,11 +183,23 @@ async function validateGeneratedSkills(result) {
       fileOk = false;
     }
 
-    // No remaining {{PLACEHOLDER}} tokens (extended pattern covers hyphens/dots too)
-    if (/\{\{[\w.-]+\}\}/.test(content)) {
-      const remaining = content.match(/\{\{[\w.-]+\}\}/g) || [];
-      const unique = [...new Set(remaining)];
-      addIssue(result, 'error', `${fileName}: ${unique.length} unreplaced placeholder(s): ${unique.slice(0, 5).join(', ')}`);
+    // No remaining build-time {{PLACEHOLDER}} tokens.
+    // Strip fenced code blocks and inline code spans first — those embed template
+    // content for skill authors (e.g. {{SKILL_NAME}} in UTE snippets, {{STEP_1_NAME}}
+    // in workflow diagrams) which are intentional "fill-me-in" markers, not build errors.
+    // Also filter against AUTHOR_PLACEHOLDERS whitelist for any remaining prose occurrences.
+    // Extended pattern covers hyphens/dots ({{OUTER-KEY}}, {{outer.key}}) in addition to standard.
+    const stripped = content
+      .replace(/```[\s\S]*?```/g, '')    // strip fenced code blocks
+      .replace(/`[^`\n]+`/g, '');        // strip inline code spans
+    const remaining = (stripped.match(/\{\{[\w.-]+\}\}/g) || [])
+      .filter(match => {
+        const key = match.slice(2, -2); // strip {{ and }}
+        return !AUTHOR_PLACEHOLDERS.has(key);
+      });
+    const uniqueBuildTime = [...new Set(remaining)];
+    if (uniqueBuildTime.length > 0) {
+      addIssue(result, 'error', `${fileName}: ${uniqueBuildTime.length} unreplaced build-time placeholder(s): ${uniqueBuildTime.slice(0, 5).join(', ')}`);
       fileOk = false;
     }
 

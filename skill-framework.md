@@ -1,16 +1,16 @@
 ---
 name: skill-writer
-version: "2.2.0"
-description: "Meta-skill framework: create any skill type from typed templates, evaluate with 4-phase 1000-point pipeline, optimize with 7-dimension loop, security-scan with CWE patterns, auto-evolve via 3-trigger system, and deploy to 7 platforms including MCP."
+version: "3.0.0"
+description: "Meta-skill framework: CREATE from templates, LEAN/EVALUATE/OPTIMIZE lifecycle, COLLECT mode for collective skill evolution, Edit Audit Guard, Skill Registry for push/pull sharing, UTE 2.0 two-tier self-improvement, and deploy to 7 platforms including MCP."
 description_i18n:
-  en: "Full lifecycle meta-skill framework: CREATE from templates, LEAN fast-eval, EVALUATE 4-phase 1000pt pipeline, OPTIMIZE 7-dim 9-step loop, auto-evolve via threshold/time/usage triggers, deploy to 7 platforms (Claude/OpenCode/OpenClaw/Cursor/OpenAI/Gemini/MCP)."
-  zh: "全生命周期元技能框架：从模板CREATE、LEAN快速评测、4阶段1000分EVALUATE、7维9步OPTIMIZE、三触发器自动进化、部署至7平台（含MCP标准）。"
+  en: "Full lifecycle meta-skill framework: CREATE from templates, LEAN fast-eval, EVALUATE 4-phase 1000pt pipeline, OPTIMIZE 7-dim 9-step loop, COLLECT for collective evolution (SkillClaw-compatible), skill registry + SHARE, UTE 2.0 L1/L2, deploy to 7 platforms (Claude/OpenCode/OpenClaw/Cursor/OpenAI/Gemini/MCP)."
+  zh: "全生命周期元技能框架：从模板CREATE、LEAN快速评测、4阶段1000分EVALUATE、7维9步OPTIMIZE、COLLECT集体进化采集（SkillClaw兼容）、技能注册表+共享、UTE 2.0双层自进化、部署至7平台（含MCP标准）。"
 
 license: MIT
 author:
   name: theneoai
 created: "2026-03-31"
-updated: "2026-04-10"
+updated: "2026-04-11"
 type: meta-framework
 
 tags:
@@ -25,7 +25,7 @@ tags:
 interface:
   input: user-natural-language
   output: structured-skill
-  modes: [create, lean, evaluate, optimize, install]
+  modes: [create, lean, evaluate, optimize, install, collect]
   platforms: [claude, opencode, openclaw, cursor, openai, gemini, mcp]
 
 extends:
@@ -581,7 +581,7 @@ Snippet: `claude/templates/use-to-evolve-snippet.md`
 3. FILL PLACEHOLDERS:
      {{SKILL_NAME}}           = skill's `name` YAML field
      {{VERSION}}              = skill's `version` YAML field
-     {{FRAMEWORK_VERSION}}    = "2.1.0"
+     {{FRAMEWORK_VERSION}}    = "2.2.0"
      {{INJECTION_DATE}}       = today ISO-8601
      {{CERTIFIED_LEAN_SCORE}} = LEAN score from Step 6 (or 350 if unknown)
 
@@ -778,12 +778,101 @@ skill generation respectively.
 
 ---
 
+## §18  COLLECT Mode — Session Data Recording
+
+**Purpose**: Produce a structured Session Artifact after any skill invocation, enabling
+collective skill evolution by accumulating usage data across sessions and users.
+
+**Inspired by**: SkillClaw collective evolution framework (arxiv.org/abs/2604.08377)
+**Full spec**: `claude/refs/session-artifact.md`
+**Edit guard**: `claude/refs/edit-audit.md`
+
+### When COLLECT runs
+
+COLLECT fires **automatically at the end of every skill invocation** when either:
+- The skill's YAML frontmatter contains `use_to_evolve.enabled: true`, OR
+- The user explicitly requests "collect" / "记录此次使用"
+
+It always runs *after* the primary mode (CREATE / LEAN / EVALUATE / OPTIMIZE) completes —
+never interrupts the main workflow.
+
+### Artifact generation protocol `[ENFORCED]`
+
+```
+1. ASSESS — review the session that just completed:
+   - What was the user's trigger phrase?
+   - What mode ran and what was the outcome?
+   - Was the user's goal fully met?
+   - What feedback signal did the user give (if any)?
+
+2. SCORE — estimate prm_signal:
+   good  = skill triggered cleanly, output accepted without correction
+   ok    = skill triggered but needed clarification or minor iteration
+   poor  = trigger miss, wrong output, or user abandoned
+
+3. OBSERVE — identify patterns and improvement hints:
+   - Any trigger phrases that almost didn't match?
+   - Any output verbosity / format issues?
+   - Any dimension that clearly underperformed?
+
+4. SUMMARIZE — write 8–15 sentence causal-chain summary
+   (see refs/session-artifact.md §4 for guidelines)
+
+5. ASSEMBLE — produce complete Session Artifact JSON
+   (see refs/session-artifact.md §2 for schema)
+
+6. DELIVER — output the JSON artifact; offer:
+   a. "Save as <session_id>.json for future AGGREGATE"
+   b. "Push to shared storage: skillclaw push <file>"
+```
+
+### AGGREGATE mode (multi-session synthesis) `[ASPIRATIONAL — basic flow available]`
+
+When the user provides 2+ Session Artifact JSONs, AGGREGATE mode synthesizes them:
+
+```
+1. READ     — parse N session artifacts
+2. SUMMARIZE— merge individual summaries into a unified cross-session picture
+3. AGGREGATE— group by skill dimension; identify the "no-skill bucket"
+              (sessions where skill didn't trigger → new skill candidates)
+4. EXECUTE  — rank improvement opportunities by evidence count:
+               ≥3 sessions with same pattern → HIGH priority
+               1–2 sessions               → LOW priority
+5. OUTPUT   — ranked improvement list for OPTIMIZE
+              OR "create new skill" proposal for no-skill bucket
+```
+
+**Trigger words for AGGREGATE**:
+- "aggregate skill feedback" / "聚合技能反馈"
+- "analyze usage sessions" / "分析使用记录"
+- "synthesize session data" / "综合会话数据"
+
+### Triggers for COLLECT
+
+```
+Auto (when UTE enabled):    fires after every skill invocation
+Explicit: "collect this session"  /  "记录此次使用"
+          "export skill usage"    /  "导出使用数据"
+          "generate session artifact"
+```
+
+### Key references
+
+- Session Artifact schema: `claude/refs/session-artifact.md`
+- Edit guard (protects OPTIMIZE from over-writing): `claude/refs/edit-audit.md`
+- Skill registry (for `skill_id` computation): `claude/refs/skill-registry.md`
+- UTE 2.0 L1/L2 architecture: `claude/refs/use-to-evolve.md §7`
+
+---
+
 **Triggers**:
-**CREATE** | **LEAN** | **EVALUATE** | **OPTIMIZE** | **INSTALL**
-**创建** | **快评** | **评测** | **优化** | **安装**
+**CREATE** | **LEAN** | **EVALUATE** | **OPTIMIZE** | **INSTALL** | **COLLECT**
+**创建** | **快评** | **评测** | **优化** | **安装** | **采集**
 
 (Templates: `claude/templates/` · UTE snippet: `claude/templates/use-to-evolve-snippet.md` ·
 Eval rubrics: `claude/eval/rubrics.md` · Benchmarks: `claude/eval/benchmarks.md` ·
 Self-review: `claude/refs/self-review.md` · Security: `claude/refs/security-patterns.md` ·
 Evolution: `claude/refs/evolution.md` · UTE spec: `claude/refs/use-to-evolve.md` ·
-Convergence: `claude/refs/convergence.md` · Optimize strategies: `claude/optimize/strategies.md`)
+Convergence: `claude/refs/convergence.md` · Optimize strategies: `claude/optimize/strategies.md` ·
+Session artifact: `claude/refs/session-artifact.md` · Edit audit: `claude/refs/edit-audit.md` ·
+Skill registry: `claude/refs/skill-registry.md`)

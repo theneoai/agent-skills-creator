@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-04-11
+
+### ✨ Added
+
+- **COLLECT Mode (§18)** — structured session artifact recording; fires after every skill invocation when UTE is enabled; enables collective skill evolution via the AGGREGATE pipeline
+- **AGGREGATE Mode** — multi-session distillation pipeline (Summarize → Aggregate → Execute) synthesizing N session artifacts into ranked improvement signals
+- **`refs/session-artifact.md`** — canonical Session Artifact schema (skill_id, outcome, prm_signal, dimension_observations, causal-chain summary); SkillClaw-compatible format
+- **`refs/edit-audit.md`** — Edit Audit Guard: classifies OPTIMIZE changes as MICRO/MINOR/MAJOR/REWRITE; blocks destructive rewrites (>50% content change); prevents skill drift
+- **`refs/skill-registry.md`** — Skill Registry spec: deterministic SHA-256[:12] IDs, 20-entry version history, push/pull/sync SHARE protocol, conflict resolution with LLM-based merge
+- **UTE 2.0 two-tier architecture** — L1 (single-user, `[ENFORCED]`, current behavior) + L2 (collective, `[ASPIRATIONAL]`, requires COLLECT + AGGREGATE pipeline)
+- **Edit guard integration in UTE** — UTE micro-patches are now explicitly bounded to MICRO class; structural changes escalate to full OPTIMIZE
+- `skill_id` field convention — SHA-256[:12] identifier added to YAML frontmatter spec for registry-enabled skills
+
+### 🔧 Fixed
+
+- **`validate.js` false positive** — placeholder check now strips fenced code blocks before scanning; `{{SKILL_NAME}}`, `{{INJECTION_DATE}}`, etc. inside template snippets no longer flagged as build errors
+- **`skill-framework.md §15` stale version** — `{{FRAMEWORK_VERSION}}` fill instruction updated from `"2.1.0"` to `"2.2.0"`
+- **README.md scoring** — `code-reviewer` corrected to GOLD 947/1000 (was incorrectly listed as SILVER 820/1000); average updated to 920.7/1000
+
+### 📐 Architecture
+
+- `builder/src/config.js` — three new `refs/` files added to `REQUIRED_FILES` (session-artifact, edit-audit, skill-registry)
+- `ARCHITECTURE-REVIEW.md` — new Section 十 synthesizing SkillClaw research into product and architecture design recommendations
+
+### 📋 Background
+
+The v3.0 additions are informed by SkillClaw (arxiv.org/abs/2604.08377, AMAP-ML), which
+demonstrated that collective skill evolution from multi-user session data outperforms
+single-user optimization — "not by using a bigger model, but by leveraging smarter experience."
+
+---
+
 ## [2.2.0] - 2026-04-11
 
 ### 🐛 Fixed

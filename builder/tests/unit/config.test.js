@@ -55,6 +55,10 @@ describe('Config Module', () => {
       expect(labels).toContain('refs/security-patterns.md');
       expect(labels).toContain('eval/rubrics.md');
       expect(labels).toContain('optimize/strategies.md');
+      // v3.0 additions
+      expect(labels).toContain('refs/session-artifact.md');
+      expect(labels).toContain('refs/edit-audit.md');
+      expect(labels).toContain('refs/skill-registry.md');
     });
 
     test('all file paths should be absolute', () => {
@@ -74,6 +78,26 @@ describe('Config Module', () => {
 
     test('should have 11 required UTE fields', () => {
       expect(config.REQUIRED_UTE_FIELDS.length).toBe(11);
+    });
+  });
+
+  describe('AUTHOR_PLACEHOLDERS', () => {
+    test('should export AUTHOR_PLACEHOLDERS as a Set', () => {
+      expect(config.AUTHOR_PLACEHOLDERS).toBeInstanceOf(Set);
+      expect(config.AUTHOR_PLACEHOLDERS.size).toBeGreaterThan(0);
+    });
+
+    test('should contain known author-time template placeholders', () => {
+      expect(config.AUTHOR_PLACEHOLDERS.has('PLACEHOLDER')).toBe(true);
+      expect(config.AUTHOR_PLACEHOLDERS.has('SKILL_NAME')).toBe(true);
+      expect(config.AUTHOR_PLACEHOLDERS.has('STEP_1_NAME')).toBe(true);
+      expect(config.AUTHOR_PLACEHOLDERS.has('WORKFLOW_NAME')).toBe(true);
+    });
+
+    test('should NOT contain build-time placeholders', () => {
+      expect(config.AUTHOR_PLACEHOLDERS.has('FRAMEWORK_VERSION')).toBe(false);
+      expect(config.AUTHOR_PLACEHOLDERS.has('INJECTION_DATE')).toBe(false);
+      expect(config.AUTHOR_PLACEHOLDERS.has('BUILD_DATE')).toBe(false);
     });
   });
 

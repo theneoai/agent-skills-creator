@@ -2037,6 +2037,18 @@ Log to audit trail: `{"outcome": "HUMAN_REVIEW", "optimize_cycles": 3}`.
 
 ---
 
+> ### Enforcement Level Guide
+>
+> | Tag | Meaning |
+> |-----|---------|
+> | `[ENFORCED]` | AI can execute this fully within a single session/prompt |
+> | `[ASPIRATIONAL]` | Requires external state, code execution, or cross-session persistence that LLMs cannot natively provide |
+>
+> When you see `[ASPIRATIONAL]`, treat the algorithm as **authoritative design intent** but implement
+> it via natural-language reasoning rather than literal code execution.
+
+---
+
 ## §1  Why Convergence Detection
 
 The 9-step optimization loop (§9 of skill-writer.md) runs up to 20 rounds.
@@ -2050,11 +2062,15 @@ triggers early stopping.**
 
 ---
 
-## §2  Signal 1 — Volatility Check
+## §2  Signal 1 — Volatility Check `[ASPIRATIONAL]`
+
+> **Note `[ASPIRATIONAL]`**: The Python implementation below is **design documentation**,
+> not executable code. AI implements this signal via natural-language reasoning:
+> *"If the last N scores differ by less than 2 points, declare convergence."*
 
 **Purpose**: Detect when scores have stabilized (low variance across recent rounds).
 
-**Algorithm**:
+**Algorithm** *(reference implementation — not executed by AI)*:
 ```python
 def volatility_check(score_history: list[float], window: int = 10) -> bool:
     """
@@ -2079,11 +2095,14 @@ def volatility_check(score_history: list[float], window: int = 10) -> bool:
 
 ---
 
-## §3  Signal 2 — Plateau Check
+## §3  Signal 2 — Plateau Check `[ASPIRATIONAL]`
+
+> **Note `[ASPIRATIONAL]`**: AI applies this via reasoning:
+> *"If >70% of recent round-to-round deltas are <0.5 pts AND total gain is ≤0, declare plateau."*
 
 **Purpose**: Detect when incremental improvements have become negligible.
 
-**Algorithm**:
+**Algorithm** *(reference implementation — not executed by AI)*:
 ```python
 def plateau_check(score_history: list[float], window: int = 10) -> bool:
     """
@@ -2109,11 +2128,15 @@ def plateau_check(score_history: list[float], window: int = 10) -> bool:
 
 ---
 
-## §4  Signal 3 — Trend Check
+## §4  Signal 3 — Trend Check `[ENFORCED via reasoning]`
+
+> **Note `[ENFORCED via reasoning]`**: AI can compare first-half vs. second-half score means
+> by reasoning over the scores listed in the OPTIMIZE loop transcript.
+> No external execution required.
 
 **Purpose**: Detect whether the optimization trajectory is improving, stable, or diverging.
 
-**Algorithm**:
+**Algorithm** *(reference implementation)*:
 ```python
 def trend_check(score_history: list[float]) -> str:
     """

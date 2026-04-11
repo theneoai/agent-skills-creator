@@ -497,10 +497,10 @@ All example skills are certified with detailed evaluation reports.
 | Skill | Type | Tier | Score | Description |
 |-------|------|------|-------|-------------|
 | [api-tester](examples/api-tester/) | API Integration | 🥇 GOLD | 920/1000 | HTTP API testing automation |
-| [code-reviewer](examples/code-reviewer/) | Workflow Automation | 🥈 SILVER | 820/1000 | Code review with security scanning |
+| [code-reviewer](examples/code-reviewer/) | Workflow Automation | 🥇 GOLD | 947/1000 | Code review with security scanning |
 | [doc-generator](examples/doc-generator/) | Data Pipeline | 🥇 GOLD | 895/1000 | Documentation generation |
 
-**Average Score: 878.3/1000**
+**Average Score: 920.7/1000**
 
 ## Contributing
 
