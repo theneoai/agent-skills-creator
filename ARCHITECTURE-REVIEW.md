@@ -1,6 +1,6 @@
-# Skill-Writer v2.1.0 架构评审报告
+# Skill-Writer v2.2.0 架构评审报告
 
-> **日期**: 2026-04-06
+> **日期**: 2026-04-10（v2.2.0 增补）| 原始版本: 2026-04-06（v2.1.0）
 > **范围**: 全项目设计与技术架构
 > **目标**: 评估设计合理性与前瞻性，识别不可实现设计，提出改进路线图
 
@@ -446,20 +446,92 @@ Builder 工具链的模块化设计合理（reader→embedder→adapter），但
 
 平台扩展性良好（新增平台只需 adapter + template），但面临模板膨胀、prompt 长度增长、LoongFlow 外部依赖等中长期风险。
 
-### 本轮评审已修复的问题
+### v2.1.0 评审已修复的问题
 
 | # | 问题 | 修复 |
 |---|------|------|
-| 1 | ~~CI cwe-validation 死代码~~ | 删除该 job（上一轮） |
-| 2 | ~~openclaw.js self-review 重复~~ | 删除重复条目（上一轮） |
+| 1 | ~~CI cwe-validation 死代码~~ | 删除该 job（v2.1.0） |
+| 2 | ~~openclaw.js self-review 重复~~ | 删除重复条目（v2.1.0） |
 | 3 | ~~§15 FRAMEWORK_VERSION = "2.0.0"~~ | 改为 "2.1.0" |
 | 4 | ~~embedder.js 3 个未使用导出~~ | 移除导出 |
 | 5 | ~~formatFrontmatter null 静默~~ | 添加 warning 日志 |
 
-### 最需要立即行动的 5 件事
+---
 
-1. **为 builder 添加测试套件** — 这是当前最大的技术债，阻碍所有后续重构
-2. **统一路径定义** — reader.js / validate.js / inspect.js 三处硬编码路径应收敛到单一来源
-3. **添加 embedder 严格模式** — placeholder 缺失时报错而非静默，防止 `{{KEY}}` 泄漏到输出
-4. **标注理想化设计** — 区分 `[ENFORCED]` 和 `[ASPIRATIONAL]`，降低新贡献者困惑
+## 十、v2.2.0 架构改进总结
+
+本节记录 2026-04-10 完成的全面架构改进，对应 branch `claude/improve-design-architecture-MLl4W`。
+
+### 10.1 代码架构修复（已完成）
+
+| # | 问题 | 影响 | 修复方案 | 文件 |
+|---|------|------|----------|------|
+| 1 | **变量遮蔽（Variable Shadowing）** — `embedCreateMode` 等 4 个函数内 `const config = DEFAULT_CONFIG` 遮蔽了模块级 `config = require('../config')` | 潜在 bug：未来若函数内需访问 `config.SCORING` 等，会静默得到错误对象 | 将局部变量重命名为 `platformCfg` | `embedder.js` |
+| 2 | **`opencode.js` 参数变异（Input Mutation）** — `skillContent += '\n\n...'` 直接修改函数参数引用 | 违反 immutability 原则，调用方可能受影响 | 使用本地变量 `let formatted` | `opencode.js` |
+| 3 | **`opencode.js` 未使用 MarkdownAdapter** — `claude.js` / `gemini.js` 已重构为基类继承，`opencode.js` 仍为 ~150 行独立实现 | ~100 行重复代码，维护负担高 | 引入 `OpenCodeAdapter extends MarkdownAdapter`，覆盖 `getInstallPath()` 和 `formatSkill()` | `opencode.js` |
+| 4 | **`validateEmbeddedContent` 正则不完整** — 使用 `/\{\{\w+\}\}/g` 无法捕获 `{{OUTER-KEY}}` 或 `{{outer.key}}` 风格 | 扩展占位符泄漏到输出时无法被检测 | 改用 `/\{\{[\w.-]+\}\}/g`，并对匹配结果去重 | `embedder.js` |
+| 5 | **`MarkdownAdapter.generateMetadata` 硬编码版本** — `testedVersions: ['1.0.0', '2.0.0', '2.1.0']` 每次发版需手动更新 | 每次发版需手动同步，容易遗忘 | 从 `package.json` 动态读取当前版本并自动追加去重 | `MarkdownAdapter.js` |
+
+### 10.2 validate.js 扩展（已完成）
+
+**问题**: `validateGeneratedSkills` 只检查 `*.md` 文件，MCP（`*.json`）和 OpenAI（`*.json`）的生成产物完全跳过验证。
+
+**修复**:
+- 同时 glob `*.md` 和 `*.json` 两种输出
+- MCP JSON 检查：`schema_version`、`name`、`tools[]`、`capabilities`
+- OpenAI JSON 检查：`name`、`instructions`
+- MD 文件的占位符检测升级为扩展正则（同 embedder 修复）
+
+### 10.3 测试覆盖扩展（已完成）
+
+**新增测试**: 从 146 个测试增加到 **176 个测试**（+30），全部通过。
+
+| 新增测试集 | 测试数 | 覆盖点 |
+|----------|-------|--------|
+| OpenCode Adapter | 11 | MarkdownAdapter 继承、Triggers 注入、不可变性、install path |
+| OpenClaw Adapter | 12 | metadata.openclaw 注入、section 注入幂等性、fromOpenCode 转换 |
+| Cursor Adapter | 9 | `{{KEY}}` → `${KEY}` 转换、JSON 代码块、frontmatter 转换 |
+| OpenAI Adapter | 10 | JSON 输出、frontmatter 提取、instructions 字段、validateSkill |
+| Integration Tests | 30 | 端到端 reader→embedder→adapter 管道，覆盖 7 平台 |
+
+**新增集成测试文件**: `builder/tests/unit/integration.test.js`
+- `readAllCoreData()` 真实文件读取验证
+- `generateSkillFile()` 对全部 7 平台的产物测试
+- Markdown 平台：`validateEmbeddedContent` + `adapter.validateSkill` 双重校验
+- JSON 平台：JSON 语法 + 结构字段 + `adapter.validateSkill` 三重校验
+
+### 10.4 MCP 适配器健壮性提升（已完成）
+
+**问题**: `mcp.formatSkill` 完全依赖 YAML frontmatter 提取元数据，但 MCP 平台的生成产物没有 frontmatter（`supportsFrontmatter: false`），导致 `description` 始终为空，`validateSkill` 报错。
+
+**修复**:
+- 新增无 frontmatter 时的内联元数据提取逻辑
+  - `name`: 从 `# Title` H1 标题提取并 kebab-case 化
+  - `description`: 按优先级尝试 `> **Description**:` → 第一个 blockquote → 第一段正文
+- `frontmatterMatch` 的 description 提取支持带引号的 YAML 值（`["']?...["']?`）
+
+### 10.5 openclaw REQUIRED_SECTIONS 对齐（已完成）
+
+**问题**: `REQUIRED_SECTIONS` 包含 `'## §1 Identity'`，但 builder 模板实际生成的是 `'## §1 Overview'`；`formatSkill` 只注入 §4/§9/§11，从不注入 §1，导致 `validateSkill` 对所有 builder 输出均报错。
+
+**修复**: 从 `REQUIRED_SECTIONS` 中移除 `'## §1 Identity'`（该 section 是 source skill 的职责，不是适配器的保证），仅保留适配器会注入的两个 section：`§4 LoongFlow Orchestration` 和 `§9 Self-Review Protocol`。
+
+### 10.6 评分体系
+
+scoring.md 规范保持不变（v2.2.0 已统一 7 维度，详见 `builder/src/config.js SCORING`）。v2.3.0 目标：将 500pt LEAN 线性映射公式嵌入 `config.js` 为可引用常量，消除 `skill-framework.md §6` 与 config 的潜在漂移。
+
+---
+
+### 最需要立即行动的事项（更新至 v2.2.0）
+
+| 优先级 | 事项 | 状态 |
+|--------|------|------|
+| ✅ P0 | builder 测试套件（146→176 个测试） | **已完成** |
+| ✅ P0 | 统一路径定义（SSOT via config.js） | **已完成（v2.1.0）** |
+| ✅ P0 | embedder 严格模式 + 占位符检测扩展 | **已完成** |
+| ✅ P1 | opencode.js 使用 MarkdownAdapter 基类 | **已完成** |
+| ✅ P1 | validate.js 覆盖 JSON 平台输出 | **已完成** |
+| 🔄 P1 | 标注理想化设计 `[ASPIRATIONAL]`/`[ENFORCED]` | 已部分完成（skill-framework.md） |
+| 📋 P2 | 按需模式加载（减少 prompt 长度） | 未开始 |
+| 📋 P2 | 外部持久化接口（audit trail / UTE 计数器） | 未开始 |
 5. **明确模式流转规则** — 在 §2 Mode Router 中添加允许/禁止的模式转换路径

@@ -157,7 +157,7 @@ function formatTemplates(templates) {
 
 /**
  * Embed CREATE mode into template
- * 
+ *
  * @param {string} template - Platform template string
  * @param {Object} createData - CREATE mode data
  * @param {string} createData.workflow - Workflow documentation
@@ -168,63 +168,63 @@ function formatTemplates(templates) {
  * @returns {string} Template with CREATE mode embedded
  */
 function embedCreateMode(template, createData) {
-  const config = DEFAULT_CONFIG;
-  
+  const platformCfg = DEFAULT_CONFIG;
+
   // Build CREATE mode section
   const sections = [];
-  
+
   // Section 1: Workflow
   if (createData.workflow) {
-    sections.push(formatSectionHeader('CREATE Mode — Workflow', 2, config));
+    sections.push(formatSectionHeader('CREATE Mode — Workflow', 2, platformCfg));
     sections.push(extractContent(createData.workflow));
   }
-  
+
   // Section 2: Elicitation Questions
   if (createData.elicitation) {
-    sections.push(formatSectionHeader('CREATE Mode — Requirement Elicitation', 2, config));
+    sections.push(formatSectionHeader('CREATE Mode — Requirement Elicitation', 2, platformCfg));
     sections.push(extractContent(createData.elicitation));
   }
-  
+
   // Section 3: Templates
   if (createData.templates && Object.keys(createData.templates).length > 0) {
-    sections.push(formatSectionHeader('CREATE Mode — Templates', 2, config));
+    sections.push(formatSectionHeader('CREATE Mode — Templates', 2, platformCfg));
     sections.push(formatTemplates(createData.templates));
   }
-  
+
   // Section 4: Security Checks
   if (createData.securityChecks) {
-    sections.push(formatSectionHeader('CREATE Mode — Security Checks', 2, config));
+    sections.push(formatSectionHeader('CREATE Mode — Security Checks', 2, platformCfg));
     sections.push(formatCodeBlock(
       yaml.dump(createData.securityChecks, { lineWidth: -1 }),
       'yaml',
-      config
+      platformCfg
     ));
   }
-  
+
   // Section 5: Configuration
   if (createData.config) {
-    sections.push(formatSectionHeader('CREATE Mode — Configuration', 2, config));
+    sections.push(formatSectionHeader('CREATE Mode — Configuration', 2, platformCfg));
     sections.push(formatCodeBlock(
       yaml.dump(createData.config, { lineWidth: -1 }),
       'yaml',
-      config
+      platformCfg
     ));
   }
-  
+
   const createContent = sections.join('\n\n');
-  
+
   // Replace CREATE_MODE placeholder or append
   if (template.includes('{{CREATE_MODE}}')) {
     return template.replace('{{CREATE_MODE}}', createContent);
   }
-  
+
   // If no placeholder, append to end
   return `${template}\n\n${createContent}`;
 }
 
 /**
  * Embed EVALUATE mode into template
- * 
+ *
  * @param {string} template - Platform template string
  * @param {Object} evaluateData - EVALUATE mode data
  * @param {string} evaluateData.phases - Phase documentation
@@ -235,67 +235,67 @@ function embedCreateMode(template, createData) {
  * @returns {string} Template with EVALUATE mode embedded
  */
 function embedEvaluateMode(template, evaluateData) {
-  const config = DEFAULT_CONFIG;
-  
+  const platformCfg = DEFAULT_CONFIG;
+
   // Build EVALUATE mode section
   const sections = [];
-  
+
   // Section 1: Overview
-  sections.push(formatSectionHeader('EVALUATE Mode — Quality Assessment', 2, config));
+  sections.push(formatSectionHeader('EVALUATE Mode — Quality Assessment', 2, platformCfg));
   sections.push('EVALUATE mode provides rigorous, standardized quality assessment for skills.');
-  
+
   // Section 2: Phases
   if (evaluateData.phases) {
-    sections.push(formatSectionHeader('4-Phase Pipeline', 3, config));
+    sections.push(formatSectionHeader('4-Phase Pipeline', 3, platformCfg));
     sections.push(extractContent(evaluateData.phases));
   }
-  
+
   // Section 3: Rubrics
   if (evaluateData.rubrics) {
-    sections.push(formatSectionHeader('Scoring Rubrics', 3, config));
+    sections.push(formatSectionHeader('Scoring Rubrics', 3, platformCfg));
     sections.push(extractContent(evaluateData.rubrics));
   }
-  
+
   // Section 4: Certification
   if (evaluateData.certification) {
-    sections.push(formatSectionHeader('Certification Tiers', 3, config));
+    sections.push(formatSectionHeader('Certification Tiers', 3, platformCfg));
     sections.push(extractContent(evaluateData.certification));
   }
-  
+
   // Section 5: Scoring Configuration
   if (evaluateData.scoring) {
-    sections.push(formatSectionHeader('Scoring Configuration', 3, config));
+    sections.push(formatSectionHeader('Scoring Configuration', 3, platformCfg));
     sections.push(formatCodeBlock(
       yaml.dump(evaluateData.scoring, { lineWidth: -1 }),
       'yaml',
-      config
+      platformCfg
     ));
   }
-  
+
   // Section 6: Configuration
   if (evaluateData.config) {
-    sections.push(formatSectionHeader('Configuration', 3, config));
+    sections.push(formatSectionHeader('Configuration', 3, platformCfg));
     sections.push(formatCodeBlock(
       yaml.dump(evaluateData.config, { lineWidth: -1 }),
       'yaml',
-      config
+      platformCfg
     ));
   }
-  
+
   const evaluateContent = sections.join('\n\n');
-  
+
   // Replace EVALUATE_MODE placeholder or append
   if (template.includes('{{EVALUATE_MODE}}')) {
     return template.replace('{{EVALUATE_MODE}}', evaluateContent);
   }
-  
+
   // If no placeholder, append to end
   return `${template}\n\n${evaluateContent}`;
 }
 
 /**
  * Embed OPTIMIZE mode into template
- * 
+ *
  * @param {string} template - Platform template string
  * @param {Object} optimizeData - OPTIMIZE mode data
  * @param {string} optimizeData.dimensions - Dimension documentation
@@ -306,67 +306,67 @@ function embedEvaluateMode(template, evaluateData) {
  * @returns {string} Template with OPTIMIZE mode embedded
  */
 function embedOptimizeMode(template, optimizeData) {
-  const config = DEFAULT_CONFIG;
-  
+  const platformCfg = DEFAULT_CONFIG;
+
   // Build OPTIMIZE mode section
   const sections = [];
-  
+
   // Section 1: Overview
-  sections.push(formatSectionHeader('OPTIMIZE Mode — Continuous Improvement', 2, config));
+  sections.push(formatSectionHeader('OPTIMIZE Mode — Continuous Improvement', 2, platformCfg));
   sections.push('OPTIMIZE mode provides automated, iterative skill improvement through systematic optimization.');
-  
+
   // Section 2: Dimensions
   if (optimizeData.dimensions) {
-    sections.push(formatSectionHeader('7-Dimension Analysis', 3, config));
+    sections.push(formatSectionHeader('7-Dimension Analysis', 3, platformCfg));
     sections.push(extractContent(optimizeData.dimensions));
   }
-  
+
   // Section 3: Strategies
   if (optimizeData.strategies) {
-    sections.push(formatSectionHeader('Optimization Strategies', 3, config));
+    sections.push(formatSectionHeader('Optimization Strategies', 3, platformCfg));
     sections.push(extractContent(optimizeData.strategies));
   }
-  
+
   // Section 4: Convergence
   if (optimizeData.convergence) {
-    sections.push(formatSectionHeader('Convergence Detection', 3, config));
+    sections.push(formatSectionHeader('Convergence Detection', 3, platformCfg));
     sections.push(extractContent(optimizeData.convergence));
   }
-  
+
   // Section 5: Loop Configuration
   if (optimizeData.loopConfig) {
-    sections.push(formatSectionHeader('9-Step Optimization Loop', 3, config));
+    sections.push(formatSectionHeader('9-Step Optimization Loop', 3, platformCfg));
     sections.push(formatCodeBlock(
       yaml.dump(optimizeData.loopConfig, { lineWidth: -1 }),
       'yaml',
-      config
+      platformCfg
     ));
   }
-  
+
   // Section 6: Configuration
   if (optimizeData.config) {
-    sections.push(formatSectionHeader('Configuration', 3, config));
+    sections.push(formatSectionHeader('Configuration', 3, platformCfg));
     sections.push(formatCodeBlock(
       yaml.dump(optimizeData.config, { lineWidth: -1 }),
       'yaml',
-      config
+      platformCfg
     ));
   }
-  
+
   const optimizeContent = sections.join('\n\n');
-  
+
   // Replace OPTIMIZE_MODE placeholder or append
   if (template.includes('{{OPTIMIZE_MODE}}')) {
     return template.replace('{{OPTIMIZE_MODE}}', optimizeContent);
   }
-  
+
   // If no placeholder, append to end
   return `${template}\n\n${optimizeContent}`;
 }
 
 /**
  * Embed shared resources into template
- * 
+ *
  * @param {string} template - Platform template string
  * @param {Object} sharedData - Shared resources data
  * @param {Object} sharedData.security - Security patterns (CWE, etc.)
@@ -376,58 +376,58 @@ function embedOptimizeMode(template, optimizeData) {
  * @returns {string} Template with shared resources embedded
  */
 function embedSharedResources(template, sharedData) {
-  const config = DEFAULT_CONFIG;
-  
+  const platformCfg = DEFAULT_CONFIG;
+
   // Build shared resources section
   const sections = [];
-  
+
   // Section 1: Header
-  sections.push(formatSectionHeader('Shared Resources', 2, config));
+  sections.push(formatSectionHeader('Shared Resources', 2, platformCfg));
   sections.push('Common patterns, utilities, and security checks used across all modes.');
-  
+
   // Section 2: Security Patterns
   if (sharedData.security) {
-    sections.push(formatSectionHeader('Security Patterns', 3, config));
+    sections.push(formatSectionHeader('Security Patterns', 3, platformCfg));
     sections.push(extractContent(sharedData.security));
   }
-  
+
   // Section 3: Utilities
   if (sharedData.utils) {
-    sections.push(formatSectionHeader('Utility Functions', 3, config));
+    sections.push(formatSectionHeader('Utility Functions', 3, platformCfg));
     sections.push(formatCodeBlock(
       extractContent(sharedData.utils),
       'yaml',
-      config
+      platformCfg
     ));
   }
-  
+
   // Section 4: Helpers
   if (sharedData.helpers) {
-    sections.push(formatSectionHeader('Helper Patterns', 3, config));
+    sections.push(formatSectionHeader('Helper Patterns', 3, platformCfg));
     sections.push(formatCodeBlock(
       yaml.dump(sharedData.helpers, { lineWidth: -1 }),
       'yaml',
-      config
+      platformCfg
     ));
   }
-  
+
   // Section 5: Configuration
   if (sharedData.config) {
-    sections.push(formatSectionHeader('Shared Configuration', 3, config));
+    sections.push(formatSectionHeader('Shared Configuration', 3, platformCfg));
     sections.push(formatCodeBlock(
       yaml.dump(sharedData.config, { lineWidth: -1 }),
       'yaml',
-      config
+      platformCfg
     ));
   }
-  
+
   const sharedContent = sections.join('\n\n');
-  
+
   // Replace SHARED_RESOURCES placeholder or append
   if (template.includes('{{SHARED_RESOURCES}}')) {
     return template.replace('{{SHARED_RESOURCES}}', sharedContent);
   }
-  
+
   // If no placeholder, append to end
   return `${template}\n\n${sharedContent}`;
 }
@@ -640,12 +640,12 @@ function getDefaultTemplate(platform) {
 function validateEmbeddedContent(content) {
   const issues = [];
   
-  // Check for remaining placeholders
-  const placeholderMatches = content.match(/\{\{\w+\}\}/g);
+  // Check for remaining placeholders (use extended pattern to catch {{OUTER-KEY}} and {{outer.key}})
+  const placeholderMatches = content.match(/\{\{[\w.-]+\}\}/g);
   if (placeholderMatches) {
     issues.push({
       type: 'warning',
-      message: `Unreplaced placeholders found: ${placeholderMatches.join(', ')}`,
+      message: `Unreplaced placeholders found: ${[...new Set(placeholderMatches)].join(', ')}`,
     });
   }
   

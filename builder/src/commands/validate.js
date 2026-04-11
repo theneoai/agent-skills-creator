@@ -113,27 +113,32 @@ async function validateTemplates(result) {
 }
 
 /**
- * Validate generated platform skill files
+ * Validate generated platform skill files (both Markdown and JSON outputs).
  */
 async function validateGeneratedSkills(result) {
   console.log(chalk.cyan('🧪 Validating generated skill files...'));
 
-  let skillFiles;
+  let mdFiles = [];
+  let jsonFiles = [];
   try {
-    skillFiles = glob.sync(path.join(PATHS.platforms, '*.md'));
+    mdFiles = glob.sync(path.join(PATHS.platforms, '*.md'));
+    jsonFiles = glob.sync(path.join(PATHS.platforms, '*.json'));
   } catch {
-    skillFiles = [];
+    // glob errors treated as empty
   }
 
-  if (skillFiles.length === 0) {
+  const allFiles = [...mdFiles, ...jsonFiles];
+
+  if (allFiles.length === 0) {
     addIssue(result, 'warning', 'No generated skill files found in platforms/');
     console.log(chalk.yellow('  ⚠ No skill files found (run build first)\n'));
     return;
   }
 
-  console.log(chalk.gray(`  Found ${skillFiles.length} skill file(s)`));
+  console.log(chalk.gray(`  Found ${mdFiles.length} .md and ${jsonFiles.length} .json file(s)`));
 
-  for (const filePath of skillFiles) {
+  // --- Markdown skill files ---
+  for (const filePath of mdFiles) {
     const fileName = path.basename(filePath);
     let content;
 
@@ -178,12 +183,75 @@ async function validateGeneratedSkills(result) {
       fileOk = false;
     }
 
-    // No remaining {{PLACEHOLDER}} tokens
-    if (/\{\{[A-Z_0-9]+\}\}/.test(content)) {
-      const remaining = (content.match(/\{\{[A-Z_0-9]+\}\}/g) || []);
+    // No remaining {{PLACEHOLDER}} tokens (extended pattern covers hyphens/dots too)
+    if (/\{\{[\w.-]+\}\}/.test(content)) {
+      const remaining = content.match(/\{\{[\w.-]+\}\}/g) || [];
       const unique = [...new Set(remaining)];
       addIssue(result, 'error', `${fileName}: ${unique.length} unreplaced placeholder(s): ${unique.slice(0, 5).join(', ')}`);
       fileOk = false;
+    }
+
+    if (fileOk) {
+      console.log(chalk.green(`  ✓ ${fileName}`));
+    } else {
+      console.log(chalk.red(`  ✗ ${fileName} (see issues above)`));
+    }
+  }
+
+  // --- JSON output files (mcp, openai) ---
+  for (const filePath of jsonFiles) {
+    const fileName = path.basename(filePath);
+    let raw;
+
+    try {
+      raw = await fs.promises.readFile(filePath, 'utf8');
+    } catch (error) {
+      addIssue(result, 'error', `Cannot read ${fileName}: ${error.message}`);
+      continue;
+    }
+
+    let fileOk = true;
+
+    // Must be valid JSON
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (error) {
+      addIssue(result, 'error', `${fileName}: invalid JSON — ${error.message}`);
+      fileOk = false;
+      console.log(chalk.red(`  ✗ ${fileName} (invalid JSON)`));
+      continue;
+    }
+
+    // MCP manifest checks
+    if (fileName.includes('-mcp-')) {
+      if (!parsed.schema_version) {
+        addIssue(result, 'error', `${fileName}: MCP manifest missing schema_version`);
+        fileOk = false;
+      }
+      if (!parsed.name) {
+        addIssue(result, 'error', `${fileName}: MCP manifest missing name`);
+        fileOk = false;
+      }
+      if (!Array.isArray(parsed.tools) || parsed.tools.length === 0) {
+        addIssue(result, 'error', `${fileName}: MCP manifest must declare at least one tool`);
+        fileOk = false;
+      }
+      if (!parsed.capabilities) {
+        addIssue(result, 'warning', `${fileName}: MCP manifest missing capabilities block`);
+      }
+    }
+
+    // OpenAI JSON checks
+    if (fileName.includes('-openai-')) {
+      if (!parsed.name) {
+        addIssue(result, 'error', `${fileName}: OpenAI manifest missing name`);
+        fileOk = false;
+      }
+      if (!parsed.instructions) {
+        addIssue(result, 'error', `${fileName}: OpenAI manifest missing instructions`);
+        fileOk = false;
+      }
     }
 
     if (fileOk) {

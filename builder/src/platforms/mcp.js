@@ -137,18 +137,41 @@ function formatSkill(skillContent) {
   let skillVersion = '1.0.0';
   let skillAuthor = '';
 
+  // Try YAML frontmatter first
   const frontmatterMatch = skillContent.match(/^---\n([\s\S]*?)\n---/);
   if (frontmatterMatch) {
     const fm = frontmatterMatch[1];
     const nameMatch = fm.match(/^name:\s*(.+)$/m);
-    const descMatch = fm.match(/^description:\s*(.+)$/m);
-    const verMatch = fm.match(/^version:\s*(.+)$/m);
+    const descMatch = fm.match(/^description:\s*["']?(.+?)["']?\s*$/m);
+    const verMatch = fm.match(/^version:\s*["']?(.+?)["']?\s*$/m);
     const authorMatch = fm.match(/^author:\s*(.+)$/m);
 
     if (nameMatch) skillName = nameMatch[1].trim();
     if (descMatch) skillDescription = descMatch[1].trim();
     if (verMatch) skillVersion = verMatch[1].trim();
     if (authorMatch) skillAuthor = authorMatch[1].trim();
+  }
+
+  // Fallback: extract metadata from inline body patterns when there is no
+  // YAML frontmatter (e.g. MCP default template output or Cursor-style content).
+  if (!skillName || skillName === 'unnamed-skill') {
+    const inlineName = skillContent.match(/^#\s+(.+)$/m);
+    if (inlineName) skillName = inlineName[1].trim().toLowerCase().replace(/\s+/g, '-');
+  }
+  if (!skillDescription) {
+    // Look for a blockquote description (> **Description**: ...) or first prose paragraph
+    const blockDesc = skillContent.match(/^>\s+\*\*Description\*\*:\s*(.+)$/m) ||
+                      skillContent.match(/^>\s+(.+)$/m);
+    if (blockDesc) {
+      skillDescription = blockDesc[1].replace(/\*\*/g, '').trim();
+    } else {
+      // Use the first non-empty, non-heading, non-blockquote paragraph
+      const firstPara = skillContent
+        .split('\n')
+        .filter(l => l.trim() && !l.startsWith('#') && !l.startsWith('>') && !l.startsWith('-') && !l.startsWith('`'))
+        .find(l => l.trim().length > 10);
+      if (firstPara) skillDescription = firstPara.trim().slice(0, 200);
+    }
   }
 
   // Build MCP manifest with extracted metadata
