@@ -111,7 +111,7 @@ describe('Validate Command', () => {
       config.PATHS.platforms = origPlatforms;
       // Clean up all temp dirs created during the test
       for (const d of tmpDirs.splice(0)) {
-        try { require('fs').rmSync(d, { recursive: true, force: true }); } catch {}
+        try { fs.rmSync(d, { recursive: true, force: true }); } catch {}
       }
     });
 
