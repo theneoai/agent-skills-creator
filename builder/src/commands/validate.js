@@ -225,7 +225,7 @@ async function validateGeneratedSkills(result) {
     }
   }
 
-  // --- JSON output files (mcp, openai) ---
+  // --- JSON output files (mcp, openai, a2a) ---
   for (const filePath of jsonFiles) {
     const fileName = path.basename(filePath);
     let raw;
@@ -251,7 +251,8 @@ async function validateGeneratedSkills(result) {
     }
 
     // MCP manifest checks
-    if (fileName.includes('-mcp-')) {
+    // Use /-mcp[.-]/ to match both skill-writer-mcp.json and skill-writer-mcp-dev.json
+    if (/-mcp[.-]/.test(fileName)) {
       if (!parsed.schema_version) {
         addIssue(result, 'error', `${fileName}: MCP manifest missing schema_version`);
         fileOk = false;
@@ -270,7 +271,8 @@ async function validateGeneratedSkills(result) {
     }
 
     // OpenAI JSON checks
-    if (fileName.includes('-openai-')) {
+    // Use /-openai[.-]/ to match both skill-writer-openai.json and skill-writer-openai-dev.json
+    if (/-openai[.-]/.test(fileName)) {
       if (!parsed.name) {
         addIssue(result, 'error', `${fileName}: OpenAI manifest missing name`);
         fileOk = false;
@@ -278,6 +280,26 @@ async function validateGeneratedSkills(result) {
       if (!parsed.instructions) {
         addIssue(result, 'error', `${fileName}: OpenAI manifest missing instructions`);
         fileOk = false;
+      }
+    }
+
+    // A2A Agent Card checks
+    // Use /-a2a[.-]/ to match both skill-writer-a2a.json and skill-writer-a2a-dev.json
+    if (/-a2a[.-]/.test(fileName)) {
+      if (!parsed.schema_version || !parsed.schema_version.startsWith('a2a/')) {
+        addIssue(result, 'error', `${fileName}: A2A Agent Card missing or invalid schema_version (expected "a2a/1.0")`);
+        fileOk = false;
+      }
+      if (!parsed.name) {
+        addIssue(result, 'error', `${fileName}: A2A Agent Card missing name`);
+        fileOk = false;
+      }
+      if (!Array.isArray(parsed.skills) || parsed.skills.length === 0) {
+        addIssue(result, 'error', `${fileName}: A2A Agent Card must declare at least one skill`);
+        fileOk = false;
+      }
+      if (!parsed.capabilities) {
+        addIssue(result, 'warning', `${fileName}: A2A Agent Card missing capabilities block`);
       }
     }
 

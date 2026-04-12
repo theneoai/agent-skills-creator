@@ -12,7 +12,7 @@
 #     ./install.sh --all              # every supported platform
 #     ./install.sh --url <URL>        # use a custom skill-framework URL
 #
-# Supported platforms: claude, opencode, openclaw, cursor, gemini, mcp
+# Supported platforms: claude, opencode, openclaw, cursor, gemini, mcp, a2a
 # (openai requires manual setup via platform dashboard)
 
 set -euo pipefail

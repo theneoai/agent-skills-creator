@@ -66,10 +66,112 @@ describe('Validate Command', () => {
   });
 
   describe('validateGeneratedSkills', () => {
+    let origPlatforms;
+    const tmpDirs = [];
+
+    beforeEach(() => {
+      origPlatforms = config.PATHS.platforms;
+    });
+
+    afterEach(() => {
+      config.PATHS.platforms = origPlatforms;
+      for (const d of tmpDirs.splice(0)) {
+        try { fs.rmSync(d, { recursive: true, force: true }); } catch {}
+      }
+    });
+
+    function makeTempJson(content, fileName) {
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sw-vgs-'));
+      tmpDirs.push(tmpDir);
+      fs.writeFileSync(path.join(tmpDir, fileName), JSON.stringify(content), 'utf8');
+      return tmpDir;
+    }
+
     test('should validate generated skill files', async () => {
       const result = makeResult();
       await validateGeneratedSkills(result);
       expect(result).toBeDefined();
+    });
+
+    // ── MCP filename regex fix ──────────────────────────────────────────────
+
+    test('should check MCP structure for skill-writer-mcp.json (not just -dev)', async () => {
+      // A prod build file (no -dev suffix) should trigger MCP structural checks
+      const incomplete = { name: 'skill-writer' }; // missing schema_version and tools
+      const tmpDir = makeTempJson(incomplete, 'skill-writer-mcp.json');
+      config.PATHS.platforms = tmpDir;
+      const result = makeResult();
+      await validateGeneratedSkills(result);
+      expect(result.errors).toBeGreaterThan(0);
+      expect(result.issues.some(i => i.message.includes('schema_version'))).toBe(true);
+    });
+
+    test('should check MCP structure for skill-writer-mcp-dev.json', async () => {
+      const incomplete = { name: 'skill-writer' }; // missing schema_version and tools
+      const tmpDir = makeTempJson(incomplete, 'skill-writer-mcp-dev.json');
+      config.PATHS.platforms = tmpDir;
+      const result = makeResult();
+      await validateGeneratedSkills(result);
+      expect(result.errors).toBeGreaterThan(0);
+      expect(result.issues.some(i => i.message.includes('schema_version'))).toBe(true);
+    });
+
+    test('should pass a valid MCP manifest', async () => {
+      const valid = {
+        schema_version: '1.0', name: 'skill-writer', description: 'test',
+        version: '1.0.0', tools: [{ name: 'invoke', description: 'Invoke' }],
+        capabilities: { modes: ['CREATE'] },
+      };
+      const tmpDir = makeTempJson(valid, 'skill-writer-mcp.json');
+      config.PATHS.platforms = tmpDir;
+      const result = makeResult();
+      await validateGeneratedSkills(result);
+      expect(result.errors).toBe(0);
+    });
+
+    // ── A2A filename regex + structural check ──────────────────────────────
+
+    test('should check A2A structure for skill-writer-a2a.json', async () => {
+      const incomplete = { schema_version: 'a2a/1.0', name: 'skill-writer' }; // missing skills
+      const tmpDir = makeTempJson(incomplete, 'skill-writer-a2a.json');
+      config.PATHS.platforms = tmpDir;
+      const result = makeResult();
+      await validateGeneratedSkills(result);
+      expect(result.errors).toBeGreaterThan(0);
+      expect(result.issues.some(i => i.message.includes('at least one skill'))).toBe(true);
+    });
+
+    test('should check A2A structure for skill-writer-a2a-dev.json', async () => {
+      const badSchema = { schema_version: 'wrong/1.0', name: 'x', skills: [] };
+      const tmpDir = makeTempJson(badSchema, 'skill-writer-a2a-dev.json');
+      config.PATHS.platforms = tmpDir;
+      const result = makeResult();
+      await validateGeneratedSkills(result);
+      expect(result.errors).toBeGreaterThan(0);
+      expect(result.issues.some(i => i.message.includes('schema_version'))).toBe(true);
+    });
+
+    test('should pass a valid A2A agent card', async () => {
+      const valid = {
+        schema_version: 'a2a/1.0', name: 'skill-writer', description: 'test',
+        version: '1.0.0', skills: [{ id: 'skill-writer/create', name: 'CREATE' }],
+        capabilities: { streaming: true },
+      };
+      const tmpDir = makeTempJson(valid, 'skill-writer-a2a.json');
+      config.PATHS.platforms = tmpDir;
+      const result = makeResult();
+      await validateGeneratedSkills(result);
+      expect(result.errors).toBe(0);
+    });
+
+    test('should error on invalid JSON in platform file', async () => {
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sw-vgs-'));
+      tmpDirs.push(tmpDir);
+      fs.writeFileSync(path.join(tmpDir, 'skill-writer-mcp.json'), '{broken json', 'utf8');
+      config.PATHS.platforms = tmpDir;
+      const result = makeResult();
+      await validateGeneratedSkills(result);
+      expect(result.errors).toBeGreaterThan(0);
     });
   });
 
