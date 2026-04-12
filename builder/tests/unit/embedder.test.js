@@ -40,7 +40,8 @@ describe('Embedder Module', () => {
   });
 
   describe('replacePlaceholders', () => {
-    const standardConfig = { placeholderPattern: config.PLACEHOLDERS.standard };
+    // PLACEHOLDERS.standard was merged into extended (extended is a strict superset).
+    const standardConfig = { placeholderPattern: config.PLACEHOLDERS.extended };
     const extendedConfig = { placeholderPattern: config.PLACEHOLDERS.extended };
     const cursorConfig = { placeholderPattern: config.PLACEHOLDERS.cursor };
 

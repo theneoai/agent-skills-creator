@@ -22,7 +22,7 @@ const { JSON_OUTPUT_PLATFORMS } = config;
 
 /**
  * Build platform-specific skills from core engine
- * 
+ *
  * @param {Object} options - Build options
  * @param {string} options.platform - Target platform (or 'all')
  * @param {boolean} options.release - Whether to create a release build
@@ -69,10 +69,16 @@ async function build(options) {
     // Step 1: Read core data
     console.log(chalk.cyan('📖 Reading core engine data...'));
     const coreData = await readAllCoreData();
-    console.log(chalk.green('  ✓ Core data loaded successfully\n'));
+    console.log(chalk.green('  ✓ Core data loaded successfully'));
+
+    // P2-2: Version compatibility check — warn if skill-framework.md is newer than the builder.
+    // This catches the case where skill-framework.md was updated but the builder was not,
+    // which could cause the generated skill files to be missing newly-added sections.
+    checkVersionCompatibility(coreData.metadata.version);
+    console.log();
 
     // Step 2: Determine target platforms
-    const targetPlatforms = buildOptions.platform === 'all' 
+    const targetPlatforms = buildOptions.platform === 'all'
       ? getSupportedPlatforms()
       : [buildOptions.platform];
 
@@ -91,7 +97,7 @@ async function build(options) {
 
     for (const platform of targetPlatforms) {
       const platformStartTime = Date.now();
-      
+
       try {
         console.log(chalk.cyan(`  Building ${chalk.bold(platform)}...`));
 
@@ -104,7 +110,7 @@ async function build(options) {
         };
 
         // Generate skill file for platform
-        let skillResult = generateSkillFile(platform, enrichedCoreData);
+        const skillResult = generateSkillFile(platform, enrichedCoreData);
 
         // Apply platform-specific formatting
         const { formatForPlatform } = require('../platforms');
@@ -136,7 +142,7 @@ async function build(options) {
         }
 
         const platformDuration = Date.now() - platformStartTime;
-        
+
         // Log success
         console.log(chalk.green(`    ✓ ${platform} skill generated`));
         console.log(chalk.gray(`      Output: ${path.relative(process.cwd(), outputPath)}`));
@@ -154,9 +160,9 @@ async function build(options) {
 
       } catch (error) {
         const platformDuration = Date.now() - platformStartTime;
-        
+
         console.log(chalk.red(`    ✗ ${platform} failed: ${error.message}\n`));
-        
+
         results.failed.push({
           platform,
           error: error.message,
@@ -182,7 +188,7 @@ async function build(options) {
 
   } catch (error) {
     console.error(chalk.red(`\n✗ Build failed: ${error.message}\n`));
-    
+
     if (error.stack) {
       console.error(chalk.gray(error.stack));
     }
@@ -223,7 +229,7 @@ function printSummary(results) {
   console.log(`  Succeeded: ${chalk.green(results.stats.succeeded)}`);
   console.log(`  Failed: ${chalk.red(results.stats.failed)}`);
   console.log(`  Duration: ${chalk.yellow(results.stats.duration + 'ms')}`);
-  
+
   if (results.success.length > 0) {
     const totalSize = results.success.reduce((sum, r) => sum + r.size, 0);
     console.log(`  Total size: ${chalk.yellow(formatBytes(totalSize))}`);
@@ -242,17 +248,66 @@ function printSummary(results) {
 }
 
 /**
+ * P2-2: Compare builder version against the version stored in coreData.metadata.
+ * The metadata version is the builder package.json version baked in by reader.js.
+ * We also compare it against skill-framework.md's frontmatter version when readable.
+ *
+ * Emits a console warning (not an error) so builds are never blocked by this check.
+ * @param {string} builderVersion - builder package.json version (from coreData.metadata.version)
+ */
+function checkVersionCompatibility(builderVersion) {
+  if (!builderVersion) return;
+
+  // Try to read skill-framework.md frontmatter version
+  try {
+    const skillFrameworkContent = require('fs').readFileSync(config.PATHS.skillFramework, 'utf-8');
+    const fmMatch = skillFrameworkContent.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+    if (fmMatch) {
+      const yaml = require('js-yaml');
+      const fm = yaml.load(fmMatch[1]);
+      const frameworkVersion = fm && fm.version ? String(fm.version) : null;
+      if (frameworkVersion && semverGt(frameworkVersion, builderVersion)) {
+        console.warn(
+          chalk.yellow(
+            `  ⚠ Version mismatch: skill-framework.md is v${frameworkVersion} but builder is v${builderVersion}.\n` +
+            '    Run `git pull` and rebuild to pick up new framework sections.'
+          )
+        );
+      }
+    }
+  } catch {
+    // skill-framework.md may not exist or lack frontmatter — non-fatal, skip silently
+  }
+}
+
+/**
+ * Simple semver "greater-than" comparison (no pre-release support needed here).
+ * @param {string} a - version to test
+ * @param {string} b - version to compare against
+ * @returns {boolean} true if a > b
+ */
+function semverGt(a, b) {
+  const pa = String(a).split('.').map(n => parseInt(n, 10) || 0);
+  const pb = String(b).split('.').map(n => parseInt(n, 10) || 0);
+  for (let i = 0; i < 3; i++) {
+    if ((pa[i] || 0) > (pb[i] || 0)) return true;
+    if ((pa[i] || 0) < (pb[i] || 0)) return false;
+  }
+  return false;
+}
+
+/**
  * Format bytes to human-readable string
  * @param {number} bytes - Number of bytes
  * @returns {string} Formatted string
  */
 function formatBytes(bytes) {
   if (bytes === 0) return '0 B';
-  
+
   const units = ['B', 'KB', 'MB', 'GB'];
   const k = 1024;
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + units[i];
 }
 

@@ -1,9 +1,9 @@
 /**
  * Embedder Module
- * 
+ *
  * Embeds core content into platform templates.
  * Handles template placeholders and platform-specific formatting.
- * 
+ *
  * @module builder/src/core/embedder
  * @version 3.1.0
  */
@@ -47,7 +47,7 @@ function getPlatformConfig(platform) {
 function replacePlaceholders(template, data, platformConfig, options = {}) {
   const { strict = false } = options;
   let result = template;
-  
+
   // Replace all placeholders
   result = result.replace(platformConfig.placeholderPattern, (match, key) => {
     const value = data[key];
@@ -60,7 +60,7 @@ function replacePlaceholders(template, data, platformConfig, options = {}) {
     }
     return String(value);
   });
-  
+
   return result;
 }
 
@@ -146,12 +146,12 @@ function formatTemplates(templates) {
   }
 
   const sections = [];
-  
+
   for (const [name, templateData] of Object.entries(templates)) {
     const content = extractContent(templateData);
     sections.push(`### ${name} Template\n\n${content}`);
   }
-  
+
   return sections.join('\n\n---\n\n');
 }
 
@@ -431,7 +431,7 @@ function embedSharedResources(template, sharedData) {
 
 /**
  * Generate complete skill file for a platform
- * 
+ *
  * @param {string} platform - Target platform (opencode, openclaw, claude, cursor, openai, gemini)
  * @param {Object} coreData - Core engine data
  * @param {Object} coreData.metadata - Skill metadata
@@ -472,27 +472,27 @@ function generateSkillFile(platform, coreData) {
       template = getDefaultTemplate(platform);
     }
   }
-  
+
   // Replace metadata placeholders
   if (coreData.metadata) {
     template = replacePlaceholders(template, coreData.metadata, config);
   }
-  
+
   // Embed CREATE mode
   if (coreData.create) {
     template = embedCreateMode(template, coreData.create);
   }
-  
+
   // Embed EVALUATE mode
   if (coreData.evaluate) {
     template = embedEvaluateMode(template, coreData.evaluate);
   }
-  
+
   // Embed OPTIMIZE mode
   if (coreData.optimize) {
     template = embedOptimizeMode(template, coreData.optimize);
   }
-  
+
   // Embed shared resources
   if (coreData.shared) {
     template = embedSharedResources(template, coreData.shared);
@@ -544,8 +544,13 @@ function generateSkillFile(platform, coreData) {
     };
     frontmatter = formatFrontmatter(fmData, config);
     if (!frontmatter) {
-      console.warn(`Warning: formatFrontmatter returned null for platform "${platform}", output will lack frontmatter`);
-      frontmatter = '';
+      // P0-3: Frontmatter generation failing for a platform that requires it is a
+      // hard error — the output would be structurally invalid.  Throw instead of
+      // silently producing a skill file with no frontmatter.
+      throw new Error(
+        '[EINVALID_FRONTMATTER] frontmatter generation failed for platform "' + platform + '" — ' +
+        'ensure all metadata values are YAML-serializable (no circular references, functions, or undefined)'
+      );
     }
   }
 
@@ -595,8 +600,6 @@ function injectUTESection(content, metadata) {
  * @returns {string} Default template
  */
 function getDefaultTemplate(platform) {
-  const config = getPlatformConfig(platform);
-  
   // Default template structure
   return `# {{TITLE}}
 
@@ -645,7 +648,7 @@ function getDefaultTemplate(platform) {
  */
 function validateEmbeddedContent(content) {
   const issues = [];
-  
+
   // Check for remaining placeholders (use extended pattern to catch {{OUTER-KEY}} and {{outer.key}})
   const placeholderMatches = content.match(/\{\{[\w.-]+\}\}/g);
   if (placeholderMatches) {
@@ -654,7 +657,7 @@ function validateEmbeddedContent(content) {
       message: `Unreplaced placeholders found: ${[...new Set(placeholderMatches)].join(', ')}`,
     });
   }
-  
+
   // Check for empty sections
   const emptySectionMatches = content.match(/##\s+\w+\s*\n\s*(?=##|$)/g);
   if (emptySectionMatches) {
@@ -664,7 +667,7 @@ function validateEmbeddedContent(content) {
       sections: emptySectionMatches,
     });
   }
-  
+
   // Check for balanced code blocks
   const codeBlockOpens = (content.match(/```/g) || []).length;
   if (codeBlockOpens % 2 !== 0) {
@@ -673,7 +676,7 @@ function validateEmbeddedContent(content) {
       message: 'Unbalanced code blocks detected',
     });
   }
-  
+
   return {
     valid: issues.filter(i => i.type === 'error').length === 0,
     issues: issues,
@@ -773,7 +776,7 @@ function convertFrontmatterToJSON(content) {
 function ensureGeminiFormatting(content) {
   // Ensure proper header hierarchy
   let result = content;
-  
+
   // Ensure there's only one H1
   const h1Matches = result.match(/^#\s+.+$/gm);
   if (h1Matches && h1Matches.length > 1) {
@@ -784,7 +787,7 @@ function ensureGeminiFormatting(content) {
       return count === 1 ? match : `## ${title}`;
     });
   }
-  
+
   return result;
 }
 

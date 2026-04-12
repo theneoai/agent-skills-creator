@@ -49,25 +49,28 @@ const FRONTMATTER_REGEX = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
  */
 function parseFrontmatter(content) {
   if (!content || typeof content !== 'string') {
-    return { frontmatterYaml: null, frontmatterData: null, body: content || '', raw: null };
+    return { frontmatterYaml: null, frontmatterData: null, body: content || '', raw: null, parseError: null };
   }
 
   const match = content.match(FRONTMATTER_REGEX);
   if (!match) {
-    return { frontmatterYaml: null, frontmatterData: null, body: content, raw: null };
+    return { frontmatterYaml: null, frontmatterData: null, body: content, raw: null, parseError: null };
   }
 
   const frontmatterYaml = match[1];
   const body = content.slice(match[0].length);
   let frontmatterData = null;
+  let parseError = null;
 
   try {
     frontmatterData = yaml.load(frontmatterYaml) || {};
-  } catch {
-    // Return null frontmatterData; caller decides whether to throw or warn
+  } catch (e) {
+    // Preserve the parse error so callers can surface diagnostics if needed.
+    // frontmatterData stays null — caller decides whether to throw or warn.
+    parseError = e;
   }
 
-  return { frontmatterYaml, frontmatterData, body, raw: match[0] };
+  return { frontmatterYaml, frontmatterData, body, raw: match[0], parseError };
 }
 
 /**

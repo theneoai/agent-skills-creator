@@ -193,7 +193,34 @@ describe('stripFrontmatter()', () => {
   });
 });
 
-// ─── Round-trip consistency ─────────────────────────��─────────────────────────
+// ─── Error paths ─────────────────────────────────────────────────────────────
+
+describe('parseFrontmatter() error paths', () => {
+  test('returns null frontmatterData and a parseError for malformed YAML', () => {
+    // Deliberately invalid YAML inside the frontmatter block
+    const badYaml = '---\nname: [unclosed bracket\n---\n\nBody.';
+    const result = parseFrontmatter(badYaml);
+    expect(result.frontmatterData).toBeNull();
+    expect(result.parseError).toBeInstanceOf(Error);
+    // Body and raw should still be populated
+    expect(result.raw).toBeTruthy();
+    expect(result.body).toContain('Body.');
+  });
+
+  test('returns null fields for content that is only whitespace', () => {
+    const result = parseFrontmatter('   \n\n   ');
+    expect(result.frontmatterYaml).toBeNull();
+    expect(result.frontmatterData).toBeNull();
+    expect(result.parseError).toBeNull();
+  });
+
+  test('parseError is null for valid frontmatter', () => {
+    const result = parseFrontmatter(WITH_TRAILING_NL);
+    expect(result.parseError).toBeNull();
+  });
+});
+
+// ─── Round-trip consistency ─────────────────────────────────────────────────
 
 describe('round-trip: raw should reconstruct original frontmatter block', () => {
   test('raw + body reconstructs original content (trailing-NL variant)', () => {

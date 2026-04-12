@@ -14,7 +14,7 @@
 
 const path = require('path');
 const os = require('os');
-const { hasFrontmatter, parseFrontmatter } = require('../utils/frontmatter');
+const { parseFrontmatter } = require('../utils/frontmatter');
 const { markdownCompatibility } = require('../utils/metadata-schema');
 
 const name = 'cursor';

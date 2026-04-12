@@ -12,7 +12,6 @@
 
 const path = require('path');
 const os = require('os');
-const yaml = require('js-yaml');
 const { parseFrontmatter } = require('../utils/frontmatter');
 const { markdownCompatibility } = require('../utils/metadata-schema');
 
@@ -110,7 +109,7 @@ function validateSkill(skillContent) {
 
   try {
     const data = JSON.parse(skillContent);
-    
+
     // Check required fields
     template.requiredFields.forEach(field => {
       if (!data[field]) {

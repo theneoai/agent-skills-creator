@@ -1,9 +1,9 @@
 /**
  * Gemini Platform Adapter
- * 
+ *
  * Adapts skills to the Gemini platform format.
  * Gemini uses standard Markdown with YAML frontmatter.
- * 
+ *
  * @version 2.1.0 - Refactored to use MarkdownAdapter base class
  */
 

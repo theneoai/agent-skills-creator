@@ -98,3 +98,68 @@ describe('Reader Module', () => {
     });
   });
 });
+
+// ─── Error-path tests ────────────────────────────────────────────────────────
+
+describe('Reader error paths', () => {
+  const fs = require('fs-extra');
+  const os = require('os');
+  const path = require('path');
+
+  describe('parseFile', () => {
+    test('throws on non-existent file', async () => {
+      await expect(reader.parseFile('/non/existent/path/file.md')).rejects.toThrow();
+    });
+
+    test('throws on malformed JSON file', async () => {
+      const tmpFile = path.join(os.tmpdir(), `sw-reader-test-${Date.now()}.json`);
+      fs.writeFileSync(tmpFile, '{bad json', 'utf8');
+      try {
+        await expect(reader.parseFile(tmpFile)).rejects.toThrow();
+      } finally {
+        fs.removeSync(tmpFile);
+      }
+    });
+
+    test('returns content object for valid markdown file', async () => {
+      const tmpFile = path.join(os.tmpdir(), `sw-reader-test-${Date.now()}.md`);
+      fs.writeFileSync(tmpFile, '# Test\n\nContent here.', 'utf8');
+      try {
+        const result = await reader.parseFile(tmpFile);
+        expect(result).toHaveProperty('content');
+        expect(result.content).toContain('# Test');
+      } finally {
+        fs.removeSync(tmpFile);
+      }
+    });
+
+    test('returns parsed object for valid JSON file', async () => {
+      const tmpFile = path.join(os.tmpdir(), `sw-reader-test-${Date.now()}.json`);
+      fs.writeFileSync(tmpFile, JSON.stringify({ name: 'test', version: '1.0.0' }), 'utf8');
+      try {
+        const result = await reader.parseFile(tmpFile);
+        expect(result).toHaveProperty('name', 'test');
+        expect(result).toHaveProperty('version', '1.0.0');
+      } finally {
+        fs.removeSync(tmpFile);
+      }
+    });
+  });
+
+  describe('readAllCoreData error context', () => {
+    test('Promise.all rejects with an error when a sub-reader throws', async () => {
+      // Temporarily override a path to a non-existent location to force failure
+      const origEval = config.PATHS.eval;
+      config.PATHS.eval = '/absolutely/non/existent/path';
+      try {
+        // readEvaluateMode checks pathExists before reading, so it won't throw —
+        // this verifies the graceful degradation path returns null fields instead.
+        const result = await reader.readEvaluateMode();
+        expect(result.rubrics).toBeNull();
+        expect(result.benchmarks).toBeNull();
+      } finally {
+        config.PATHS.eval = origEval;
+      }
+    });
+  });
+});

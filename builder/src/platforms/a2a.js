@@ -62,7 +62,7 @@ function formatSkill(skillContent) {
   let skillVersion = '1.0.0';
   let skillAuthor = '';
   let skillTier = null;
-  let triggers = { en: [], zh: [] };
+  const triggers = { en: [], zh: [] };
 
   const { frontmatterData } = parseFrontmatter(skillContent);
   if (frontmatterData) {

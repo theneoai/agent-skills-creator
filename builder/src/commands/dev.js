@@ -222,16 +222,13 @@ async function dev(options) {
 
   // Create debounced rebuild function
   let debounceTimer = null;
-  let pendingRebuild = false;
 
   const debouncedRebuild = (targetPlatform) => {
     if (debounceTimer) {
       clearTimeout(debounceTimer);
     }
 
-    pendingRebuild = true;
     debounceTimer = setTimeout(() => {
-      pendingRebuild = false;
       performRebuild(targetPlatform).catch((err) => {
         log(`Unhandled rebuild error: ${err.message}`, 'error');
       });

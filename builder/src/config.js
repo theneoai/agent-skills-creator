@@ -1,9 +1,9 @@
 /**
  * Project Configuration - Single Source of Truth
- * 
+ *
  * Centralizes all path definitions and configuration constants
  * to prevent SSOT (Single Source of Truth) breaks across modules.
- * 
+ *
  * @module builder/src/config
  * @version 3.1.0
  */
@@ -80,9 +80,8 @@ const REQUIRED_UTE_FIELDS = [
  * Placeholder patterns for template processing
  */
 const PLACEHOLDERS = {
-  // Standard pattern: {{KEY}}
-  standard: /\{\{([A-Z_0-9]+)\}\}/g,
-  // Extended pattern: supports dots and hyphens {{outer.key}} or {{OUTER-KEY}}
+  // Extended pattern: supports uppercase, digits, dots, hyphens — {{KEY}}, {{outer.key}}, {{OUTER-KEY}}
+  // This is the single canonical pattern used everywhere (replaces the old narrower 'standard' variant).
   extended: /\{\{([\w.-]+)\}\}/g,
   // Cursor pattern: ${KEY}
   cursor: /\$\{([A-Z_0-9]+)\}/g,

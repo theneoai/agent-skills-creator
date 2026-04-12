@@ -35,6 +35,28 @@ success() { echo "  ✓ $*"; }
 warn()    { echo "  ⚠ $*" >&2; }
 err()     { echo "  ✗ $*" >&2; }
 
+# Check that a directory is writable (or creatable).
+# Returns 1 and prints an error if an existing directory is not writable.
+check_writable() {
+  local dir="$1"
+  if [[ -d "${dir}" && ! -w "${dir}" ]]; then
+    err "Directory '${dir}' exists but is not writable. Check permissions (try: chmod u+w '${dir}')."
+    return 1
+  fi
+  return 0
+}
+
+# Create a timestamped backup of an existing file before overwriting.
+# No-op if the file does not exist.
+backup_if_exists() {
+  local dest="$1"
+  if [[ -f "${dest}" ]]; then
+    local backup="${dest}.bak.$(date +%Y%m%d_%H%M%S)"
+    cp "${dest}" "${backup}"
+    info "Backed up existing file → ${backup}"
+  fi
+}
+
 fetch() {
   local url="$1" dest="$2"
   if command -v curl &>/dev/null; then
@@ -188,7 +210,9 @@ install_claude() {
   local src
   src="${CUSTOM_FILE:-$(resolve_source claude md)}"
   local dest_dir="${HOME}/.claude/skills"
+  check_writable "${dest_dir}" || return 1
   mkdir -p "${dest_dir}"
+  backup_if_exists "${dest_dir}/skill-writer.md"
   cp "${src}" "${dest_dir}/skill-writer.md"
   success "[claude] ${dest_dir}/skill-writer.md"
 
@@ -216,7 +240,9 @@ install_md_platform() {
   local dest_dir="$2"
   local src
   src="${CUSTOM_FILE:-$(resolve_source "${platform}" md)}"
+  check_writable "${dest_dir}" || return 1
   mkdir -p "${dest_dir}"
+  backup_if_exists "${dest_dir}/skill-writer.md"
   cp "${src}" "${dest_dir}/skill-writer.md"
   success "[${platform}] ${dest_dir}/skill-writer.md"
 }
@@ -225,7 +251,9 @@ install_mcp() {
   local mcp_dir="${HOME}/.mcp/servers/skill-writer"
   local src
   src="$(resolve_source mcp json)"
+  check_writable "${mcp_dir}" || return 1
   mkdir -p "${mcp_dir}"
+  backup_if_exists "${mcp_dir}/mcp-manifest.json"
   cp "${src}" "${mcp_dir}/mcp-manifest.json"
   success "[mcp] ${mcp_dir}/mcp-manifest.json"
 
@@ -292,7 +320,9 @@ install_a2a() {
   local a2a_dir="${HOME}/.a2a/agents/skill-writer"
   local src
   src="$(resolve_source a2a json)"
+  check_writable "${a2a_dir}" || return 1
   mkdir -p "${a2a_dir}"
+  backup_if_exists "${a2a_dir}/agent-card.json"
   cp "${src}" "${a2a_dir}/agent-card.json"
   success "[a2a] ${a2a_dir}/agent-card.json"
 }

@@ -1,6 +1,6 @@
 /**
  * Platform Registry
- * 
+ *
  * Central registry for all platform adapters.
  * Provides unified interface for platform-specific operations.
  */
@@ -171,7 +171,7 @@ function installSkill(platformName, skillContent, skillName) {
  * @returns {string} Converted skill content
  */
 function convertBetweenPlatforms(sourcePlatform, targetPlatform, skillContent) {
-  const source = getPlatform(sourcePlatform);
+  getPlatform(sourcePlatform); // validate source platform exists
   const target = getPlatform(targetPlatform);
 
   // If source has a specific export method for target, use it

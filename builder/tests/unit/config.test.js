@@ -102,19 +102,20 @@ describe('Config Module', () => {
   });
 
   describe('PLACEHOLDERS', () => {
-    test('should export PLACEHOLDERS with regex patterns', () => {
-      expect(config.PLACEHOLDERS.standard).toBeInstanceOf(RegExp);
+    test('should export PLACEHOLDERS with extended and cursor patterns (standard merged into extended)', () => {
+      // PLACEHOLDERS.standard was removed — extended is a strict superset and the canonical pattern.
+      expect(config.PLACEHOLDERS.standard).toBeUndefined();
       expect(config.PLACEHOLDERS.extended).toBeInstanceOf(RegExp);
       expect(config.PLACEHOLDERS.cursor).toBeInstanceOf(RegExp);
     });
 
-    test('standard pattern should match {{KEY}} format (uppercase only)', () => {
-      expect('{{NAME}}'.match(config.PLACEHOLDERS.standard)).not.toBeNull();
-      expect('{{VERSION}}'.match(config.PLACEHOLDERS.standard)).not.toBeNull();
-      expect('not a placeholder'.match(config.PLACEHOLDERS.standard)).toBeNull();
+    test('extended pattern should match {{KEY}} format (uppercase — formerly "standard")', () => {
+      expect('{{NAME}}'.match(config.PLACEHOLDERS.extended)).not.toBeNull();
+      expect('{{VERSION}}'.match(config.PLACEHOLDERS.extended)).not.toBeNull();
+      expect('not a placeholder'.match(config.PLACEHOLDERS.extended)).toBeNull();
     });
 
-    test('extended pattern should match {{OUTER-KEY}} and {{outer.key}}', () => {
+    test('extended pattern should also match {{OUTER-KEY}} and {{outer.key}}', () => {
       expect('{{OUTER-KEY}}'.match(config.PLACEHOLDERS.extended)).not.toBeNull();
       expect('{{outer.key}}'.match(config.PLACEHOLDERS.extended)).not.toBeNull();
       expect('{{KEY}}'.match(config.PLACEHOLDERS.extended)).not.toBeNull();

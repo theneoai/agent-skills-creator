@@ -1,10 +1,10 @@
 /**
  * Inspect Command
- * 
+ *
  * Inspects built output for a specific platform.
  * Provides detailed analysis of the skill file including statistics,
  * section breakdown, and issue detection.
- * 
+ *
  * @module builder/src/commands/inspect
  * @version 1.0.0
  */
@@ -24,12 +24,12 @@ function formatFileSize(bytes) {
   const units = ['B', 'KB', 'MB', 'GB'];
   let size = bytes;
   let unitIndex = 0;
-  
+
   while (size >= 1024 && unitIndex < units.length - 1) {
     size /= 1024;
     unitIndex++;
   }
-  
+
   return `${size.toFixed(2)} ${units[unitIndex]}`;
 }
 
@@ -59,7 +59,7 @@ function countWords(content) {
 function extractSections(content) {
   const sections = [];
   const lines = content.split('\n');
-  
+
   for (let i = 0; i < lines.length; i++) {
     const match = lines[i].match(/^(#{1,6})\s+(.+)$/);
     if (match) {
@@ -70,7 +70,7 @@ function extractSections(content) {
       });
     }
   }
-  
+
   return sections;
 }
 
@@ -120,7 +120,7 @@ function findPlaceholders(content) {
 function findEmptySections(content) {
   const emptySections = [];
   const lines = content.split('\n');
-  
+
   for (let i = 0; i < lines.length; i++) {
     const match = lines[i].match(/^(#{1,6})\s+(.+)$/);
     if (match) {
@@ -137,7 +137,7 @@ function findEmptySections(content) {
           break;
         }
       }
-      
+
       if (!hasContent) {
         emptySections.push({
           title: title,
@@ -146,7 +146,7 @@ function findEmptySections(content) {
       }
     }
   }
-  
+
   return emptySections;
 }
 
@@ -220,7 +220,7 @@ function displayStatistics(content, filePath) {
     words: countWords(content),
     characters: content.length
   };
-  
+
   console.log(chalk.bold('\n📊 File Statistics'));
   console.log(chalk.gray('─'.repeat(50)));
   console.log(`  ${chalk.cyan('Path:')}        ${filePath}`);
@@ -237,21 +237,21 @@ function displayStatistics(content, filePath) {
 function displaySectionBreakdown(sections) {
   console.log(chalk.bold('\n📑 Section Breakdown'));
   console.log(chalk.gray('─'.repeat(50)));
-  
+
   if (sections.length === 0) {
     console.log(chalk.yellow('  No sections found'));
     return;
   }
-  
+
   const maxTitleLength = Math.max(...sections.map(s => s.title.length));
-  
+
   sections.forEach(section => {
     const indent = '  '.repeat(section.level - 1);
     const title = section.title.padEnd(maxTitleLength);
     const lineInfo = chalk.gray(`(line ${section.line})`);
     console.log(`${indent}${chalk.green('●')} ${title} ${lineInfo}`);
   });
-  
+
   console.log(chalk.gray(`\n  Total sections: ${sections.length}`));
 }
 
@@ -262,12 +262,12 @@ function displaySectionBreakdown(sections) {
 function displayFrontmatter(frontmatter) {
   console.log(chalk.bold('\n📋 Frontmatter'));
   console.log(chalk.gray('─'.repeat(50)));
-  
+
   if (!frontmatter) {
     console.log(chalk.yellow('  No frontmatter found'));
     return;
   }
-  
+
   Object.entries(frontmatter).forEach(([key, value]) => {
     let displayValue = value;
     if (typeof value === 'object') {
@@ -284,17 +284,17 @@ function displayFrontmatter(frontmatter) {
 function displayIssues(issues) {
   console.log(chalk.bold('\n🔍 Issues'));
   console.log(chalk.gray('─'.repeat(50)));
-  
-  const hasIssues = 
+
+  const hasIssues =
     issues.placeholders.length > 0 ||
     issues.emptySections.length > 0 ||
     issues.unbalancedCodeBlocks;
-  
+
   if (!hasIssues) {
     console.log(chalk.green('  ✓ No issues found'));
     return;
   }
-  
+
   // Placeholders
   if (issues.placeholders.length > 0) {
     console.log(chalk.yellow(`\n  ⚠ Unreplaced Placeholders (${issues.placeholders.length}):`));
@@ -302,7 +302,7 @@ function displayIssues(issues) {
       console.log(`    ${chalk.red(issue.placeholder)} at line ${issue.line}`);
     });
   }
-  
+
   // Empty sections
   if (issues.emptySections.length > 0) {
     console.log(chalk.yellow(`\n  ⚠ Empty Sections (${issues.emptySections.length}):`));
@@ -310,11 +310,11 @@ function displayIssues(issues) {
       console.log(`    "${section.title}" at line ${section.line}`);
     });
   }
-  
+
   // Unbalanced code blocks
   if (issues.unbalancedCodeBlocks) {
-    console.log(chalk.red(`\n  ✗ Unbalanced Code Blocks:`));
-    console.log(`    Code block delimiters (\`\`\`) are not properly paired`);
+    console.log(chalk.red('\n  ✗ Unbalanced Code Blocks:'));
+    console.log('    Code block delimiters (```) are not properly paired');
   }
 }
 
@@ -325,12 +325,12 @@ function displayIssues(issues) {
 function displayPlatformInfo(platform) {
   console.log(chalk.bold('\n🖥️  Platform Information'));
   console.log(chalk.gray('─'.repeat(50)));
-  
+
   try {
     const platformInfo = getPlatform(platform);
     console.log(`  ${chalk.cyan('Name:')}       ${platformInfo.name || platform}`);
     console.log(`  ${chalk.cyan('Template:')}   ${platformInfo.template || 'default'}`);
-    
+
     try {
       const installPath = platformInfo.getInstallPath();
       console.log(`  ${chalk.cyan('Install:')}    ${installPath}`);
@@ -349,7 +349,7 @@ function displayPlatformInfo(platform) {
  */
 async function inspect(options) {
   const platform = options.platform || 'opencode';
-  
+
   // Validate platform
   const supportedPlatforms = getSupportedPlatforms();
   if (!supportedPlatforms.includes(platform)) {
@@ -357,18 +357,18 @@ async function inspect(options) {
     console.error(chalk.gray(`Supported platforms: ${supportedPlatforms.join(', ')}`));
     process.exit(1);
   }
-  
+
   console.log(chalk.bold.blue(`\n🔎 Inspecting ${platform} build output...\n`));
-  
+
   // Find built skill file
   const filePath = getBuiltSkillPath(platform);
-  
+
   if (!filePath) {
     console.error(chalk.red(`Error: No built skill file found for platform "${platform}"`));
     console.error(chalk.gray('Run "swb build --platform ' + platform + '" first'));
     process.exit(1);
   }
-  
+
   // Read file content
   let content;
   try {
@@ -377,41 +377,41 @@ async function inspect(options) {
     console.error(chalk.red(`Error reading file: ${error.message}`));
     process.exit(1);
   }
-  
+
   // Analyze content
   const sections = extractSections(content);
   const frontmatter = extractFrontmatter(content);
-  
+
   const issues = {
     placeholders: findPlaceholders(content),
     emptySections: findEmptySections(content),
     unbalancedCodeBlocks: hasUnbalancedCodeBlocks(content)
   };
-  
+
   // Display results
   displayStatistics(content, filePath);
   displayPlatformInfo(platform);
   displayFrontmatter(frontmatter);
   displaySectionBreakdown(sections);
   displayIssues(issues);
-  
+
   // Summary
   console.log(chalk.bold('\n📈 Summary'));
   console.log(chalk.gray('─'.repeat(50)));
-  
-  const totalIssues = 
-    issues.placeholders.length + 
-    issues.emptySections.length + 
+
+  const totalIssues =
+    issues.placeholders.length +
+    issues.emptySections.length +
     (issues.unbalancedCodeBlocks ? 1 : 0);
-  
+
   if (totalIssues === 0) {
     console.log(chalk.green('  ✓ Skill file looks good!'));
   } else {
     console.log(chalk.yellow(`  ⚠ Found ${totalIssues} issue(s) to review`));
   }
-  
+
   console.log('');
-  
+
   // Return inspection results for programmatic use
   return {
     platform,

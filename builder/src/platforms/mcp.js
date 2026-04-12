@@ -20,7 +20,6 @@
 
 const path = require('path');
 const os = require('os');
-const yaml = require('js-yaml');
 const config = require('../config');
 const { parseFrontmatter } = require('../utils/frontmatter');
 const { mcpCompatibility } = require('../utils/metadata-schema');
@@ -153,7 +152,7 @@ function formatSkill(skillContent) {
   let skillVersion = '1.0.0';
   let skillAuthor = '';
   let skillTier = null;
-  let skillTriggers = { en: [], zh: [] };
+  const skillTriggers = { en: [], zh: [] };
 
   // Parse YAML frontmatter using shared utility (handles optional trailing newline —
   // fixes silent failure when skill files end with `---` without trailing newline).

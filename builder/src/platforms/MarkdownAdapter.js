@@ -15,7 +15,7 @@
 const path = require('path');
 const os = require('os');
 const { hasFrontmatter } = require('../utils/frontmatter');
-const { markdownCompatibility, getBuilderVersion } = require('../utils/metadata-schema');
+const { markdownCompatibility } = require('../utils/metadata-schema');
 
 /**
  * Base class for Markdown-based platform adapters
