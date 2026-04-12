@@ -321,9 +321,12 @@ async function validateSkillMdSpec(result) {
       continue;
     }
 
-    // Extract YAML frontmatter
+    // Track spec issues added for this file specifically
+    const issuesBefore = result.issues.length;
+
+    // Extract YAML frontmatter — use \r?\n to handle both Unix and Windows line endings
     let fm = null;
-    const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+    const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
     if (fmMatch) {
       try {
         fm = yaml.load(fmMatch[1]);
@@ -361,18 +364,29 @@ async function validateSkillMdSpec(result) {
     }
 
     // ── 3. Content line count ────────────────────────────────────────────────
+    // Thresholds match refs/progressive-disclosure.md §3:
+    //   >500  lines → WARNING  (acceptable but monitor token usage)
+    //   >1000 lines → ERROR    (likely contains embedded reference content)
     const lineCount = content.split('\n').length;
-    if (lineCount > SKILLMD_SPEC.contentMaxLines) {
+    if (lineCount > 1000) {
+      addIssue(result, 'error',
+        `${fileName}: ${lineCount} lines is excessive — skill likely contains embedded reference content ` +
+        `that belongs in Layer 3 companion files — refs/progressive-disclosure.md §3`);
+    } else if (lineCount > SKILLMD_SPEC.contentMaxLines) {
       addIssue(result, 'warning',
         `${fileName}: ${lineCount} lines exceeds recommended ${SKILLMD_SPEC.contentMaxLines}-line limit ` +
-        `— consider Progressive Disclosure pattern (refs/progressive-disclosure.md)`);
+        `— consider Progressive Disclosure pattern (refs/progressive-disclosure.md §3)`);
     }
 
-    const specIssues = result.issues.filter(i => i.message.startsWith(fileName) && i.message.includes('agentskills.io'));
-    if (specIssues.length === 0) {
+    const newIssues = result.issues.slice(issuesBefore);
+    const newErrors = newIssues.filter(i => i.type === 'error').length;
+    const newWarnings = newIssues.filter(i => i.type === 'warning').length;
+    if (newIssues.length === 0) {
       console.log(chalk.green(`  ✓ ${fileName} (spec compliant)`));
+    } else if (newErrors > 0) {
+      console.log(chalk.red(`  ✗ ${fileName} (${newErrors} error(s), ${newWarnings} warning(s))`));
     } else {
-      console.log(chalk.red(`  ✗ ${fileName} (${specIssues.length} spec violation(s))`));
+      console.log(chalk.yellow(`  ⚠ ${fileName} (${newWarnings} warning(s))`));
     }
   }
 

@@ -22,7 +22,6 @@
 
 const path = require('path');
 const os = require('os');
-const yaml = require('js-yaml');
 const { parseFrontmatter } = require('../utils/frontmatter');
 const { mcpCompatibility } = require('../utils/metadata-schema');
 
@@ -171,7 +170,7 @@ function formatSkill(skillContent) {
       {
         id: `${skillName}/install`,
         name: 'INSTALL',
-        description: 'Deploy a skill to 7 platforms (Claude, OpenCode, Cursor, Gemini, OpenAI, MCP, A2A).',
+        description: 'Deploy a skill to 8 platforms (Claude, OpenCode, OpenClaw, Cursor, Gemini, OpenAI, MCP, A2A).',
         tags: ['install', 'deploy', 'platform'],
         examples: [
           '/install claude',

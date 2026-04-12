@@ -570,7 +570,7 @@ describe('generateMetadata schema consistency', () => {
 });
 
 describe('Platform Registry', () => {
-  test('should support all 7 platforms including mcp', () => {
+  test('should support all 8 platforms including mcp and a2a', () => {
     const supported = platforms.getSupportedPlatforms();
     expect(supported).toContain('opencode');
     expect(supported).toContain('openclaw');
