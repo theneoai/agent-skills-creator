@@ -7,6 +7,8 @@
 > **Note on LEAN vs EVALUATE**: LEAN (§6 skill-framework.md) is a 500-pt heuristic pre-check.
 > EVALUATE is the full 1000-pt pipeline. They share dimension names but NOT point allocations.
 > LEAN leanMax ≠ EVALUATE Phase 2 per-dimension max. See config.js comment for full explanation.
+> **v3.2.0**: Added D8 Composability (LEAN bonus 0–20 pts; EVALUATE Phase 5 defined for v4.0+).
+> D8 is optional — absence does NOT penalise a skill. Adds up to 20 bonus pts to LEAN (max 520).
 
 ---
 
@@ -85,6 +87,9 @@ Scored in Pass 1.
 | **Examples** | 45 | 15% | ≥ 2 examples, both EN and ZH or bilingual triggers, output shown |
 | **Security Baseline** | 30 | 10% | Security section present, CWE reference, OWASP ASI01-ASI10 status documented, no hardcoded-credential patterns |
 | **Metadata Quality** | 15 | 5% | YAML complete (incl. `skill_tier`, `triggers`), version semver, author, dates, description bilingual |
+
+> **v3.2.0 note**: Phase 2 dimensions are unchanged. D8 Composability is scored in LEAN (bonus)
+> and in EVALUATE Phase 5 (v4.0+). See §9 below for D8 specification.
 
 > **Note on Security dimension (v3.1.0)**: Phase 4 runs automated CWE + OWASP ASI pattern scan.
 > Phase 2 checks whether security *documentation* is adequate (Security Baseline section, OWASP
@@ -346,6 +351,53 @@ Phase 2 minimum thresholds (used in tier certification) adjust proportionally:
 
 ---
 
+## §9  D8 Composability — LEAN Bonus Dimension (v3.2.0)
+
+> **Research basis**: SkillNet (arxiv:2603.04448), GoS bundle retrieval.
+> **Implementation**: `builder/src/core/graph.js scoreD8Composability()`
+> **Full spec**: `claude/refs/skill-graph.md §5`
+
+D8 is an **optional bonus dimension**. Skills without a `graph:` YAML block
+score **0 on D8 with no penalty** — their LEAN score is still out of 500.
+Skills with a `graph:` block earn up to 20 bonus points (LEAN max = 520).
+
+### D8 LEAN Scoring (0–20 bonus points)
+
+| Check ID | Points | Condition |
+|----------|--------|-----------|
+| `[D8-STATIC] graph_block_present` | 5 | `graph:` key exists in YAML frontmatter with ≥ 1 non-empty field |
+| `[D8-STATIC] skill_tier_graph_consistent` | 10 | Tier matches graph structure (see table below) |
+| `[D8-STATIC] graph_edge_ids_valid_format` | 5 | All `depends_on`/`composes`/`similar_to` IDs match `[a-f0-9]{12}` |
+
+**Tier consistency scoring** (10-pt check):
+
+| skill_tier | Expected graph structure | Score |
+|------------|--------------------------|-------|
+| `planning` | Has `composes` with ≥ 1 entry | 10 |
+| `planning` | Has `depends_on` only (no composes) | 5 (advisory) |
+| `functional` | Has `provides` and/or `consumes` | 10 |
+| `functional` | No `provides`/`consumes` | 7 (acceptable) |
+| `atomic` | Has `provides`/`consumes`; NO `depends_on` | 10 |
+| `atomic` | Has `depends_on` declared | 4 (advisory: atomic should be self-contained) |
+
+**Scoring mechanics**:
+- LEAN score with D8: reported as `XXX/520` (or `XXX/500 + X D8 bonus`)
+- LEAN pass threshold remains 350/500 (D8 bonus does NOT lower this threshold)
+- Near a LEAN tier boundary? Declare `graph:` block to earn bonus pts rather than improving other dims
+
+### D8 EVALUATE Phase 5 (v4.0+ — not active in v3.x)
+
+Phase 5 adds 100 pts when active. Certification thresholds scale proportionally (see refs/skill-graph.md §5.2).
+
+| Sub-dimension | Max | What is checked |
+|---------------|-----|----------------|
+| Dependency declaration completeness | 30 | Declared deps cover all skills referenced in body |
+| Interface contract clarity | 25 | `provides`/`consumes` types are specific (not generic "data") |
+| Tier role consistency | 25 | Skill's graph role matches skill_tier declaration |
+| Edge quality | 20 | similar_to similarities plausible; IDs valid and resolvable |
+
+---
+
 ## §10  LEAN Fast Path
 
 Before running Phase 1–4, apply LEAN heuristics (§6 of skill-writer.md).
@@ -384,7 +436,7 @@ PHASE SCORES
     Security Scan:    XX/60    MRR Gate:   XX/30
     Consensus:        XX/30
 
-TOTAL SCORE:     XXX / 1000
+TOTAL SCORE:     XXX / 1000   (+ XXX D8 bonus / 20 if graph: declared)
 VARIANCE:        X.XX  (threshold for tier: <N)
 F1:              0.XX  (threshold: ≥ 0.90)  [PASS|FAIL]
 MRR:             0.XX  (threshold: ≥ 0.85)  [PASS|FAIL]
@@ -403,6 +455,12 @@ ISSUES
   ERROR:   <blocking issues — must fix before delivery>
   WARNING: <advisory issues — document or fix>
   INFO:    <informational notes>
+
+D8 COMPOSABILITY   (LEAN bonus — optional)
+  graph_block_present:         X/5   [graph: block absent → 0 pts, no penalty]
+  skill_tier_graph_consistent: X/10
+  graph_edge_ids_valid:        X/5
+  D8 TOTAL:                    X/20
 
 CERTIFICATION TIER:  PLATINUM | GOLD | SILVER | BRONZE | FAIL
 STATUS:              CERTIFIED | TEMP_CERT | LEAN_CERT | HUMAN_REVIEW | ABORT

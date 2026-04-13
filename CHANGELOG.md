@@ -5,7 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-04-11
+## [Unreleased]
+
+---
+
+## [3.2.0] - 2026-04-13
+
+### ✨ Added — Graph of Skills (GoS)
+
+- **`refs/skill-graph.md`** — Comprehensive GoS specification: typed edge schema (6 types), bundle retrieval protocol (BFS + PageRank diffusion), Progressive Disclosure Layer 0 (≤200 tokens), D8 Composability scoring, graph health checks GRAPH-001–008, graph visualization format, and dependency resolution workflow
+- **`builder/src/core/graph.js`** — GoS algorithm library: `buildGraph`, `detectCycles` (Tarjan DFS), `topologicalSort` (Kahn BFS), `resolveBundle` (BFS + 0.85/hop decay), `findSimilarSkills`, `findMergeCandidates`, `checkGraphHealth`, `scoreD8Composability`
+- **GRAPH Mode (§19 in `skill-framework.md`)** — 7th mode with sub-commands: `/graph view` (ASCII dependency graph), `/graph check` (GRAPH-001–008 health), `/graph plan` (decomposition planning), `/graph bundle` (bundle resolution), `/graph diff` (edge delta)
+- **D8 Composability dimension** — Optional LEAN bonus dimension (+0–20 pts); skills without `graph:` block score 0 with no penalty; LEAN max = 520 with D8; validated by 3 checks: graph_block_present, skill_tier_graph_consistent, graph_edge_ids_valid_format
+- **Graph strategies S10/S11/S12** in `optimize/strategies.md`:
+  - S10 Graph Extraction: decompose monolithic skills into composable atomic/functional sub-skills
+  - S11 Coupling Reduction: break circular A↔B dependencies via intermediate skill C
+  - S12 Similarity Consolidation: merge/subsume near-duplicate skills with similarity ≥ 0.95
+- **Registry schema v2.0** (`refs/skill-registry.md §10`) — top-level `graph: { edges[], bundles[] }` section; backward-compatible with v1.x; AGGREGATE auto-inference rules (co-invocation ≥80% → depends_on, data flow ≥60% → provides/consumes)
+- **Progressive Disclosure Layer 0** (`refs/progressive-disclosure.md §2`) — ≤200-token bundle context injected before Layer 1 ADVERTISE stubs when task matches a known bundle and registry has `graph:` data
+- **Session Artifact GoS fields** (`refs/session-artifact.md §8`) — `bundle_context` object (bundle_id, co_invoked_skills, invocation_order, data_flow, bundle_success, missing_dependencies) and `graph_signals` object (should_add_edge, should_merge_with, composability_score)
+- **INSTALL dependency resolution** (`skill-framework.md §12 Step 2a`) — reads `depends_on` edges, builds dependency tree, displays dependency manifest, installs in topological order (deepest dependency first)
+- **COLLECT bundle context** (`skill-framework.md §18 v3.2.0 extension`) — 4-step protocol to record `bundle_context` and `graph_signals` when invoked as part of a multi-skill task
+- **`graph:` block in base template** (`templates/base.md`) — comprehensive commented-out YAML `graph:` block with all 6 edge types, documentation, and tier guidance
+- **D8 section in rubrics** (`eval/rubrics.md §9`) — 3-check scoring table, tier consistency table, Phase 5 roadmap (+100 pts, v4.0+)
+
+### 🔧 Changed
+
+- **`builder/src/config.js`** — Added GoS constants: `GRAPH_EDGE_TYPES`, `GRAPH_SCHEMA_VERSION`, `GRAPH_SIMILARITY_MERGE_THRESHOLD = 0.95`, `GRAPH_MAX_TRAVERSAL_DEPTH = 6`, `REQUIRED_GRAPH_FIELDS`, `GRAPH_STRATEGIES`; updated `SCORING` with D8 `composability` dimension (`leanMax: 20`, `weight: 0.00`); `SCORING.lean.maxScoreWithD8 = 520`; added `refs/skill-graph.md` to `REQUIRED_FILES`
+- **`builder/src/index.js`** — Exported `graph` module; added `planBundle(seedSkillId, registryObject, options)` convenience wrapper
+- **`builder/src/commands/validate.js`** — Added `validateGraphEdges()` with GRAPH-001–005 checks (ID format, planning missing composes, atomic has depends_on, similarity merge advisory, self-loop)
+- **`skill-framework.md`** — Version 3.1.0 → 3.2.0; added `/graph` to Mode Router; added GRAPH routing keywords (技能图, 依赖图, etc.); extended INSTALL Step 2a; extended COLLECT bundle context subsection; added §19 GRAPH Mode
+- **`optimize/strategies.md`** — Version 3.2.0; added D8 dimension row; added S10/S11/S12 graph strategies; updated strategy selection matrix; added §7 Graph-Level Strategy Guidelines
+- **`eval/rubrics.md`** — Added D8 note to Phase 2; added §9 D8 Composability bonus section; updated report template
+- **`refs/progressive-disclosure.md`** — "Three-Layer" → "Four-Layer Architecture (v3.2.0)"; added Layer 0 GRAPH CONTEXT spec
+- **`refs/session-artifact.md`** — Added `bundle_context` and `graph_signals` fields; added §8 GoS Fields
+
+### 🧪 Tests
+
+- **`builder/tests/unit/config.test.js`** — Updated to expect 8 SCORING dimensions (7 core + D8); added test asserting D8 leanMax=20, weight=0.00; updated core leanMax sum test to filter D8 before summing
+
+### 📋 Background
+
+v3.2.0 implements the Graph of Skills framework inspired by SkillNet (arxiv:2603.04448), which demonstrated that inference-time typed directed graphs retrieve **execution-complete bundles** rather than isolated semantically-similar skills. The GoS features build directly on the three-tier hierarchy (SkillX arxiv:2604.04804) introduced in v3.1.0. Bundle context in COLLECT is informed by SkillClaw (arxiv:2604.08377) collective evolution methodology.
+
+---
+
+## [3.1.0] - 2026-04-11
 
 ### 📝 Documentation
 
@@ -295,6 +340,7 @@ Skill Framework MVP - Production Ready
 
 ---
 
+[3.2.0]: https://github.com/theneoai/skill-writer/releases/tag/v3.2.0
 [3.1.0]: https://github.com/theneoai/skill-writer/releases/tag/v3.1.0
 [3.0.0]: https://github.com/theneoai/skill-writer/releases/tag/v3.0.0
 [2.2.0]: https://github.com/theneoai/skill-writer/releases/tag/v2.2.0
