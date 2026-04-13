@@ -1,16 +1,16 @@
 ---
 name: skill-writer
-version: "3.1.0"
-description: "Meta-skill framework: CREATE from templates, LEAN/EVALUATE/OPTIMIZE lifecycle, COLLECT mode for collective skill evolution, Edit Audit Guard, Skill Registry for push/pull sharing, UTE 2.0 two-tier self-improvement, and deploy to 7 platforms including MCP."
+version: "3.2.0"
+description: "Meta-skill framework: CREATE from templates, LEAN/EVALUATE/OPTIMIZE lifecycle, GRAPH mode for GoS bundle retrieval, COLLECT for collective skill evolution, Edit Audit Guard, Skill Registry v2.0 with typed graph edges, UTE 2.0 two-tier self-improvement, and deploy to 7 platforms including MCP."
 description_i18n:
-  en: "Full lifecycle meta-skill framework: CREATE from templates (3-tier hierarchy, negative boundaries, Skill Summary), LEAN fast-eval, EVALUATE 4-phase 1000pt pipeline + OWASP Agentic Top 10, OPTIMIZE 7-dim 9-step loop + co-evolutionary VERIFY, COLLECT for collective evolution (SkillClaw + SkillRL-compatible), skill registry + SHARE, UTE 2.0 L1/L2, deploy to 7 platforms."
-  zh: "全生命周期元技能框架：三层层级结构+负向边界+检索优化摘要的CREATE、LEAN快速评测、OWASP Agentic Top 10安全检测的4阶段EVALUATE、加入协同进化VERIFY的OPTIMIZE、SkillRL+SkillClaw兼容COLLECT、技能注册表+共享、UTE 2.0双层自进化、部署至7平台。"
+  en: "Full lifecycle meta-skill framework: CREATE from templates (3-tier hierarchy, negative boundaries, Skill Summary, optional graph: block), LEAN fast-eval + D8 Composability bonus, EVALUATE 4-phase 1000pt pipeline + OWASP Agentic Top 10, OPTIMIZE 8-dim loop + S10/S11/S12 graph strategies + co-evolutionary VERIFY, GRAPH mode (GoS bundle retrieval, health checks, dependency resolution), COLLECT with bundle context for collective evolution (SkillClaw + SkillRL-compatible), skill registry v2.0 + SHARE, UTE 2.0 L1/L2, deploy to 7 platforms."
+  zh: "全生命周期元技能框架：支持可选graph:块的三层层级结构+负向边界+检索优化摘要的CREATE、带D8可组合性奖励的LEAN快速评测、OWASP Agentic Top 10安全检测的4阶段EVALUATE、含S10/S11/S12图策略+协同进化VERIFY的OPTIMIZE、GoS包检索+健康检查+依赖解析的GRAPH模式、含包上下文的SkillRL+SkillClaw兼容COLLECT、技能注册表v2.0+共享、UTE 2.0双层自进化、部署至7平台。"
 
 license: MIT
 author:
   name: theneoai
 created: "2026-03-31"
-updated: "2026-04-11"
+updated: "2026-04-13"
 type: meta-framework
 
 tags:
@@ -254,6 +254,7 @@ No confirmation needed. These commands are LLM-evaluated (not platform CLI comma
 | `/share` | SHARE mode (export + package your created skill) | `/分享` |
 | `/collect` | COLLECT mode | `/采集` |
 | `/aggregate` | AGGREGATE mode (multi-session synthesis) | `/聚合` |
+| `/graph` | GRAPH mode (skill graph view, health, bundle planning) | `/技能图` |
 | `/skip` | Accept current result as-is (TEMP_CERT if below BRONZE) | `/跳过` |
 
 > `/skip` is only meaningful when the framework has displayed a "type /skip" prompt
@@ -308,6 +309,10 @@ User Input
 │ AGGREGATE[聚合,分析,综合,汇总,聚合反馈 |                        │
 │           aggregate,analyze.*sessions,synthesize.*session,      │
 │           aggregate.*feedback,which.*skill.*optimize]           │
+│ GRAPH    [技能图,依赖图,包规划,技能关系 |                         │
+│           skill.*graph,graph.*view,graph.*check,graph.*plan,    │
+│           graph.*bundle,bundle.*plan,skill.*depend.*,           │
+│           /graph view,/graph check,/graph plan,/graph bundle]   │
 │                                                                 │
 │ confidence HIGH   → AUTO-ROUTE (no confirmation)                │
 │ confidence MEDIUM → show "I'll run [MODE] — confirm? (yes/no)"  │
@@ -1543,13 +1548,28 @@ URL examples:
    - Verify it contains YAML frontmatter with name: skill-writer
    - If verification fails → ABORT with message
 
+2a. RESOLVE DEPENDENCIES (v3.2.0 — GoS dependency resolution) `[CORE]`
+    IF skill has graph.depends_on entries in its YAML frontmatter:
+      - Parse graph.depends_on list
+      - For each dependency: check if skill_id is in registry
+      - Recursively resolve transitive deps (DFS, max depth 6, cycle-safe)
+      - Show dependency manifest:
+        Installing: <skill-name> v<version>
+        Dependencies:
+          ✓ <dep-name> v<ver>  (already installed)
+          ⚠ <dep-name> v<ver>  (will install — in registry)
+          ✗ <dep-name> v<ver>  (not in registry — manual install required)
+      - If any required dep is ✗ → WARN but do not ABORT (soft dependency resolution)
+    ELSE:
+      → Skip dependency resolution (no graph block or no depends_on)
+
 3. CONFIRM
-   - Show: source (URL or local), target platforms, install paths
+   - Show: source (URL or local), target platforms, install paths, dependency manifest
    - Ask: "Proceed with installation? (yes/no)"
    - On "no" → ABORT gracefully
 
-4. INSTALL (per platform)
-   FOR EACH platform in target:
+4. INSTALL (in topological order — deps first, then target skill)
+   FOR EACH skill in dependency tree (topological sort):
      a. mkdir -p <install_path_dir>
      b. Write skill content to <install_path>
      c. IF platform == claude AND local clone available:
@@ -1560,6 +1580,8 @@ URL examples:
 5. REPORT
    ✓ Installed to N platform(s):
      • <platform>: <install_path>
+   ✓ Dependencies installed: <dep1>, <dep2> (if any)
+   ⚠ Manual action required: <dep3> not in registry — install separately
    ℹ Restart <platform> to activate skill-writer.
    ℹ Companion files (refs/, eval/, templates/, optimize/) copied for Claude.
 ```
@@ -2276,12 +2298,114 @@ Explicit: "collect this session"  /  "记录此次使用"
 - Edit guard (protects OPTIMIZE from over-writing): `claude/refs/edit-audit.md`
 - Skill registry (for `skill_id` computation): `claude/refs/skill-registry.md`
 - UTE 2.0 L1/L2 architecture: `claude/refs/use-to-evolve.md §7`
+- **v3.2.0**: GoS bundle context fields: `claude/refs/session-artifact.md §8`
+
+### v3.2.0 COLLECT Extension — Bundle Context `[CORE]`
+
+When COLLECT fires and the task involved multiple skills (bundle invocation):
+1. Record `bundle_context.co_invoked_skills` — list the other skill_ids used in this task
+2. Record `bundle_context.invocation_order` — the sequence they were called
+3. Record `bundle_context.data_flow` — any observed output → input passing between skills
+4. Fill `graph_signals.should_add_edge` if you strongly infer a dependency (confidence ≥ 0.85)
+
+These fields feed the AGGREGATE pipeline's auto-inference of graph edges.
+Full spec: `claude/refs/session-artifact.md §8`
+
+---
+
+## §19  GRAPH Mode — Skill Graph Management (v3.2.0)
+
+> **GRAPH at a Glance**
+>
+> **What it does**: Manages the typed relationship graph between skills.
+> View the skill dependency graph, check graph health, plan bundles for tasks,
+> and resolve installation dependencies.
+>
+> **Research basis**: SkillNet (arxiv:2603.04448), GoS bundle retrieval, SkillX tiers
+> **Full spec**: `claude/refs/skill-graph.md`
+> **Implementation**: `builder/src/core/graph.js`
+>
+> **When to use**:
+> - Before installing a skill that has `graph.depends_on` entries
+> - When `/graph check` errors appear (GRAPH-001 to GRAPH-008)
+> - To plan the minimum skill set for a complex task
+> - After running AGGREGATE to review auto-inferred graph edges
+
+**Trigger**: `/graph [subcommand]` | `技能图` | `依赖图` | `包规划`
+
+### Sub-commands
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `/graph view` | ASCII graph of current skill ecosystem | `/graph view` |
+| `/graph view [skill]` | Neighborhood graph for one skill | `/graph view api-tester` |
+| `/graph check` | Run GRAPH-001–008 health checks | `/graph check` |
+| `/graph plan [task]` | Resolve minimum bundle for a task | `/graph plan "test the payment API"` |
+| `/graph bundle` | List all pre-defined bundles | `/graph bundle` |
+| `/graph diff [v1] [v2]` | Compare graph structure between versions | `/graph diff v3.1.0 v3.2.0` |
+
+### `/graph plan` Workflow
+
+```
+/graph plan "test the payment API and generate a coverage report"
+     ↓
+Step 1: Route to primary skill via SkillRouter trigger matching
+        → primary: api-tester (seed node)
+     ↓
+Step 2: BFS expansion via builder/src/core/graph.js resolveBundle()
+        → Follow depends_on (required=true)  → schema-validator
+        → Follow depends_on (required=false) → auth-helper (optional)
+        → Match provides → consumes         → report-generator
+     ↓
+Step 3: Deduplication (similar_to ≥ 0.90 → keep higher-scoring)
+     ↓
+Step 4: Topological sort (dependencies first)
+     ↓
+Output:
+  Bundle: API Testing Suite
+  Install order:
+    1. schema-validator  (atomic, required)
+    2. auth-helper       (atomic, optional)
+    3. api-tester        (functional, entry point)
+    4. report-generator  (functional)
+  Token estimate: ~3,200 tokens (within budget)
+  Run /install --bundle to deploy all at once.
+```
+
+### `/graph check` Output Format
+
+```
+📊 Graph Health Report — skill-writer registry v2.0
+  Nodes: N skills | Edges: M relationships | Bundles: K defined
+
+  ERRORS:   [GRAPH-001] dangling edge, [GRAPH-005] cycle — must fix
+  WARNINGS: [GRAPH-002] planning missing composes, [GRAPH-004] merge advisory
+  INFO:     [GRAPH-006] isolated nodes, [GRAPH-008] unused provides types
+
+  → Fix ERRORS before /install --bundle
+  → Review WARNINGS before publishing to skill registry
+```
+
+### GRAPH Mode + D8 Scoring
+
+After running `/graph check`:
+- If D8 score is 0 (no `graph:` block): GRAPH mode prompts user to add graph declarations
+- If D8 score < 15: GRAPH mode identifies which D8 sub-checks are failing and suggests fixes
+- Successful `/graph plan` execution = proof the graph declarations work → D8 boost
+
+### Key references
+
+- Full GoS spec: `claude/refs/skill-graph.md`
+- Registry v2.0 format: `claude/refs/skill-registry.md §10`
+- D8 scoring rules: `claude/eval/rubrics.md §9`
+- Graph algorithms: `builder/src/core/graph.js`
+- Validation checks: `builder/src/commands/validate.js` (GRAPH-001–005)
 
 ---
 
 **Triggers**:
-**CREATE** | **LEAN** | **EVALUATE** | **OPTIMIZE** | **INSTALL** | **COLLECT**
-**创建** | **快评** | **评测** | **优化** | **安装** | **采集**
+**CREATE** | **LEAN** | **EVALUATE** | **OPTIMIZE** | **INSTALL** | **COLLECT** | **GRAPH**
+**创建** | **快评** | **评测** | **优化** | **安装** | **采集** | **技能图**
 
 (Templates: `claude/templates/` · UTE snippet: `claude/templates/use-to-evolve-snippet.md` ·
 Eval rubrics: `claude/eval/rubrics.md` · Benchmarks: `claude/eval/benchmarks.md` ·
@@ -2289,4 +2413,4 @@ Self-review: `claude/refs/self-review.md` · Security: `claude/refs/security-pat
 Evolution: `claude/refs/evolution.md` · UTE spec: `claude/refs/use-to-evolve.md` ·
 Convergence: `claude/refs/convergence.md` · Optimize strategies: `claude/optimize/strategies.md` ·
 Session artifact: `claude/refs/session-artifact.md` · Edit audit: `claude/refs/edit-audit.md` ·
-Skill registry: `claude/refs/skill-registry.md`)
+Skill registry: `claude/refs/skill-registry.md` · **Skill graph: `claude/refs/skill-graph.md`**)

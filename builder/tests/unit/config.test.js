@@ -184,10 +184,11 @@ describe('Config Module', () => {
       expect(config.SCORING.varianceGates.gold).toBe(15);
     });
 
-    test('should export unified 7-dimension schema', () => {
+    test('should export unified 8-dimension schema (7 core + D8 composability)', () => {
       expect(config.SCORING.dimensions).toBeDefined();
       const dims = Object.keys(config.SCORING.dimensions);
-      expect(dims).toHaveLength(7);
+      // v3.2.0: 8 dimensions — 7 core (D1-D7) + D8 Composability (GoS bonus)
+      expect(dims).toHaveLength(8);
       expect(dims).toContain('systemDesign');
       expect(dims).toContain('domainKnowledge');
       expect(dims).toContain('workflow');
@@ -195,6 +196,7 @@ describe('Config Module', () => {
       expect(dims).toContain('examples');
       expect(dims).toContain('security');
       expect(dims).toContain('metadata');
+      expect(dims).toContain('composability');
     });
 
     test('dimension weights should sum to 1.0', () => {
@@ -203,10 +205,19 @@ describe('Config Module', () => {
       expect(totalWeight).toBeCloseTo(1.0, 5);
     });
 
-    test('dimension leanMax scores should sum to 500', () => {
-      const totalLean = Object.values(config.SCORING.dimensions)
-        .reduce((sum, d) => sum + d.leanMax, 0);
+    test('core dimension leanMax scores (D1-D7) should sum to 500', () => {
+      // v3.2.0: D8 composability adds up to 20 bonus pts; core D1-D7 still sum to 500.
+      const coreDims = Object.entries(config.SCORING.dimensions)
+        .filter(([key]) => key !== 'composability');
+      const totalLean = coreDims.reduce((sum, [, d]) => sum + d.leanMax, 0);
       expect(totalLean).toBe(500);
+    });
+
+    test('D8 composability leanMax should be 20 (bonus dimension)', () => {
+      const d8 = config.SCORING.dimensions.composability;
+      expect(d8).toBeDefined();
+      expect(d8.leanMax).toBe(20);
+      expect(d8.weight).toBe(0.00); // Phase 2 weight 0; scored in Phase 5 (v4.0+)
     });
 
     test('each dimension should have label, weight, leanMax, strategies', () => {

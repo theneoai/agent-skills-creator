@@ -4,7 +4,7 @@
 > **Load**: When §17 (COLLECT Mode) of `claude/skill-writer.md` is accessed.
 > **Inspired by**: SkillClaw (arxiv:2604.08377) + SkillRL lesson distillation (arxiv:2602.08234)
 > **Main doc**: `claude/skill-writer.md §17`
-> **Last updated**: 2026-04-11 — Added SkillRL-inspired `lesson_type` + `lesson_summary` fields (§2, §3)
+> **Last updated**: 2026-04-13 — v3.2.0: Added GoS `bundle_context` + `graph_signals` fields (§2, §3, §8)
 
 ---
 
@@ -66,7 +66,26 @@ The Session Artifact is the atomic unit that enables this.
   },
 
   "lesson_type": "strategic_pattern | failure_lesson | neutral",
-  "lesson_summary": "<≤3 sentences distilling the reusable lesson from this session>"
+  "lesson_summary": "<≤3 sentences distilling the reusable lesson from this session>",
+
+  "bundle_context": {
+    "bundle_id":          "<bnd-xxx | null if single-skill session>",
+    "co_invoked_skills":  ["<skill_id_1>", "<skill_id_2>"],
+    "invocation_order":   ["<skill_id_1>", "<this_skill_id>", "<skill_id_2>"],
+    "data_flow": [
+      { "from": "<skill_id>", "to": "<this_skill_id>", "via": "<data_type>" }
+    ],
+    "bundle_success":          true,
+    "missing_dependencies":    []
+  },
+
+  "graph_signals": {
+    "should_add_edge": [
+      { "type": "depends_on", "target": "<skill_id>", "confidence": 0.85 }
+    ],
+    "should_merge_with":   null,
+    "composability_score": null
+  }
 }
 ```
 
@@ -243,6 +262,65 @@ tracking personal usage patterns over time.
 
 ---
 
+## §8  Graph of Skills Fields (v3.2.0)
+
+> **Research basis**: GoS bundle retrieval, SkillNet (arxiv:2603.04448).
+> These fields enable the AGGREGATE pipeline to auto-infer graph edges from collective
+> session data. Full spec: `claude/refs/skill-graph.md`
+
+### `bundle_context` fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `bundle_id` | No | ID from `registry.graph.bundles[]`; `null` for single-skill sessions |
+| `co_invoked_skills` | No | skill_ids of other skills used in the same task session |
+| `invocation_order` | No | Ordered list of skill_ids in the sequence they were called |
+| `data_flow` | No | Observed data passing between skills; used to infer `provides`/`consumes` edges |
+| `bundle_success` | No | Whether the multi-skill session achieved its goal |
+| `missing_dependencies` | No | Skills that were needed but not installed; each is a string skill_id |
+
+**`co_invoked_skills` recording rule** `[CORE]`:
+Populate when the AI identifies that the current task was accomplished using multiple
+skills in sequence. If only one skill was used, set `co_invoked_skills: []`.
+
+**`data_flow` recording rule** `[CORE]`:
+Record when output from one skill was explicitly used as input to another.
+- `from`: the skill_id that produced the output
+- `to`: the skill_id that consumed it
+- `via`: human-readable name of the data type (e.g. `"validated-api-schema"`)
+
+### `graph_signals` fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `should_add_edge` | No | Proposed new graph edges inferred from this session |
+| `should_merge_with` | No | skill_id of a highly similar skill (if similarity > 0.90 observed) |
+| `composability_score` | No | Estimated D8 LEAN score for this invocation (0–20), if graph: block is present |
+
+**`should_add_edge` recording rule** `[CORE]`:
+When the AI observes that skill A consistently required skill B, propose:
+```json
+{ "type": "depends_on", "target": "<skill_B_id>", "confidence": 0.80 }
+```
+Do NOT add edges with confidence < 0.60.
+
+### AGGREGATE Auto-Inference Rules (from §10.3 of skill-registry.md)
+
+The AGGREGATE pipeline reads `bundle_context` across N artifacts and applies:
+
+```
+N ≥ 5 artifacts with same co_invoked pair:
+  → If ≥ 80% show skill A + B co-invoked → propose A depends_on B
+
+N ≥ 5 artifacts with same data_flow entry:
+  → If ≥ 60% show A.output → B.input → propose A provides X; B consumes X
+
+Any artifact with should_add_edge.confidence ≥ 0.85:
+  → Immediately surface to user for confirmation (no minimum count)
+```
+
+---
+
 ## §7  SkillClaw Interoperability
 
 Session Artifacts are designed to be compatible with the SkillClaw evolve server
@@ -255,3 +333,4 @@ session format. Key alignment points:
 | PRM score | `prm_signal` (3-level) | Simplified: good/ok/poor vs continuous score |
 | Skill reference | `skill_id` + `skill_name` | SHA-256[:12] IDs are compatible |
 | Sessions queue | `sessions/` directory | Same storage layout |
+| **v3.2.0 GoS extension** | `bundle_context` + `graph_signals` | Enables graph edge auto-inference |

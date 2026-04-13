@@ -1,10 +1,10 @@
 # Progressive Disclosure Reference
 
-> **Purpose**: Defines the three-layer loading pattern for skill content, optimizing token
+> **Purpose**: Defines the four-layer loading pattern for skill content, optimizing token
 > usage and LLM reasoning quality across platforms.
-> **Load**: When §12 (INSTALL) or §2 (Mode Router) of `claude/skill-writer.md` is accessed.
+> **Load**: When §12 (INSTALL), §2 (Mode Router), or §18 (GRAPH) of `claude/skill-writer.md` is accessed.
 > **Main doc**: `claude/skill-writer.md §12`
-> **Last updated**: 2026-04-12 — Initial spec (agentskills.io compliance, token efficiency)
+> **Last updated**: 2026-04-13 — v3.2.0: Added Layer 0 Graph Context (GoS bundle-aware loading)
 
 ---
 
@@ -15,19 +15,54 @@ context window limits (agentskills.io specification, 2025; Lakera prompt enginee
 research, 2026). Loading every skill in full at startup saturates the effective context
 budget before the user's task is even considered.
 
-Progressive Disclosure solves this with a **three-layer architecture**: skills are loaded
-only as far as needed for the current task, keeping token consumption proportional to
-what the agent actually requires.
+Progressive Disclosure solves this with a **four-layer architecture** (v3.2.0): skills
+are loaded only as far as needed for the current task, keeping token consumption
+proportional to what the agent actually requires.  Layer 0 (Graph Context) is new in
+v3.2.0 — it provides bundle-level awareness before individual skills are loaded.
 
 ---
 
-## §2  Three-Layer Architecture
+## §2  Four-Layer Architecture (v3.2.0)
 
 ```
-Layer 1 — ADVERTISE   ≈ 100 tokens   Always loaded (system prompt injection)
-Layer 2 — LOAD        < 5,000 tokens Loaded when task matches skill domain
-Layer 3 — READ RESOURCES  as needed  Fetched only when skill invokes them
+Layer 0 — GRAPH CONTEXT  ≈ 200 tokens  Loaded when task matches a known bundle
+                                        (v3.2.0; only when registry has graph data)
+Layer 1 — ADVERTISE      ≈ 100 tokens  Always loaded (system prompt injection)
+Layer 2 — LOAD           < 5,000 tokens Loaded when task matches skill domain
+Layer 3 — READ RESOURCES   as needed   Fetched only when skill invokes them
 ```
+
+### Layer 0: GRAPH CONTEXT (v3.2.0)
+
+**Content**: Bundle summary — ordered list of skills, their roles, and data-flow between them.
+**When loaded**: The router determines the task likely requires ≥ 2 skills AND the registry
+has `graph:` data (schema v2.0+).
+**Token budget**: ≤ 200 tokens (strict limit — enforced by `resolveBundle()` in graph.js).
+**Source**: `registry.json graph.bundles[]` + computed from `graph.edges[]`.
+
+Layer 0 precedes Layer 1 — it gives the LLM structural context about the skill ecosystem
+*before* individual skill names are loaded.
+
+Example Layer 0 output (≤ 200 tokens):
+```
+Bundle: API Testing Suite
+Skills (execute in order):
+  1. schema-validator  → validates input schema     [atomic]
+  2. api-tester        → executes test suite         [functional, entry point]
+  3. report-generator  → produces coverage report    [functional]
+Data flow: api-tester → report-generator via "test-results-json"
+```
+
+**When Layer 0 is NOT loaded**:
+- Single-skill tasks (no bundle context needed)
+- Registry has no `graph:` data (v1.x registry)
+- Task does not match any known bundle
+
+**Platform support**: Layer 0 is injected as a prefix to the system prompt alongside
+Layer 1 ADVERTISE stubs. Platforms that don't support dynamic system prompt injection
+(e.g. Cursor) receive Layer 0 as part of the first user message instead.
+
+---
 
 ### Layer 1: ADVERTISE
 
@@ -87,6 +122,7 @@ Resource loading triggers:
 | CREATE | templates/base.md (or template-specific file) |
 | SHARE | refs/skill-registry.md |
 | Any | refs/use-to-evolve.md (UTE cadence check) |
+| **GRAPH** (v3.2.0) | **refs/skill-graph.md** (graph spec + health check rules) |
 
 ---
 
@@ -140,6 +176,8 @@ For Skill Writer builds (`npm run build`):
 
 | Spec | Layer | Role |
 |------|-------|------|
+| **refs/skill-graph.md** (v3.2.0) | **0** | **GoS spec; loaded by GRAPH mode and bundle-aware routing** |
+| **registry.json graph section** (v3.2.0) | **0** | **Bundle data source for Layer 0 context** |
 | agentskills.io SKILL.md | 1 + 2 | Name/description constraints; 500-line limit |
 | refs/self-review.md | 2 | Self-review protocol runs in-layer |
 | refs/security-patterns.md | 3 | Loaded by EVALUATE security gate only |

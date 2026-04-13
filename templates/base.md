@@ -19,6 +19,12 @@
 `{{TARGET_USER}}`, `{{TRIGGER_PHRASE_EN_1~3}}`, `{{TRIGGER_PHRASE_ZH_1~2}}`,
 `{{ANTI_CASE_1}}`, `{{CORE_ACTION}}`, `{{OUTPUT_FORMAT}}`, `{{DATE}}`
 
+**选填占位符 (graph: 块) — OPTIONAL graph placeholders** (v3.2.0):
+`{{GRAPH_DEP_ID}}`, `{{GRAPH_DEP_NAME}}`, `{{GRAPH_CHILD_ID}}`, `{{GRAPH_CHILD_NAME}}`,
+`{{GRAPH_SIMILAR_ID}}`, `{{GRAPH_SIMILAR_NAME}}`, `{{GRAPH_OUTPUT_TYPE}}`, `{{GRAPH_INPUT_TYPE}}`
+→ 取消注释 `# graph:` 行并填写即可解锁 D8 可组合性评分 (+20 LEAN pts)
+→ Uncomment the `# graph:` block and fill to unlock D8 Composability scoring (+20 LEAN pts)
+
 **自动填充 (其余占位符) — AUTO-FILLED by `/create`**:
 其余所有 `{{PLACEHOLDER}}` 均可由 CREATE 模式根据你的回答自动推断。
 All remaining placeholders are inferred by CREATE mode from your answers.
@@ -82,7 +88,7 @@ interface:
 
 use_to_evolve:
   enabled: true
-  injected_by: "skill-writer v3.1.0"
+  injected_by: "skill-writer v3.2.0"
   injected_at: "{{DATE}}"
   check_cadence: {lightweight: 10, full_recompute: 50, tier_drift: 100}
   micro_patch_enabled: true
@@ -92,6 +98,30 @@ use_to_evolve:
   pending_patches: 0
   total_micro_patches_applied: 0
   cumulative_invocations: 0
+
+# Graph of Skills — optional (v3.2.0, research: SkillNet arxiv:2603.04448)
+# Declare typed relationships to other skills. All lists are optional — omit any
+# that don't apply. Presence of this block unlocks D8 Composability scoring (+20 LEAN pts).
+# skill_tier determines which fields are most important:
+#   planning  → fill composes (which sub-skills this orchestrates)
+#   functional → fill depends_on and provides/consumes
+#   atomic    → fill provides/consumes only (atomic skills rarely have dependencies)
+# graph:
+#   depends_on:              # Skills that must be available before this one executes
+#     - id: "{{GRAPH_DEP_ID}}"
+#       name: "{{GRAPH_DEP_NAME}}"
+#       required: true       # true = hard dependency; false = optional enhancement
+#   composes:                # Sub-skills this planning skill coordinates (planning tier only)
+#     - id: "{{GRAPH_CHILD_ID}}"
+#       name: "{{GRAPH_CHILD_NAME}}"
+#   similar_to:              # Functionally similar skills (substitutable in some contexts)
+#     - id: "{{GRAPH_SIMILAR_ID}}"
+#       name: "{{GRAPH_SIMILAR_NAME}}"
+#       similarity: 0.80     # 0.0–1.0; ≥ 0.95 triggers GRAPH-004 merge advisory
+#   provides:                # Output types this skill produces (for downstream depends_on)
+#     - "{{GRAPH_OUTPUT_TYPE}}"   # e.g. "structured-test-report", "validated-api-schema"
+#   consumes:                # Input types this skill requires from upstream skills
+#     - "{{GRAPH_INPUT_TYPE}}"    # e.g. "raw-api-spec", "unstructured-log-data"
 ---
 
 ## Skill Summary
@@ -287,3 +317,7 @@ tier-drift detection every 100.
 - [ ] ASI01 CLEAR (no untrusted content injected as instructions)
 - [ ] If confidence < 0.70 on delivery: add `TEMP_CERT: true` to YAML frontmatter
       and schedule 72 h re-evaluation window
+- [ ] **[OPTIONAL v3.2.0]** If skill has dependencies on other skills: uncomment and fill `graph:` block
+      → enables D8 Composability scoring (+20 LEAN bonus pts)
+      → enables dependency resolution in `/install` mode
+      → enables bundle retrieval via GRAPH mode (`/graph plan`)

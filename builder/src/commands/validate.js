@@ -9,8 +9,15 @@
  *   - Description: max 1024 characters
  *   - Content: warn if > 500 lines (Progressive Disclosure best practice)
  *
+ * v3.2.0: Added GRAPH-001–005 checks for Graph of Skills edge validation.
+ *   - GRAPH-001: edge target skill_ids must be recognisable 12-char hex format
+ *   - GRAPH-002: planning tier should have composes edges (WARNING)
+ *   - GRAPH-003: atomic tier should not have depends_on edges (WARNING)
+ *   - GRAPH-004: similar_to similarity ≥ 0.95 → merge advisory WARNING
+ *   - GRAPH-005: self-loop detection (skill depends on itself)
+ *
  * @module builder/src/commands/validate
- * @version 3.1.1 - Added agentskills.io SKILL.md spec compliance checks
+ * @version 3.2.0
  */
 
 const fs = require('fs');
@@ -21,7 +28,14 @@ const yaml = require('js-yaml');
 const config = require('../config');
 
 // Use configuration from centralized config
-const { PATHS, REQUIRED_FILES, REQUIRED_UTE_FIELDS, PLACEHOLDERS, AUTHOR_PLACEHOLDERS } = config;
+const {
+  PATHS,
+  REQUIRED_FILES,
+  REQUIRED_UTE_FIELDS,
+  PLACEHOLDERS,
+  AUTHOR_PLACEHOLDERS,
+  GRAPH_SIMILARITY_MERGE_THRESHOLD,
+} = config;
 
 // agentskills.io SKILL.md specification constraints
 const SKILLMD_SPEC = {
@@ -49,6 +63,7 @@ async function validate() {
   await validateTemplates(result);
   await validateGeneratedSkills(result);
   await validateSkillMdSpec(result);
+  await validateGraphEdges(result);
 
   printSummary(result);
   return result;
@@ -419,6 +434,148 @@ async function validateSkillMdSpec(result) {
   console.log('');
 }
 
+/**
+ * Validate graph: blocks in generated Markdown skill files (v3.2.0).
+ * Runs GRAPH-001 through GRAPH-005 checks.
+ *
+ * GRAPH-001  Edge target IDs must be 12-char lowercase hex
+ * GRAPH-002  planning skills should have composes edges (WARNING)
+ * GRAPH-003  atomic  skills should NOT have depends_on edges (WARNING)
+ * GRAPH-004  similar_to similarity ≥ threshold → merge advisory (WARNING)
+ * GRAPH-005  Self-loop: skill depends on itself (ERROR)
+ *
+ * Note: full cycle detection across the registry is handled at runtime by
+ * builder/src/core/graph.js detectCycles(). Here we only catch self-loops
+ * and local structural issues detectable within a single file.
+ */
+async function validateGraphEdges(result) {
+  console.log(chalk.cyan('🕸  Checking Graph of Skills (GoS) edge declarations...'));
+
+  let mdFiles = [];
+  try {
+    mdFiles = glob.sync(path.join(PATHS.platforms, '*.md'));
+  } catch {
+    // No files — already reported elsewhere
+  }
+
+  if (mdFiles.length === 0) {
+    console.log(chalk.gray('  (no .md skill files to check)\n'));
+    return;
+  }
+
+  const hexIdPattern = /^[a-f0-9]{12}$/;
+  let anyGraph = false;
+
+  for (const filePath of mdFiles) {
+    const fileName = path.basename(filePath);
+    let content;
+    try {
+      content = await fs.promises.readFile(filePath, 'utf8');
+    } catch {
+      continue;
+    }
+
+    // Extract YAML frontmatter
+    let fm = null;
+    const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+    if (fmMatch) {
+      try { fm = yaml.load(fmMatch[1]); } catch { /* already caught elsewhere */ }
+    }
+
+    if (!fm || !fm.graph) continue;
+    anyGraph = true;
+
+    const g   = fm.graph;
+    const id  = fm.name || fileName;          // use skill name as human label
+    const tier = fm.skill_tier || 'functional';
+    const issuesBefore = result.issues.length;
+
+    // ── Collect all declared skill IDs ────────────────────────────────────
+    const allEdgeIds = [];
+    const hasComposes   = Array.isArray(g.composes)   && g.composes.length > 0;
+    const hasDepsOn     = Array.isArray(g.depends_on) && g.depends_on.length > 0;
+    const hasSimilarTo  = Array.isArray(g.similar_to) && g.similar_to.length > 0;
+
+    if (hasDepsOn) {
+      allEdgeIds.push(...g.depends_on.map(d => ({ id: d.id || '', ctx: 'depends_on' })));
+    }
+    if (hasComposes) {
+      allEdgeIds.push(...g.composes.map(c => ({ id: c.id || '', ctx: 'composes' })));
+    }
+    if (hasSimilarTo) {
+      allEdgeIds.push(...g.similar_to.map(s => ({ id: s.id || '', ctx: 'similar_to' })));
+    }
+
+    // GRAPH-001: ID format check
+    for (const { id: targetId, ctx } of allEdgeIds) {
+      if (!targetId) {
+        addIssue(result, 'warning',
+          `[GRAPH-001] ${fileName}: graph.${ctx} entry is missing 'id' field`);
+      } else if (!hexIdPattern.test(targetId)) {
+        addIssue(result, 'warning',
+          `[GRAPH-001] ${fileName}: graph.${ctx} id "${targetId}" is not a valid 12-char hex skill ID` +
+          ' — expected format: SHA-256(name)[:12] e.g. "a1b2c3d4e5f6"');
+      }
+    }
+
+    // GRAPH-005: self-loop (skill depends on itself)
+    const selfId = fm.skill_id;
+    if (selfId) {
+      for (const { id: targetId, ctx } of allEdgeIds) {
+        if (targetId === selfId) {
+          addIssue(result, 'error',
+            `[GRAPH-005] ${fileName}: self-loop detected — skill declares ${ctx} on itself (${selfId})`);
+        }
+      }
+    }
+
+    // GRAPH-002: planning should have composes
+    if (tier === 'planning' && !hasComposes) {
+      addIssue(result, 'warning',
+        `[GRAPH-002] ${fileName}: skill_tier is "planning" but graph.composes is absent` +
+        ' — planning skills should declare the sub-skills they orchestrate');
+    }
+
+    // GRAPH-003: atomic should not have depends_on
+    if (tier === 'atomic' && hasDepsOn) {
+      addIssue(result, 'warning',
+        `[GRAPH-003] ${fileName}: skill_tier is "atomic" but graph.depends_on is declared` +
+        ' — atomic skills should be self-contained; consider upgrading to "functional"');
+    }
+
+    // GRAPH-004: similar_to merge advisory
+    if (hasSimilarTo) {
+      for (const entry of g.similar_to) {
+        const sim = entry.similarity ?? 0;
+        if (sim >= GRAPH_SIMILARITY_MERGE_THRESHOLD) {
+          addIssue(result, 'warning',
+            `[GRAPH-004] ${fileName}: similar_to "${entry.name || entry.id}" has similarity ` +
+            `${sim} ≥ ${GRAPH_SIMILARITY_MERGE_THRESHOLD} — merge candidate` +
+            ' (run /graph check for detailed merge analysis)');
+        }
+      }
+    }
+
+    // Per-file result line
+    const newIssues = result.issues.slice(issuesBefore);
+    const newErrors   = newIssues.filter(i => i.type === 'error').length;
+    const newWarnings = newIssues.filter(i => i.type === 'warning').length;
+    if (newIssues.length === 0) {
+      console.log(chalk.green(`  ✓ ${fileName} (graph: block valid)`));
+    } else if (newErrors > 0) {
+      console.log(chalk.red(`  ✗ ${fileName} (${newErrors} graph error(s), ${newWarnings} warning(s))`));
+    } else {
+      console.log(chalk.yellow(`  ⚠ ${fileName} (${newWarnings} graph warning(s))`));
+    }
+  }
+
+  if (!anyGraph) {
+    console.log(chalk.gray('  (no graph: blocks found — D8 scoring inactive; this is normal)'));
+  }
+
+  console.log('');
+}
+
 function addIssue(result, type, message) {
   result.issues.push({ type, message, timestamp: new Date().toISOString() });
   if (type === 'error') {
@@ -462,5 +619,6 @@ module.exports = {
   validateTemplates,
   validateGeneratedSkills,
   validateSkillMdSpec,
+  validateGraphEdges,
   SKILLMD_SPEC,
 };

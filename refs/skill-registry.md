@@ -239,6 +239,7 @@ Existing skills without these fields receive an advisory warning; they are not r
 **Schema version history**:
 - `1.0`: Original — id, name, version, tier, score, platforms, tags, history
 - `1.1` (v3.1.0): Added `skill_tier`, `triggers` at registry entry level; added `skill_tier` to history entries
+- `2.0` (v3.2.0): Added top-level `graph` object with `edges[]` and `bundles[]` arrays (Graph of Skills)
 
 ---
 
@@ -305,6 +306,118 @@ When a MAJOR version is published:
 | `functional` → `planning` | MINOR | Higher-level orchestration added |
 | `planning` → `functional` | MAJOR | Scope reduction — may remove orchestration capabilities |
 | `functional` → `atomic` | MAJOR | Scope reduction — callers expecting rich workflow may fail |
+
+---
+
+## §10  Graph of Skills — Schema v2.0
+
+> **v3.2.0 addition**. Research basis: SkillNet (arxiv:2603.04448), GoS bundle retrieval,
+> SkillX tier hierarchy (arxiv:2604.04804).
+> **Backward compatible**: existing v1.x registries work unchanged; `graph` key is optional.
+> Full specification: `claude/refs/skill-graph.md`
+
+### §10.1  Registry v2.0 Format Extension
+
+Schema v2.0 adds a top-level `graph` object alongside `skills[]`:
+
+```json
+{
+  "schema_version": "2.0",
+  "registry_updated": "<ISO-8601>",
+  "skills": [ /* ... same as v1.1 ... */ ],
+
+  "graph": {
+    "edges": [
+      {
+        "from":          "a1b2c3d4e5f6",
+        "to":            "7f8a9b0c1d2e",
+        "type":          "depends_on",
+        "weight":        1.0,
+        "required":      true,
+        "auto_inferred": false,
+        "confidence":    1.0,
+        "added_at":      "<ISO-8601>",
+        "added_by":      "skill-writer-v3.2.0 | aggregate | user"
+      }
+    ],
+    "bundles": [
+      {
+        "bundle_id":    "bnd-api-testing",
+        "name":         "API Testing Suite",
+        "description":  "End-to-end API testing: schema validation → execution → reporting",
+        "skills":       ["a1b2c3d4e5f6", "7f8a9b0c1d2e", "3e4f5a6b7c8d"],
+        "entry_point":  "a1b2c3d4e5f6",
+        "created_at":   "<ISO-8601>",
+        "auto_composed": false
+      }
+    ]
+  }
+}
+```
+
+### §10.2  Edge Types (canonical — from `builder/src/config.js GRAPH_EDGE_TYPES`)
+
+| Type | Direction | Meaning | Which Tier Uses It |
+|------|-----------|---------|-------------------|
+| `depends_on` | A → B | A requires B to be available before execution | functional, planning |
+| `composes` | A → [B,C,D] | A orchestrates B, C, D as sub-skills | planning only |
+| `similar_to` | A ↔ B | A and B are functionally similar; may substitute | any |
+| `uses_resource` | A → R | A reads a companion resource file | any |
+| `provides` | A → type | A outputs a named data type | any |
+| `consumes` | A → type | A requires a named input data type | any |
+
+### §10.3  Auto-Inference from COLLECT Artifacts
+
+The AGGREGATE pipeline (`/collect` → `aggregate skill feedback`) reads `bundle_context`
+fields in Session Artifacts and infers graph edges:
+
+```
+Rule 1 — Co-invocation:
+  IF ≥ 80% of artifacts show skill A and B invoked in same session
+  → Propose edge: A depends_on B  (confidence = co_invocation_rate)
+  → Mark: auto_inferred: true
+
+Rule 2 — Data Flow:
+  IF ≥ 60% of artifacts show A.provides → B.consumes match
+  → Propose edge: A provides type; B consumes type
+  → Create directed edge: A → B (type: depends_on, weight: flow_rate)
+
+Rule 3 — Merge Advisory:
+  IF similar_to similarity > 0.95
+  → GRAPH-004 warning; DO NOT auto-merge; present to user for confirmation
+```
+
+### §10.4  Bundle Lifecycle
+
+```
+/graph plan [task description]
+     ↓
+Resolve bundle via builder/src/core/graph.js resolveBundle()
+     ↓
+Bundle entry saved to registry graph.bundles[]
+     ↓
+/install --bundle bnd-xxx  → installs all bundle skills in topological order
+     ↓
+Bundle usage tracked in Session Artifact bundle_context.bundle_id
+```
+
+### §10.5  Migration: v1.x → v2.0
+
+No breaking changes. To upgrade an existing registry:
+
+```bash
+# Add empty graph section to registry.json
+node -e "
+const fs = require('fs');
+const r = JSON.parse(fs.readFileSync('registry.json'));
+if (!r.graph) r.graph = { edges: [], bundles: [] };
+r.schema_version = '2.0';
+fs.writeFileSync('registry.json', JSON.stringify(r, null, 2));
+"
+```
+
+Skills that have `graph:` blocks in their YAML frontmatter will have their edges
+populated automatically on the next `skillclaw push` or `/install` command.
 
 ---
 
