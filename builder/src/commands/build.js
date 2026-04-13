@@ -287,8 +287,12 @@ function checkVersionCompatibility(builderVersion) {
  * @returns {boolean} true if a > b
  */
 function semverGt(a, b) {
-  const pa = String(a).split('.').map(n => parseInt(n, 10) || 0);
-  const pb = String(b).split('.').map(n => parseInt(n, 10) || 0);
+  // Strip pre-release suffixes before comparing (e.g. "3.1.0-rc1" → "3.1.0").
+  // Semver strictly says 3.1.0 > 3.1.0-rc1, but for a version-mismatch warning
+  // we treat them as equal — the point is to detect a meaningfully newer framework.
+  const strip = v => String(v).replace(/-[^.]*$/, '');
+  const pa = strip(a).split('.').map(n => parseInt(n, 10) || 0);
+  const pb = strip(b).split('.').map(n => parseInt(n, 10) || 0);
   for (let i = 0; i < 3; i++) {
     if ((pa[i] || 0) > (pb[i] || 0)) return true;
     if ((pa[i] || 0) < (pb[i] || 0)) return false;

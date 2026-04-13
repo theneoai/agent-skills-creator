@@ -274,4 +274,63 @@ describe('Embedder Module', () => {
       expect(result.issues.some(i => i.type === 'warning')).toBe(true);
     });
   });
+
+  // ── generateSkillFile error paths ─────────────────────────────────────────
+
+  describe('generateSkillFile — EINVALID_FRONTMATTER (P0-1 regression guard)', () => {
+    // NOTE: The throw is only reached when the template does NOT already have frontmatter
+    // (all platform templates start with `---`, so we must supply a custom template without
+    // frontmatter to force the generation code path and exercise the throw).
+    const NO_FM_TEMPLATE = '# {{TITLE}}\n\nBody content here.\n';
+
+    test('throws EINVALID_FRONTMATTER when metadata contains a circular reference', () => {
+      // A circular reference causes yaml.dump() to throw, which makes formatFrontmatter()
+      // return null, which should now throw (hard error) instead of silently producing
+      // a skill file with missing frontmatter.
+      const circular = {};
+      circular.self = circular;
+
+      const coreData = {
+        template: NO_FM_TEMPLATE,
+        metadata: {
+          name: 'test-skill',
+          version: '1.0.0',
+          description: 'test',
+          extra: { bad: circular }, // yaml.dump will throw on this
+        },
+      };
+
+      expect(() => embedder.generateSkillFile('opencode', coreData))
+        .toThrow('EINVALID_FRONTMATTER');
+    });
+
+    test('EINVALID_FRONTMATTER error message includes the platform name and metadata keys', () => {
+      const circular = {};
+      circular.ref = circular;
+      const coreData = {
+        template: NO_FM_TEMPLATE,
+        metadata: { name: 'x', version: '1.0.0', extra: { x: circular } },
+      };
+      let message = '';
+      try {
+        embedder.generateSkillFile('gemini', coreData);
+      } catch (e) {
+        message = e.message;
+      }
+      expect(message).toContain('gemini');
+      expect(message).toContain('Metadata keys present');
+    });
+
+    test('does NOT throw for platforms that do not require frontmatter (cursor)', () => {
+      // cursor has supportsFrontmatter: false — the frontmatter code path is skipped entirely,
+      // so even a circular reference in extra cannot trigger EINVALID_FRONTMATTER here.
+      const circular = {};
+      circular.ref = circular;
+      const coreData = {
+        template: NO_FM_TEMPLATE,
+        metadata: { name: 'test-skill', version: '1.0.0', extra: { x: circular } },
+      };
+      expect(() => embedder.generateSkillFile('cursor', coreData)).not.toThrow();
+    });
+  });
 });

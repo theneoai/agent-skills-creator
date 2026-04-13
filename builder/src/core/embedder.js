@@ -544,12 +544,14 @@ function generateSkillFile(platform, coreData) {
     };
     frontmatter = formatFrontmatter(fmData, config);
     if (!frontmatter) {
-      // P0-3: Frontmatter generation failing for a platform that requires it is a
-      // hard error — the output would be structurally invalid.  Throw instead of
-      // silently producing a skill file with no frontmatter.
+      // Frontmatter generation failing for a platform that requires it is a hard error —
+      // the output would be structurally invalid.  Throw with enough context to debug.
+      let metadataKeys = '(unavailable)';
+      try { metadataKeys = Object.keys(fmData).join(', '); } catch {}
       throw new Error(
         '[EINVALID_FRONTMATTER] frontmatter generation failed for platform "' + platform + '" — ' +
-        'ensure all metadata values are YAML-serializable (no circular references, functions, or undefined)'
+        'ensure all metadata values are YAML-serializable (no circular references, functions, or undefined). ' +
+        'Metadata keys present: ' + metadataKeys
       );
     }
   }
@@ -710,10 +712,14 @@ function extractPlaceholders(template, platformConfig) {
 /**
  * Apply platform-specific post-processing transforms.
  *
- * NOTE: This is a utility for callers that have a pre-built Markdown string and need
- * platform-specific adjustments AFTER all placeholder substitutions are done.
- * In the standard build pipeline, formatSkill() on each platform adapter handles
- * these transforms — you generally do NOT need to call this separately.
+ * INTENDED USE: External utility for callers that have a pre-built Markdown string
+ * and need platform-specific adjustments AFTER all placeholder substitutions are done
+ * (e.g., post-processing a skill loaded from disk, or in a custom build pipeline).
+ *
+ * NOT called by generateSkillFile() — the standard build pipeline delegates all
+ * platform-specific formatting to formatSkill() on each platform adapter instead.
+ * This function is intentionally exported for programmatic API consumers; it is not
+ * dead code, but it also should not be wired into the main build path.
  *
  * @param {string} content - Content to transform (all {{PLACEHOLDER}}s already replaced)
  * @param {string} platform - Target platform name

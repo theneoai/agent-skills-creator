@@ -58,7 +58,12 @@ function formatSkill(skillContent) {
   // Convert YAML frontmatter to JSON code block using shared utility.
   // Uses canonical FRONTMATTER_REGEX which handles optional trailing newline —
   // fixes silent failure when skill files end with `---` without trailing newline.
-  const { frontmatterData, body, raw } = parseFrontmatter(formatted);
+  const { frontmatterData, body, raw, parseError } = parseFrontmatter(formatted);
+  if (parseError) {
+    // Frontmatter is malformed YAML — surface the error so it doesn't silently produce
+    // a Cursor skill file that still contains raw YAML instead of the expected JSON block.
+    console.warn(`[cursor] frontmatter parse error (YAML → JSON conversion skipped): ${parseError.message}`);
+  }
   if (raw && frontmatterData) {
     try {
       const jsonContent = JSON.stringify(frontmatterData, null, 2);

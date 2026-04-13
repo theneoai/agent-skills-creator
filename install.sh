@@ -125,7 +125,8 @@ resolve_source() {
   fi
 
   err "Could not find source file for platform '${platform}'."
-  exit 1
+  # Return 1 (not exit 1) so the calling install loop can continue with other platforms.
+  return 1
 }
 
 # ── Parse arguments ───────────────────────────────────────────────────────────

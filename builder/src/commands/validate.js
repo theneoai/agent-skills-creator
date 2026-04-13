@@ -218,17 +218,34 @@ async function validateGeneratedSkills(result) {
       fileOk = false;
     }
 
-    // P1-1: Secondary check — warn when known author placeholders appear in PROSE text
+    // Secondary check — warn when known author placeholders appear in PROSE text
     // (outside code blocks).  Author placeholders are intentional inside fenced code
     // examples but suspicious in prose — they indicate template content bleeding into
     // documentation sections rather than example blocks.
+    // Note: may produce false positives if documentation deliberately uses placeholder
+    // examples in prose (e.g. "use {{SKILL_NAME}} in your config").  Treat as info-level.
     const proseAuthorPlaceholders = (stripped.match(/\{\{[\w.-]+\}\}/g) || [])
       .filter(match => AUTHOR_PLACEHOLDERS.has(match.slice(2, -2)));
     if (proseAuthorPlaceholders.length > 0) {
       const unique = [...new Set(proseAuthorPlaceholders)];
+
+      // Collect line numbers where each placeholder appears outside code blocks
+      const lines = content.split('\n');
+      let inFenced = false;
+      const hitLines = [];
+      lines.forEach((line, idx) => {
+        if (/^```/.test(line)) { inFenced = !inFenced; return; }
+        if (!inFenced && unique.some(ph => line.includes(ph))) {
+          hitLines.push(idx + 1);
+        }
+      });
+      const lineRef = hitLines.length > 0
+        ? ` (line${hitLines.length > 1 ? 's' : ''} ${hitLines.slice(0, 5).join(', ')})`
+        : '';
+
       addIssue(result, 'warning',
-        `${fileName}: ${unique.length} author placeholder(s) found in prose text (expected only inside code blocks): ` +
-        unique.slice(0, 3).join(', ')
+        `${fileName}: ${unique.length} author placeholder(s) found in prose text${lineRef} ` +
+        `(expected only inside code blocks): ${unique.slice(0, 3).join(', ')}`
       );
     }
 
