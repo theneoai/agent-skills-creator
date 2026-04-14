@@ -140,18 +140,16 @@ jobs:
 
         Paste one of the commands below into your AI agent to install skill-writer.
 
-        ### What's new in v3.2.0 — Graph of Skills (GoS)
+        ### What's new in v3.3.0 — Three-Tier Hook Routing + SkillRouter Weighted Ranking
 
-        - **GRAPH Mode** — 7th mode: \`/graph view\`, \`/graph check\`, \`/graph plan\`, \`/graph bundle\`, \`/graph diff\`
-        - **D8 Composability** — Optional LEAN bonus dimension (+0–20 pts) for skills with \`graph:\` block
-        - **Typed edge schema** — 6 edge types: \`depends_on\`, \`composes\`, \`similar_to\`, \`uses_resource\`, \`provides\`, \`consumes\`
-        - **Bundle retrieval** — BFS + PageRank resolves execution-complete skill bundles from a seed skill
-        - **Graph health checks** — GRAPH-001–008: dangling edges, cycles, isolated nodes, merge advisories
-        - **INSTALL dependency resolution** — Step 2a resolves the dependency tree and installs in topological order
-        - **COLLECT bundle context** — New \`bundle_context\` + \`graph_signals\` fields; AGGREGATE auto-infers graph edges
-        - **Registry schema v2.0** — Top-level \`graph:\` section in \`registry.json\` with \`edges[]\` + \`bundles[]\`
-        - **Progressive Disclosure Layer 0** — ≤200-token bundle context injected before ADVERTISE stubs
-        - **GoS algorithm library** — \`builder/src/core/graph.js\`: buildGraph, detectCycles, topologicalSort, resolveBundle, checkGraphHealth, scoreD8Composability
+        - **Three-Tier Routing Model** — AGENTS.md (session-constant) → UserPromptSubmit Hook (per-message) → trigger phrases; solves "LLM forgets skills exist" without relying on trigger-phrase matching alone
+        - **INSTALL steps 4e + 4f** — Auto-generate \`CLAUDE.md\`/\`AGENTS.md\` routing rules and \`UserPromptSubmit\` hook config in one install pass; idempotent (safe to re-run)
+        - **Progressive Disclosure Layer -1** — ≤50-token Hook Injection layer; five-layer architecture (Layer -1 through Layer 3)
+        - **SkillRouter Weighted Ranking** — Multi-factor rank formula (trigger×0.4 + lean\_score×0.3 + usage\_freq×0.2 + source\_quality×0.1); quality threshold gate (0.35) prevents low-confidence routing
+        - **Trigger Discovery Pipeline** — AGGREGATE Rule 4 mines \`candidate_triggers\` from session artifacts; promotes phrases at ≥5 count / ≥70% confidence to canonical triggers
+        - **\`trigger_signals\`** — New session artifact field: \`trigger_used\`, \`matched_trigger\`, \`match_type\`, \`trigger_miss\`, \`candidate_triggers[]\`
+        - **\`usage_stats\`** — New registry field: \`total_invocations\`, \`trigger_phrase_counts\`, \`success_rate\`, \`prm_distribution\`
+        - **Incremental Build Cache** — \`source_hash\` per file; \`.build-cache.json\` skips unchanged platforms; release builds always bypass cache
 
         ### Agent Install — per platform
 

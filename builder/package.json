@@ -1,7 +1,7 @@
 {
   "name": "skill-writer-builder",
-  "version": "2.2.0",
-  "description": "Build tool for skill-writer - embeds core engine into platform-specific skills",
+  "version": "2.3.0",
+  "description": "Build tool for skill-writer - embeds core engine into platform-specific skills; v2.3.0 adds source_hash incremental build cache",
   "main": "src/index.js",
   "bin": {
     "skill-writer-builder": "./bin/skill-writer-builder.js",

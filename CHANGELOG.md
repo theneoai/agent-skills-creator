@@ -9,6 +9,81 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.3.0] - 2026-04-14
+
+### ✨ Added — Three-Tier Hook Routing + SkillRouter Weighted Ranking + Trigger Discovery
+
+- **Layer -1 Hook Injection** (`refs/progressive-disclosure.md §2 Layer -1`)
+  - New lowest layer in the Progressive Disclosure stack — fires at `UserPromptSubmit` before the LLM sees the message
+  - Token budget ≤ 50 tokens (per-message; always on, not counted against skill context budget)
+  - Platform support: Claude ✅, OpenCode ✅, Cursor ❌ (IDE intercepts), Gemini 🔲 (planned v3.4.0)
+  - **Three-tier routing model** (outer → inner): AGENTS.md (session-constant) → UserPromptSubmit Hook (per-message) → trigger phrases (in-skill keyword routing)
+  - Solves "LLM forgets skills exist" — every message receives a skill-awareness nudge regardless of user phrasing
+
+- **INSTALL steps 4e + 4f** (`skill-framework.md §16`)
+  - **Step 4e — AGENTS.md generation**: After skill file install, generate or update `~/.claude/CLAUDE.md` / `~/.config/opencode/AGENTS.md` / etc. with skill registry routing rules block (idempotent `<!-- skill-writer:start/end -->` markers); Cursor gets `.mdc` with `alwaysApply: true`
+  - **Step 4f — Hook injection**: Merge `UserPromptSubmit` hook entry into `~/.claude/settings.json` (Claude/OpenCode only); appends to existing hook array without overwriting; skipped with note for unsupported platforms
+
+- **SkillRouter Weighted Ranking** (`refs/skill-registry.md §11`)
+  - Multi-factor rank formula: `trigger_match × 0.40 + lean_score_normalized × 0.30 + usage_frequency × 0.20 + source_quality × 0.10`
+  - **Quality threshold gate** (default 0.35): returns `noMatch` if best candidate is below threshold — prevents AI from "going with wrong result" (将错就错)
+  - **Disambiguation**: if top-2 candidates differ by < 0.05, surface choice to user instead of auto-routing
+  - **Source quality scoring**: GOLD/PLATINUM = 1.0, SILVER = 0.8, BRONZE = 0.6, registry-stable = 0.9, experimental = 0.4, unvalidated = 0.2
+  - **`usage_stats` field** in `registry.json`: `total_invocations`, `successful_invocations`, `success_rate`, `trigger_phrase_counts`, `last_invoked`, `prm_distribution`
+
+- **Trigger Discovery Pipeline** (`refs/session-artifact.md §8 Rule 4`)
+  - New `trigger_signals` object in session artifact schema: `trigger_used`, `matched_trigger`, `match_type` (exact/fuzzy/acronym/semantic/none), `trigger_miss`, `candidate_triggers[]`
+  - **AGGREGATE Rule 4** (v3.3.0): mines `candidate_triggers` across artifacts; when phrase count ≥ 5 and confidence ≥ 0.70, proposes adding phrase to `triggers.en/zh` (user confirms before registry update)
+  - **`trigger_miss` signal**: set when skill activated via AGENTS.md/Hook but no trigger phrase matched — highest-priority signal for discovery (threshold reduced to count ≥ 3)
+  - Closes the feedback loop: observed user language → confirmed canonical triggers → improved SkillRouter accuracy
+
+- **Incremental Build Cache** (`builder/src/core/reader.js` + `builder/src/commands/build.js`)
+  - `computeHash()`: SHA-256 first 16 hex chars per source file; `parseFile()` now returns `source_hash` field
+  - `collectHashes()`: aggregates all file hashes into flat `{ relPath: hash }` map; `readAllCoreData()` returns `source_hashes` map
+  - `.build-cache.json` (project root, gitignored): persists `{ source_hashes, built_platforms[] }` between runs
+  - On incremental run: compares stored vs current hashes; skips platforms already built from identical sources; rebuild triggered by any source change
+  - Release builds (`--release`) and dry-runs always bypass cache for reproducibility
+  - Reduces multi-platform rebuild time from O(N) to O(changed) for common "edit one ref file → rebuild" workflows
+
+### 🔧 Changed
+
+- **`refs/progressive-disclosure.md`**: "Four-Layer Architecture (v3.2.0)" → "**Five-Layer Architecture (v3.3.0)**"
+  - Layer -1 (HOOK INJECTION) prepended to existing Layer 0–3
+  - New "Three-Tier Routing Model" diagram documents outer→inner routing tiers
+  - §4 Implementation Checklist updated with Tier 1/2/3 routing checklist items
+  - §5 Relationship table updated with Layer -1 spec entries
+
+- **`skill-framework.md`**: version 3.2.0 → 3.3.0; `interface.modes` now includes `graph` (was missing)
+  - §16 INSTALL: new steps 4e (AGENTS.md) and 4f (Hook injection) with full merge strategy, platform notes, and safety rules
+  - REPORT step updated to confirm AGENTS.md path and three-tier model notice
+
+- **`refs/skill-registry.md`**: new §11 (SkillRouter Weighted Ranking & Quality Gate)
+  - §11.1 ranking formula, §11.2 source quality weights, §11.3 quality threshold gate, §11.4 trigger phrase discovery, §11.5 `usage_stats` spec
+
+- **`refs/session-artifact.md`**: schema updated for v3.3.0
+  - `trigger_signals` object added to §2 Schema and §3 Field Definitions
+  - §8 AGGREGATE rules numbered (Rule 1–4); Rule 4 (Trigger Discovery) added
+
+- **`builder/src/core/reader.js`**: version comment 3.1.1 → 3.3.0; `crypto` module imported; `computeHash`, `collectHashes` added; `parseFile` returns `source_hash`; `readAllCoreData` returns `source_hashes`; `computeHash` exported
+
+- **`builder/src/commands/build.js`**: version comment 2.2.0 → 2.3.0; cache helpers and Step 1b incremental logic added; successful platform recorded in `built_platforms`; cache persisted after build
+
+- **`.gitignore`**: added `.build-cache.json`
+
+- **`package.json`**: version 3.2.0 → 3.3.0; description updated
+
+- **`builder/package.json`**: version 2.2.0 → 2.3.0; description updated
+
+### 📋 Background
+
+v3.3.0 addresses two root causes of skill trigger instability identified in production AI Coding practices:
+
+**Trigger instability** (solved by three-tier routing model): The four-layer disclosure model (v3.2.0) relied on trigger-phrase matching for Layer 1 → Layer 2 routing. Vercel benchmarks (2026) show default skill triggering via description matching alone does not improve task pass rates; explicit context injection is required. AGENTS.md provides a session-constant skill inventory; the UserPromptSubmit Hook provides a per-message nudge. Together they ensure skills are always "visible" to the LLM before it decides how to respond. Inspired by 得物 AI Coding component reuse practice (2026).
+
+**Trigger vocabulary gap** (solved by Trigger Discovery pipeline): Skill trigger phrases are authored once at creation time but users develop natural phrasings through actual use. AGGREGATE Rule 4 mines `candidate_triggers` from session artifacts and promotes high-frequency phrases to canonical triggers at ≥70% confidence, continuously improving SkillRouter accuracy without manual curation.
+
+---
+
 ## [3.2.0] - 2026-04-13
 
 ### ✨ Added — Graph of Skills (GoS)

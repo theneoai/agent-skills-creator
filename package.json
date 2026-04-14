@@ -1,7 +1,7 @@
 {
   "name": "skill-writer",
-  "version": "3.2.0",
-  "description": "Full lifecycle meta-skill framework: CREATE with Skill Summary + Negative Boundaries + 3-tier hierarchy, LEAN/EVALUATE/OPTIMIZE with co-evolutionary VERIFY, OWASP Agentic Top 10 security, COLLECT mode for collective skill evolution (SkillClaw + SkillRL), and deploy to 7 platforms including MCP",
+  "version": "3.3.0",
+  "description": "Full lifecycle meta-skill framework: CREATE with Skill Summary + Negative Boundaries + 3-tier hierarchy, LEAN/EVALUATE/OPTIMIZE with co-evolutionary VERIFY, OWASP Agentic Top 10 security, GRAPH mode (GoS bundle retrieval + typed edges), COLLECT for collective skill evolution (SkillClaw + SkillRL), three-tier Hook routing (AGENTS.md + UserPromptSubmit Hook), SkillRouter weighted ranking with quality threshold gate, Trigger Discovery pipeline, incremental build cache, and deploy to 7 platforms including MCP",
   "main": "builder/src/index.js",
   "scripts": {
     "setup": "bash install.sh",

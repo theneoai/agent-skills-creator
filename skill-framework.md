@@ -1,16 +1,16 @@
 ---
 name: skill-writer
-version: "3.2.0"
-description: "Meta-skill framework: CREATE from templates, LEAN/EVALUATE/OPTIMIZE lifecycle, GRAPH mode for GoS bundle retrieval, COLLECT for collective skill evolution, Edit Audit Guard, Skill Registry v2.0 with typed graph edges, UTE 2.0 two-tier self-improvement, and deploy to 7 platforms including MCP."
+version: "3.3.0"
+description: "Meta-skill framework: CREATE from templates, LEAN/EVALUATE/OPTIMIZE lifecycle, GRAPH mode for GoS bundle retrieval, COLLECT for collective skill evolution, Edit Audit Guard, Skill Registry v2.0 + SkillRouter weighted ranking, three-tier Hook routing layer (AGENTS.md + UserPromptSubmit Hook + triggers), Trigger Discovery pipeline, UTE 2.0 two-tier self-improvement, and deploy to 7 platforms including MCP."
 description_i18n:
-  en: "Full lifecycle meta-skill framework: CREATE from templates (3-tier hierarchy, negative boundaries, Skill Summary, optional graph: block), LEAN fast-eval + D8 Composability bonus, EVALUATE 4-phase 1000pt pipeline + OWASP Agentic Top 10, OPTIMIZE 8-dim loop + S10/S11/S12 graph strategies + co-evolutionary VERIFY, GRAPH mode (GoS bundle retrieval, health checks, dependency resolution), COLLECT with bundle context for collective evolution (SkillClaw + SkillRL-compatible), skill registry v2.0 + SHARE, UTE 2.0 L1/L2, deploy to 7 platforms."
-  zh: "全生命周期元技能框架：支持可选graph:块的三层层级结构+负向边界+检索优化摘要的CREATE、带D8可组合性奖励的LEAN快速评测、OWASP Agentic Top 10安全检测的4阶段EVALUATE、含S10/S11/S12图策略+协同进化VERIFY的OPTIMIZE、GoS包检索+健康检查+依赖解析的GRAPH模式、含包上下文的SkillRL+SkillClaw兼容COLLECT、技能注册表v2.0+共享、UTE 2.0双层自进化、部署至7平台。"
+  en: "Full lifecycle meta-skill framework: CREATE from templates (3-tier hierarchy, negative boundaries, Skill Summary, optional graph: block), LEAN fast-eval + D8 Composability bonus, EVALUATE 4-phase 1000pt pipeline + OWASP Agentic Top 10, OPTIMIZE 8-dim loop + S10/S11/S12 graph strategies + co-evolutionary VERIFY, GRAPH mode (GoS bundle retrieval, health checks, dependency resolution), COLLECT with bundle context for collective evolution (SkillClaw + SkillRL-compatible), skill registry v2.0 + SHARE, SkillRouter weighted ranking + quality threshold gate, three-tier Hook routing (AGENTS.md + UserPromptSubmit Hook + trigger phrases), Trigger Discovery pipeline (AGGREGATE Rule 4), UTE 2.0 L1/L2, deploy to 7 platforms."
+  zh: "全生命周期元技能框架：支持可选graph:块的三层层级结构+负向边界+检索优化摘要的CREATE、带D8可组合性奖励的LEAN快速评测、OWASP Agentic Top 10安全检测的4阶段EVALUATE、含S10/S11/S12图策略+协同进化VERIFY的OPTIMIZE、GoS包检索+健康检查+依赖解析的GRAPH模式、含包上下文的SkillRL+SkillClaw兼容COLLECT、技能注册表v2.0+共享、SkillRouter加权排序+质量阈值门控、三层Hook路由（AGENTS.md+UserPromptSubmit Hook+触发词短语）、触发词发现流水线（AGGREGATE规则4）、UTE 2.0双层自进化、部署至7平台。"
 
 license: MIT
 author:
   name: theneoai
 created: "2026-03-31"
-updated: "2026-04-13"
+updated: "2026-04-14"
 type: meta-framework
 
 tags:
@@ -25,7 +25,7 @@ tags:
 interface:
   input: user-natural-language
   output: structured-skill
-  modes: [create, lean, evaluate, optimize, install, collect]
+  modes: [create, lean, evaluate, optimize, install, collect, graph]
   platforms: [claude, opencode, openclaw, cursor, openai, gemini, mcp]
 
 extends:

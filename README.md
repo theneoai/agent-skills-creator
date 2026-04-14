@@ -2,7 +2,7 @@
 
 A cross-platform meta-skill for creating, evaluating, and optimizing AI assistant skills through natural language interaction.
 
-[![Version](https://img.shields.io/badge/version-3.2.0-blue.svg)](https://github.com/theneoai/skill-writer)
+[![Version](https://img.shields.io/badge/version-3.3.0-blue.svg)](https://github.com/theneoai/skill-writer)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platforms](https://img.shields.io/badge/platforms-7-orange.svg)](#supported-platforms)
 [![GitHub Actions](https://github.com/theneoai/skill-writer/workflows/Skill%20Writer%20-%20Build%20and%20Release/badge.svg)](https://github.com/theneoai/skill-writer/actions)
@@ -473,7 +473,14 @@ Installs skill-writer itself to one or all supported platforms from a URL or loc
 2a. **RESOLVE DEPENDENCIES** *(v3.2.0)*: If the skill has a `graph:` block, read `depends_on` edges, build the dependency tree, and display the full manifest before proceeding. Install order follows topological sort (deepest dependency first).
 3. **CONFIRM**: Show install plan (including dependency list if any), ask user to confirm
 4. **INSTALL**: Write skill file(s) to each platform's skills directory in dependency order
-5. **REPORT**: List installed paths, dependency installation results, and next steps
+4e. **AGENTS.md GENERATION** *(v3.3.0)*: After writing skill files, generate or update the platform's agent context file with skill registry routing rules. Target files: `~/.claude/CLAUDE.md` (Claude), `~/.config/opencode/AGENTS.md` (OpenCode), `~/.cursor/rules/skill-writer.mdc` (Cursor, `alwaysApply: true`), etc. Uses idempotent `<!-- skill-writer:start/end -->` markers — safe to re-run.
+4f. **HOOK INJECTION** *(v3.3.0)*: Merge a `UserPromptSubmit` hook entry into `~/.claude/settings.json` (Claude/OpenCode only). The hook fires before the LLM sees each user message and injects a ≤50-token skill-awareness reminder. Appends to existing hook arrays; never overwrites. Skipped with a note for platforms without hook support (Cursor, Gemini, OpenAI, MCP).
+5. **REPORT**: List installed paths, AGENTS.md path (created/updated), dependency results, and next steps
+
+> **Three-Tier Routing Model** (v3.3.0): INSTALL now establishes all three routing layers in one pass:
+> 1. **AGENTS.md** (step 4e) — session-constant skill inventory; always present in system prompt
+> 2. **UserPromptSubmit Hook** (step 4f) — per-message nudge; fires before LLM reasoning starts
+> 3. **Trigger phrases** — in-skill keyword routing from YAML `triggers.en/zh`
 
 #### Platform Paths
 
@@ -610,9 +617,21 @@ Six typed edge types are supported:
 | GRAPH-007 | INFO | Isolated node (no edges in or out) |
 | GRAPH-008 | WARNING | `provides`/`consumes` artifact name mismatch |
 
-#### Progressive Disclosure Layer 0 *(v3.2.0)*
+#### Progressive Disclosure — Five-Layer Architecture *(v3.3.0)*
 
-When a task matches ≥ 2 skills AND the registry has `graph:` data, a ≤200-token **bundle context** is injected as Layer 0 — before individual skill ADVERTISE stubs (Layer 1). This gives the LLM structural awareness of the skill ecosystem before loading any single skill.
+Skills are loaded only as far as needed for the task, keeping token use proportional to what the agent actually requires. Layer -1 is new in v3.3.0:
+
+| Layer | Name | Token Budget | When Loaded |
+|-------|------|-------------|-------------|
+| **-1** | **Hook Injection** *(v3.3.0)* | ≤ 50 | Every message — `UserPromptSubmit` hook; fires before LLM sees input |
+| 0 | Graph Context *(v3.2.0)* | ≤ 200 | Task matches a known bundle AND registry has `graph:` data |
+| 1 | Advertise | ≤ 100 per skill | Every session — injected from YAML `name` + `description` |
+| 2 | Load | < 5,000 | Task matches skill domain via trigger phrases |
+| 3 | Read Resources | as needed | On-demand — skill body references a companion file |
+
+**Layer -1 (v3.3.0)** fires at `UserPromptSubmit` — before the LLM decides what to do. This solves the "LLM forgets skills exist" failure mode that trigger-phrase matching alone cannot fix. INSTALL step 4f generates the hook config automatically.
+
+**Layer 0 (v3.2.0)** — bundle context example:
 
 ```
 Bundle: API Testing Suite
@@ -946,6 +965,34 @@ node bin/skill-writer-builder.js validate
 node bin/skill-writer-builder.js inspect --platform opencode
 ```
 
+#### Incremental Build Cache *(v3.3.0)*
+
+The builder skips unchanged platforms to reduce multi-platform rebuild time:
+
+```bash
+# First build — all 7 platforms built from scratch
+npm run build
+
+# Second build (nothing changed) — all platforms skipped, ~instant
+npm run build
+#   ℹ Source files unchanged since last build (cache hit)
+#   ⏭ claude — skipped (no source changes since last build)
+#   ⏭ opencode — skipped ...
+
+# After editing refs/skill-registry.md — all platforms rebuild (source changed)
+npm run build
+
+# Release builds always bypass the cache (reproducible output)
+node bin/skill-writer-builder.js build --all --release
+```
+
+**How it works**: During the read phase, each source file (skill-framework.md, refs/\*.md, templates/\*.md, eval/\*.md, optimize/\*.md) is hashed with SHA-256 (first 16 chars). The hashes are stored in `.build-cache.json` at the project root. On the next run, if the hash map is identical and the target platform was already built in the last run, the platform build is skipped. Any source change invalidates the cache for all platforms.
+
+**Cache behaviour**:
+- `.build-cache.json` is gitignored — each developer has their own local cache
+- Release builds (`--release`) always bypass the cache
+- Delete `.build-cache.json` to force a full rebuild
+
 ## Project Structure
 
 ```
@@ -961,7 +1008,8 @@ skill-writer/
 │   ├── edit-audit.md              # Edit Audit Guard (MICRO/MINOR/MAJOR/REWRITE)
 │   ├── skill-registry.md          # Skill Registry spec (SHA-256 IDs, push/pull/sync)
 │   ├── skill-graph.md             # Graph of Skills spec (v3.2.0): typed edges, bundles, health checks
-│   └── progressive-disclosure.md  # Four-layer loading pattern (Layer 0 GoS bundle context)
+│   ├── progressive-disclosure.md  # Five-layer loading pattern (v3.3.0): Layer -1 Hook + Layer 0 GoS bundle context
+│   └── skill-registry.md          # Skill Registry v2.0 + SkillRouter weighted ranking §11 (v3.3.0)
 ├── templates/                     # Skill templates (4 types + UTE snippet)
 │   ├── base.md
 │   ├── api-integration.md
@@ -1023,8 +1071,10 @@ skill-writer/
 │  │ • 8-dim     │  │ • 7-platform│  │ • Session artifact log   │  │
 │  │   analysis  │  │   support   │  │ • Lesson classification  │  │
 │  │ • 10-step   │  │ • Dep tree  │  │ • Bundle context (GoS)   │  │
-│  │   loop      │  │   resolution│  │ • AGGREGATE pipeline     │  │
-│  │ • VERIFY    │  │   (v3.2.0)  │  │   (SkillRL-compatible)   │  │
+│  │   loop      │  │   resolution│  │ • trigger_signals (v3.3) │  │
+│  │ • VERIFY    │  │ • AGENTS.md │  │ • AGGREGATE pipeline     │  │
+│  │             │  │   + Hook    │  │   Rule 4 trigger         │  │
+│  │             │  │   (v3.3.0)  │  │   discovery (v3.3.0)     │  │
 │  └─────────────┘  └─────────────┘  └──────────────────────────┘  │
 │                                                                    │
 │  ┌──────────────────────────────────────────────────────────────┐  │
@@ -1041,8 +1091,11 @@ skill-writer/
 │  │  • CWE + OWASP ASI01–ASI10 Security Patterns              │   │
 │  │  • UTE 2.0 Self-Evolution (L1 enforced + L2 collective)    │   │
 │  │  • Multi-Pass Self-Review (Generate/Review/Reconcile)      │   │
-│  │  • Skill Registry v2.0 (SHA-256 IDs, graph: edges/bundles) │   │
+│  │  • Skill Registry v2.0 + SkillRouter weighted ranking      │   │
+│  │    (quality threshold gate + usage_stats) — v3.3.0         │   │
 │  │  • Edit Audit Guard (MICRO/MINOR/MAJOR/REWRITE classes)    │   │
+│  │  • Five-Layer Progressive Disclosure (Layer -1 Hook,       │   │
+│  │    Layer 0 GoS, Layer 1 Advertise, Layer 2–3) — v3.3.0     │   │
 │  └────────────────────────────────────────────────────────────┘   │
 │                                                                    │
 └──────────────────────────────────────────────────────────────────┘
@@ -1162,6 +1215,11 @@ MIT License - See [LICENSE](LICENSE) file for details.
 - [x] **v3.2.0** — Registry schema v2.0: top-level `graph:` section with `edges[]` + `bundles[]`
 - [x] **v3.2.0** — Progressive Disclosure Layer 0: ≤200-token bundle context prefix (pre-ADVERTISE)
 - [x] **v3.2.0** — `builder/src/core/graph.js`: GoS algorithm library (buildGraph, detectCycles, topologicalSort, resolveBundle, checkGraphHealth, scoreD8Composability)
+- [x] **v3.3.0** — Three-Tier Hook Routing: AGENTS.md (session-constant) + UserPromptSubmit Hook (per-message) + trigger phrases; INSTALL steps 4e + 4f auto-generate routing config
+- [x] **v3.3.0** — Progressive Disclosure Layer -1 (Hook Injection): ≤50-token per-message skill-awareness nudge; five-layer architecture
+- [x] **v3.3.0** — SkillRouter Weighted Ranking: multi-factor rank formula (trigger×0.4 + lean×0.3 + usage×0.2 + quality×0.1); quality threshold gate (0.35); `usage_stats` field
+- [x] **v3.3.0** — Trigger Discovery Pipeline: `trigger_signals` in session artifact; AGGREGATE Rule 4 promotes observed user language to canonical triggers (≥5 count, ≥70% confidence)
+- [x] **v3.3.0** — Incremental Build Cache: `source_hash` per file; `.build-cache.json`; skips unchanged platforms; release builds always bypass cache
 
 ### Planned
 
@@ -1181,4 +1239,4 @@ MIT License - See [LICENSE](LICENSE) file for details.
 
 **Made with ❤️ by the Skill Writer Team**
 
-*Last updated: 2026-04-13*
+*Last updated: 2026-04-14*
