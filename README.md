@@ -4,9 +4,7 @@ A cross-platform meta-skill for creating, evaluating, and optimizing AI assistan
 
 [![Version](https://img.shields.io/badge/version-3.3.0-blue.svg)](https://github.com/theneoai/skill-writer)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Platforms](https://img.shields.io/badge/platforms-7-orange.svg)](#supported-platforms)
-[![GitHub Actions](https://github.com/theneoai/skill-writer/workflows/Skill%20Writer%20-%20Build%20and%20Release/badge.svg)](https://github.com/theneoai/skill-writer/actions)
-[![Security Scan](https://github.com/theneoai/skill-writer/workflows/Skill%20Writer%20-%20Security%20Scan/badge.svg)](https://github.com/theneoai/skill-writer/actions)
+[![Platforms](https://img.shields.io/badge/platforms-3-orange.svg)](#supported-platforms)
 
 ## What is a skill?
 
@@ -26,7 +24,7 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 
 - **Agent Install**: One-line install via "read [URL] and install" — works in any supported platform
 - **Zero CLI Interface**: Natural language interaction - no commands to memorize
-- **Cross-Platform**: Works on 7 major AI platforms (including MCP)
+- **Cross-Platform**: Works on Claude, OpenClaw, and OpenCode — no build pipeline
 - **Seven Powerful Modes**: CREATE, LEAN, EVALUATE, OPTIMIZE, INSTALL, COLLECT, and GRAPH
 - **Template-Based**: 4 built-in templates for common skill patterns
 - **Quality Assurance**: 1000-point scoring system with certification tiers
@@ -37,53 +35,28 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 - **Self-Evolution**: UTE (Use-to-Evolve) protocol for automatic skill improvement (L1 enforced + L2 collective)
 - **Multi-Pass Self-Review**: Generate/Review/Reconcile quality protocol
 - **Graph of Skills (GoS)**: Typed dependency graph between skills — bundle retrieval, dependency resolution, D8 Composability dimension (v3.2.0)
-- **Bilingual**: Full English + Chinese (中文) support for all 7 modes. Framework documentation (refs/ companion files) is in English.
+- **Bilingual**: Full English + Chinese (中文) support for all modes. Framework documentation (refs/ companion files) is in English.
 
 ## Supported Platforms
 
-| Platform | Status | Installation Path |
-|----------|--------|-------------------|
-| [OpenCode](https://opencode.ai) | ✅ P0 | `~/.config/opencode/skills/` |
-| [OpenClaw](https://openclaw.ai) | ✅ P0 | `~/.openclaw/skills/` |
-| [Claude](https://claude.ai) | ✅ P0 | `~/.claude/skills/` |
-| [Cursor](https://cursor.sh) | ✅ P1 | `~/.cursor/skills/` |
-| [OpenAI](https://openai.com) | ✅ P1 | Manual setup via platform dashboard (JSON) |
-| [Gemini](https://gemini.google.com) | ✅ P2 | `~/.gemini/skills/` |
-| [MCP](https://modelcontextprotocol.io) | ✅ P2 | `~/.mcp/servers/skill-writer/` (JSON manifest) |
+| Platform | Installation Path | Routing File |
+|----------|-------------------|--------------|
+| [Claude](https://claude.ai) | `~/.claude/skills/` | `~/.claude/CLAUDE.md` |
+| [OpenClaw](https://openclaw.ai) | `~/.openclaw/skills/` | `~/.openclaw/AGENTS.md` |
+| [OpenCode](https://opencode.ai) | `~/.config/opencode/skills/` | `~/.config/opencode/AGENTS.md` |
+
+All three platforms are functionally equivalent — each gets the same skill file, companion files (refs/, templates/, eval/, optimize/), routing rules, and install script.
 
 ### Platform Feature Matrix
 
-| Feature | Claude | OpenCode | OpenClaw | Cursor | Gemini | OpenAI | MCP |
-|---------|--------|----------|----------|--------|--------|--------|-----|
-| `/command` syntax | ✅ | ✅ | ✅ | ⚠️ Use keywords | ✅ | — | — |
-| Keyword triggers | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| All 7 modes (CREATE/LEAN/EVALUATE/OPTIMIZE/INSTALL/COLLECT/GRAPH) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Companion files (refs/, templates/, eval/) `[CORE]` | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| UTE Hook persistence `[EXTENDED]` | ✅ | ✅ | ❌ | ❌ | ❌ | — | — |
-| COLLECT auto-persist `[EXTENDED]` | ✅† | ✅† | ❌ | ❌ | ❌ | — | — |
-| YAML frontmatter | ✅ | ✅ | ✅ | ❌* | ✅ | JSON | JSON |
-
-\* Cursor uses `${KEY}` placeholder syntax in the IDE — but skill-writer auto-handles conversion.
-  You don't need to manually edit YAML. If you hand-edit a `.md` file in the Cursor IDE, use `${KEY}` syntax.  
-† Requires platform hooks — see `refs/use-to-evolve.md §8` for setup  
-⚠️ Cursor: IDE command palette intercepts `/` — use keyword phrases instead:
-
-| Mode | Use this keyword phrase (not `/command`) |
-|------|------------------------------------------|
-| CREATE | `create a skill that …` |
-| LEAN | `lean eval` / `fast check this skill` |
-| EVALUATE | `evaluate this skill` / `full eval` |
-| OPTIMIZE | `optimize this skill` |
-| INSTALL | `install skill-writer to cursor` |
-| COLLECT | `collect session data` / `record this session` |
-
-> **Cursor + COLLECT**: COLLECT auto-persist (file hooks) is not available in IDE context.
-> Instead, COLLECT outputs JSON directly to the chat window. To save it:
-> 1. Run `collect session data` → copy the JSON output
-> 2. Save to `~/.skill-artifacts/YYYYMMDD_skillname.json` manually
-> 3. Later: paste 2+ artifacts into a new chat and type `aggregate skill feedback`
-> 
-> This is COLLECT Method B (manual paste) — fully supported in Cursor.
+| Feature | Claude | OpenClaw | OpenCode |
+|---------|--------|----------|----------|
+| All 8 modes (CREATE/LEAN/EVALUATE/OPTIMIZE/INSTALL/COLLECT/SHARE/GRAPH) | ✅ | ✅ | ✅ |
+| Companion files (refs/, templates/, eval/, optimize/) | ✅ | ✅ | ✅ |
+| UTE self-evolution tracking | ✅ | ✅ | ✅ |
+| Hook routing (UserPromptSubmit / AGENTS.md) | ✅ | ✅ | ✅ |
+| OpenClaw-specific metadata | — | ✅ | — |
+| Triggers footer | — | — | ✅ |
 
 ## Quick Start
 
@@ -98,114 +71,51 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 > ```
 > Each step feeds the next. Skip ahead only if you already have a skill file.
 
-### What You Get After Installing
-
-| Feature | curl install `[CORE]` | git clone install `[EXTENDED]` |
-|---------|----------------------|-------------------------------|
-| All 7 modes (CREATE, LEAN, EVALUATE, OPTIMIZE, INSTALL, COLLECT, GRAPH) | ✅ | ✅ |
-| LEAN scoring (17-check, 500 pts) | ✅ | ✅ |
-| EVALUATE scoring (4-phase, 1000 pts) | ✅ same scoring logic | ✅ + per-dimension breakdown in report |
-| OPTIMIZE loop | ✅ | ✅ |
-| COLLECT manual (JSON output to conversation) | ✅ | ✅ |
-| Companion files (refs/, templates/, eval/) for Claude | ❌ | ✅ |
-| COLLECT auto-persist to `~/.skill-artifacts/` | ❌ | ✅ (requires hooks) |
-| UTE Hook-based auto-evolution | ❌ | ✅ |
-
-> **EVALUATE scoring is identical in both installs** — the 1000-point algorithm is fully inline.
-> The difference is output richness: git clone adds companion files that enable per-dimension
-> breakdowns, historical comparisons, and richer advisory text in the report.
-
-**tl;dr**: The curl one-liner gives you everything you need to create, evaluate, and optimize skills. The git clone adds richer evaluation reports and automatic persistence.
-
 ### Installation
 
-#### Option 1 — curl one-liner (no git clone required)
-
-Auto-detects your installed AI platforms and installs to all of them:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/theneoai/skill-writer/main/install.sh | bash
-```
-
-Install to a specific platform:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/theneoai/skill-writer/main/install.sh | bash -s -- --platform claude
-curl -fsSL https://raw.githubusercontent.com/theneoai/skill-writer/main/install.sh | bash -s -- --platform opencode
-curl -fsSL https://raw.githubusercontent.com/theneoai/skill-writer/main/install.sh | bash -s -- --all
-```
-
-#### Option 2 — Agent Install from Latest Release
-
-Paste one command into your AI agent to install the latest stable release:
-
-| Platform | Agent command |
-|----------|--------------|
-| All platforms | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer.md and install` |
-| Claude only | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-claude.md and install to claude` |
-| OpenCode only | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-opencode.md and install to opencode` |
-| OpenClaw only | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-openclaw.md and install to openclaw` |
-| Cursor only | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-cursor.md and install to cursor` |
-| Gemini only | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-gemini.md and install to gemini` |
-| OpenAI only | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-openai.json and install to openai` |
-| MCP only | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-mcp.json and install to mcp` |
-
-Each [GitHub Release](https://github.com/theneoai/skill-writer/releases) includes per-platform assets and ready-to-paste agent commands for that version.
-
-#### Option 3 — Shell Script (from git clone)
+#### Option 1 — Shell Script (from git clone, recommended)
 
 ```bash
 git clone https://github.com/theneoai/skill-writer.git
 cd skill-writer
 
-# Install to all supported platforms
+# Auto-detect installed platforms and install
 ./install.sh
 
-# Install to a single platform
+# Install to a specific platform
 ./install.sh --platform claude
+./install.sh --platform openclaw
 ./install.sh --platform opencode
-./install.sh --platform cursor
-./install.sh --platform gemini
-./install.sh --platform openai
-./install.sh --platform mcp
 
-# Install directly from a release asset
-./install.sh --url https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer.md
+# Install to all three platforms
+./install.sh --all
+
+# Preview without making changes
+./install.sh --dry-run
 ```
 
-#### Option 4 — Manual Copy
+Each platform's install script copies:
+- `{platform}/skill-writer.md` → `~/{platform-home}/skills/`
+- `refs/ templates/ eval/ optimize/` → `~/{platform-home}/`
+- Routing rules (CLAUDE.md / AGENTS.md) → merged idempotently
 
-Pre-built platform files are committed to the repository — no builder step required:
+#### Option 2 — Manual Copy (no script needed)
 
 ```bash
 # Claude
-cp platforms/skill-writer-claude.md ~/.claude/skills/skill-writer.md
-
-# OpenCode
-mkdir -p ~/.config/opencode/skills
-cp platforms/skill-writer-opencode.md ~/.config/opencode/skills/skill-writer.md
+mkdir -p ~/.claude/skills
+cp claude/skill-writer.md ~/.claude/skills/skill-writer.md
+# Then restart Claude
 
 # OpenClaw
 mkdir -p ~/.openclaw/skills
-cp platforms/skill-writer-openclaw.md ~/.openclaw/skills/skill-writer.md
+cp openclaw/skill-writer.md ~/.openclaw/skills/skill-writer.md
+# Then restart OpenClaw
 
-# Cursor
-mkdir -p ~/.cursor/skills
-cp platforms/skill-writer-cursor.md ~/.cursor/skills/skill-writer.md
-# ⚠️  Cursor: IDE command palette intercepts /commands — use keywords instead:
-#     "create a skill that ..." (not /create)   "lean eval" (not /lean)
-
-# Gemini
-mkdir -p ~/.gemini/skills
-cp platforms/skill-writer-gemini.md ~/.gemini/skills/skill-writer.md
-
-# OpenAI (JSON format — requires manual setup via platform dashboard)
-# The JSON file is at: platforms/skill-writer-openai.json
-# Upload it via https://platform.openai.com (see platform docs for custom GPT setup)
-
-# MCP (JSON manifest)
-mkdir -p ~/.mcp/servers/skill-writer
-cp platforms/skill-writer-mcp.json ~/.mcp/servers/skill-writer/mcp-manifest.json
+# OpenCode
+mkdir -p ~/.config/opencode/skills
+cp opencode/skill-writer.md ~/.config/opencode/skills/skill-writer.md
+# Then restart OpenCode
 ```
 
 ### Usage Examples

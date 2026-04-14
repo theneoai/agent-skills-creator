@@ -84,14 +84,14 @@ use_to_evolve:
   configuration root (~/.claude/). Companion files are installed there by
   `npm run install:claude` (which runs install-claude.sh):
 
-    claude/refs/security-patterns.md  →  ~/.claude/refs/security-patterns.md
-    claude/refs/use-to-evolve.md      →  ~/.claude/refs/use-to-evolve.md
-    claude/refs/convergence.md        →  ~/.claude/refs/convergence.md
-    claude/refs/self-review.md        →  ~/.claude/refs/self-review.md
-    claude/refs/evolution.md          →  ~/.claude/refs/evolution.md
-    claude/templates/                 →  ~/.claude/templates/
-    claude/eval/                      →  ~/.claude/eval/
-    claude/optimize/                  →  ~/.claude/optimize/
+    refs/security-patterns.md  →  ~/.refs/security-patterns.md
+    refs/use-to-evolve.md      →  ~/.refs/use-to-evolve.md
+    refs/convergence.md        →  ~/.refs/convergence.md
+    refs/self-review.md        →  ~/.refs/self-review.md
+    refs/evolution.md          →  ~/.refs/evolution.md
+    templates/                 →  ~/.templates/
+    eval/                      →  ~/.eval/
+    optimize/                  →  ~/.optimize/
 
   Source files in this repository:  refs/  templates/  eval/  optimize/
 -->
@@ -247,21 +247,21 @@ auto-evolve via a 3-trigger system — all enforced by multi-pass self-review
 and non-bypassable security gates.
 
 **Design Patterns** (Google 5):
-- **Tool Wrapper**: Load `claude/refs/` on demand, treat as absolute truth
+- **Tool Wrapper**: Load `refs/` on demand, treat as absolute truth
 - **Generator**: Template-based structured output for every skill type
 - **Reviewer**: Self-review severity-scoped audit (ERROR / WARNING / INFO)
 - **Inversion**: Blocking requirement elicitation before any generation
 - **Pipeline**: Strict phase order with hard checkpoints
 
 **Orchestration**: LoongFlow — Plan-Execute-Summarize replacing rigid state machines.
-See `claude/refs/self-review.md §1` for full spec.
+See `refs/self-review.md §1` for full spec.
 
 **Red Lines (严禁)**:
 
 > `严禁` = **STRICTLY FORBIDDEN** — 触发此规则时必须立即中止，不可跳过。
 > When triggered, execution MUST halt immediately. No bypass without explicit human sign-off.
 
-- 严禁 (FORBIDDEN) hardcoded credentials (CWE-798) — patterns: `claude/refs/security-patterns.md`
+- 严禁 (FORBIDDEN) hardcoded credentials (CWE-798) — patterns: `refs/security-patterns.md`
 - 严禁 (FORBIDDEN) deliver any skill without passing BRONZE gate (score ≥ 700)
 - 严禁 (FORBIDDEN) skip LEAN or EVALUATE security scan before delivery
 - 严禁 (FORBIDDEN) proceed past ABORT trigger without explicit human sign-off
@@ -535,7 +535,7 @@ Every mode executes via Plan-Execute-Summarize:
 │  PLAN                                                    │
 │  Multi-pass self-review → consensus on approach           │
 │  Build cognitive graph of steps                          │
-│  Extended spec: claude/refs/self-review.md               │
+│  Extended spec: refs/self-review.md               │
 └──────────────────────────────┬───────────────────────────┘
                                │ plan reviewed
                                ▼
@@ -556,7 +556,7 @@ Every mode executes via Plan-Execute-Summarize:
 
 ### Inline Error Recovery Rules `[ENFORCED — no companion file required]`
 
-These rules apply regardless of whether `claude/refs/self-review.md` is available:
+These rules apply regardless of whether `refs/self-review.md` is available:
 
 | Error Type | Recovery Action |
 |-----------|----------------|
@@ -628,10 +628,10 @@ Submit skill file via PR with this EVALUATE report attached as context.
 | # | Phase | Gate |
 |---|-------|------|
 | 1 | **ELICIT** — Inversion pattern, one question at a time (§7) | All Qs answered |
-| 2 | **SELECT TEMPLATE** — match skill type → `claude/templates/<type>.md` | Template chosen |
-| 3 | **PLAN** — multi-pass self-review (`claude/refs/self-review.md §2`) | Plan reviewed |
+| 2 | **SELECT TEMPLATE** — match skill type → `templates/<type>.md` | Template chosen |
+| 3 | **PLAN** — multi-pass self-review (`refs/self-review.md §2`) | Plan reviewed |
 | 4 | **GENERATE** — fill template; write Skill Summary (¶1), Negative Boundaries section. If Q7 or Q8 was skipped, pause and show auto-filled content for user confirmation before proceeding. | Draft complete, no placeholders |
-| 5 | **SECURITY SCAN** — CWE + OWASP Agentic Top 10 (`claude/refs/security-patterns.md`) | No P0 violations; ASI01 CLEAR |
+| 5 | **SECURITY SCAN** — CWE + OWASP Agentic Top 10 (`refs/security-patterns.md`) | No P0 violations; ASI01 CLEAR |
 | 6 | **LEAN EVAL** — fast heuristic check (§6) | Score ≥ 350; negative boundaries present |
 | 7 | **FULL EVALUATE** — 4-phase pipeline if LEAN uncertain (§8) | Score ≥ 700 BRONZE |
 | 8 | **INJECT UTE** — append `§UTE` section from snippet, fill placeholders (§15) | UTE section present |
@@ -721,7 +721,7 @@ Use this template when writing the Negative Boundaries section in Phase 4 (GENER
 anything else                             → base
 ```
 
-Template files: `claude/templates/<type>.md`
+Template files: `templates/<type>.md`
 
 > **Language note**: YAML frontmatter field names (`name`, `version`, `triggers`, etc.) are
 > always in English — this is a technical standard. All skill *content* (descriptions, workflow
@@ -979,7 +979,7 @@ Ask **one question at a time**. Wait for answer before next question.
 
 ## §9  EVALUATE Mode — 4-Phase Pipeline
 
-**Total: 1000 points** | Full rubrics: `claude/eval/rubrics.md`
+**Total: 1000 points** | Full rubrics: `eval/rubrics.md`
 
 ### Phase Overview
 
@@ -1036,11 +1036,11 @@ High variance = artifact looks good on paper but fails runtime (or vice versa).
 ```
 1. LEAN pre-check (§6) → if UNCERTAIN or FAIL → full pipeline
 2. READ skill_tier from YAML frontmatter (planning | functional | atomic)
-   → If present: apply tier-adjusted Phase 2 weights (claude/eval/rubrics.md §8)
+   → If present: apply tier-adjusted Phase 2 weights (eval/rubrics.md §8)
    → If absent or 'functional': use default Phase 2 weights (rubrics.md §4)
 3. Phase 1: Parse — YAML, required sections, trigger presence, no placeholders
 4. Phase 2: Text — 7 sub-dimensions with tier-adjusted weights
-5. Phase 3: Runtime — benchmark test cases (claude/eval/benchmarks.md)
+5. Phase 3: Runtime — benchmark test cases (eval/benchmarks.md)
 6. Phase 4: Certification — compute variance, run security scan, check tier-adjusted gates
 7. REPORT — per-phase scores + tier + issues list (include skill_tier in report header)
 8. ROUTE:
@@ -1055,7 +1055,7 @@ Score in separate passes to ensure objectivity:
 - Pass 2: Score Phase 3 (Runtime) — focus on trigger accuracy and behavior
 - Pass 3: Reconcile scores, compute variance, certify (Phase 4)
 
-Full protocol: `claude/refs/self-review.md §2`
+Full protocol: `refs/self-review.md §2`
 
 ---
 
@@ -1169,7 +1169,7 @@ Convergence check (every round):
   VOLATILITY: score swings > ±30 pts round-to-round for 3+ consecutive rounds
   STABLE:     3+ consecutive rounds with delta in [+5, +10] range → diminishing returns
   IF any condition → STOP early; output session_best + convergence reason
-  See: claude/refs/convergence.md
+  See: refs/convergence.md
 
 Post-loop — Co-Evolutionary VERIFY (Step 10) [NEW in v3.1.0]:
   ┌──────────────────────────────────────────────────────────────────┐
@@ -1262,8 +1262,8 @@ When VOLATILITY or PLATEAU detected AND score < 350 (FAIL), output structured di
   ─────────────────────────────────────────────────────────────────
 ```
 
-Strategy catalog: `claude/optimize/strategies.md`
-Convergence spec: `claude/refs/convergence.md`
+Strategy catalog: `optimize/strategies.md`
+Convergence spec: `refs/convergence.md`
 
 ---
 
@@ -1284,14 +1284,14 @@ IF staleness triggered         → LEAN eval → if BRONZE+ OK, else OPTIMIZE
 IF usage < 5 in 90d           → present: deprecate | maintain | refocus
 ```
 
-Full spec: `claude/refs/evolution.md`
+Full spec: `refs/evolution.md`
 
 ---
 
 ## §12  Security
 
 Scan every skill on CREATE, EVALUATE, and OPTIMIZE delivery.
-Full patterns + OWASP rules: `claude/refs/security-patterns.md`
+Full patterns + OWASP rules: `refs/security-patterns.md`
 
 ### CWE Patterns (Code Security)
 
@@ -1324,7 +1324,7 @@ Full patterns + OWASP rules: `claude/refs/security-patterns.md`
 > - 严禁 deliver skills with executable scripts but no Security Baseline section (SkillProbe: 2.12× vulnerability risk)
 
 ABORT protocol: stop → log → flag → notify → require human sign-off before resume.
-Detection heuristics for each ASI: `claude/refs/security-patterns.md §5`
+Detection heuristics for each ASI: `refs/security-patterns.md §5`
 
 ---
 
@@ -1340,7 +1340,7 @@ Timeouts: 60 s per phase, 180 s total.
 Outcomes: CLEAR → proceed; REVISED → proceed with note;
 UNRESOLVED → HUMAN_REVIEW.
 
-Full spec: `claude/refs/self-review.md`
+Full spec: `refs/self-review.md`
 
 ---
 
@@ -1482,8 +1482,8 @@ Next: run /eval for authoritative score, then /share when ready
 The AI, upon recognizing the UTE section, follows the protocol to observe usage patterns
 and propose improvements over time.
 
-Full spec: `claude/refs/use-to-evolve.md`
-Snippet: `claude/templates/use-to-evolve-snippet.md`
+Full spec: `refs/use-to-evolve.md`
+Snippet: `templates/use-to-evolve-snippet.md`
 
 ### Injection Protocol (CREATE Step 8 / OPTIMIZE Pre-loop)
 
@@ -1492,7 +1492,7 @@ Snippet: `claude/templates/use-to-evolve-snippet.md`
      YES → UPDATE: refresh certified_lean_score, reset last_ute_check
      NO  → INJECT: proceed below
 
-2. LOAD    — read claude/templates/use-to-evolve-snippet.md
+2. LOAD    — read templates/use-to-evolve-snippet.md
 
 3. FILL PLACEHOLDERS:
      {{SKILL_NAME}}           = skill's `name` YAML field
@@ -2220,8 +2220,8 @@ skill generation respectively.
 collective skill evolution by accumulating usage data across sessions and users.
 
 **Inspired by**: SkillClaw collective evolution framework (arxiv.org/abs/2604.08377)
-**Full spec**: `claude/refs/session-artifact.md`
-**Edit guard**: `claude/refs/edit-audit.md`
+**Full spec**: `refs/session-artifact.md`
+**Edit guard**: `refs/edit-audit.md`
 
 ### Session Artifact Schema (inline reference)
 
@@ -2458,11 +2458,11 @@ Explicit: "collect this session"  /  "记录此次使用"
 
 ### Key references
 
-- Session Artifact schema: `claude/refs/session-artifact.md`
-- Edit guard (protects OPTIMIZE from over-writing): `claude/refs/edit-audit.md`
-- Skill registry (for `skill_id` computation): `claude/refs/skill-registry.md`
-- UTE 2.0 L1/L2 architecture: `claude/refs/use-to-evolve.md §7`
-- **v3.2.0**: GoS bundle context fields: `claude/refs/session-artifact.md §8`
+- Session Artifact schema: `refs/session-artifact.md`
+- Edit guard (protects OPTIMIZE from over-writing): `refs/edit-audit.md`
+- Skill registry (for `skill_id` computation): `refs/skill-registry.md`
+- UTE 2.0 L1/L2 architecture: `refs/use-to-evolve.md §7`
+- **v3.2.0**: GoS bundle context fields: `refs/session-artifact.md §8`
 
 ### v3.2.0 COLLECT Extension — Bundle Context `[CORE]`
 
@@ -2473,7 +2473,7 @@ When COLLECT fires and the task involved multiple skills (bundle invocation):
 4. Fill `graph_signals.should_add_edge` if you strongly infer a dependency (confidence ≥ 0.85)
 
 These fields feed the AGGREGATE pipeline's auto-inference of graph edges.
-Full spec: `claude/refs/session-artifact.md §8`
+Full spec: `refs/session-artifact.md §8`
 
 ---
 
@@ -2486,7 +2486,7 @@ Full spec: `claude/refs/session-artifact.md §8`
 > and resolve installation dependencies.
 >
 > **Research basis**: SkillNet (arxiv:2603.04448), GoS bundle retrieval, SkillX tiers
-> **Full spec**: `claude/refs/skill-graph.md`
+> **Full spec**: `refs/skill-graph.md`
 > **Implementation**: `builder/src/core/graph.js`
 >
 > **When to use**:
@@ -2559,9 +2559,9 @@ After running `/graph check`:
 
 ### Key references
 
-- Full GoS spec: `claude/refs/skill-graph.md`
-- Registry v2.0 format: `claude/refs/skill-registry.md §10`
-- D8 scoring rules: `claude/eval/rubrics.md §9`
+- Full GoS spec: `refs/skill-graph.md`
+- Registry v2.0 format: `refs/skill-registry.md §10`
+- D8 scoring rules: `eval/rubrics.md §9`
 - Graph algorithms: `builder/src/core/graph.js`
 - Validation checks: `builder/src/commands/validate.js` (GRAPH-001–005)
 
@@ -2571,10 +2571,15 @@ After running `/graph check`:
 **CREATE** | **LEAN** | **EVALUATE** | **OPTIMIZE** | **INSTALL** | **COLLECT** | **GRAPH**
 **创建** | **快评** | **评测** | **优化** | **安装** | **采集** | **技能图**
 
-(Templates: `claude/templates/` · UTE snippet: `claude/templates/use-to-evolve-snippet.md` ·
-Eval rubrics: `claude/eval/rubrics.md` · Benchmarks: `claude/eval/benchmarks.md` ·
-Self-review: `claude/refs/self-review.md` · Security: `claude/refs/security-patterns.md` ·
-Evolution: `claude/refs/evolution.md` · UTE spec: `claude/refs/use-to-evolve.md` ·
-Convergence: `claude/refs/convergence.md` · Optimize strategies: `claude/optimize/strategies.md` ·
-Session artifact: `claude/refs/session-artifact.md` · Edit audit: `claude/refs/edit-audit.md` ·
-Skill registry: `claude/refs/skill-registry.md` · **Skill graph: `claude/refs/skill-graph.md`**)
+(Templates: `templates/` · UTE snippet: `templates/use-to-evolve-snippet.md` ·
+Eval rubrics: `eval/rubrics.md` · Benchmarks: `eval/benchmarks.md` ·
+Self-review: `refs/self-review.md` · Security: `refs/security-patterns.md` ·
+Evolution: `refs/evolution.md` · UTE spec: `refs/use-to-evolve.md` ·
+Convergence: `refs/convergence.md` · Optimize strategies: `optimize/strategies.md` ·
+Session artifact: `refs/session-artifact.md` · Edit audit: `refs/edit-audit.md` ·
+Skill registry: `refs/skill-registry.md` · **Skill graph: `refs/skill-graph.md`**)
+
+
+---
+
+**Triggers**: create a skill | evaluate this skill | optimize this skill | lean eval | install skill-writer | graph view | share my skill | collect session | 创建技能 | 评测技能 | 优化技能 | 安装skill-writer | 技能图
