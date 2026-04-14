@@ -1,206 +1,269 @@
-name: Skill Writer - Build and Release
+name: Skill Writer - Validate and Release
 
 on:
   push:
-    branches: [ main, develop ]
-    tags: [ 'v*' ]
+    branches: [main, develop]
+    tags: ['v*']
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
+  # ── Validate platform skill files ──────────────────────────────────────────
   validate:
+    name: Validate skill files
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: builder/package.json
+      - name: Check platform directories exist
+        run: |
+          missing=()
+          for platform in claude openclaw opencode cursor gemini openai kimi hermes; do
+            if [[ ! -d "$platform" ]]; then
+              missing+=("$platform/")
+            fi
+          done
+          if [[ ${#missing[@]} -gt 0 ]]; then
+            echo "⚠ Missing platform directories: ${missing[*]}"
+            echo "  (Add them with install.sh or create the directory manually)"
+          else
+            echo "✓ All 8 platform directories present"
+          fi
 
-    - name: Install dependencies
-      run: |
-        cd builder
-        npm ci
+      - name: Validate YAML frontmatter in skill files
+        run: |
+          python3 - <<'EOF'
+          import os, sys, re
 
-    - name: Validate core engine
-      run: |
-        cd builder
-        node bin/skill-writer-builder.js validate
+          platforms = ['claude', 'openclaw', 'opencode', 'cursor', 'gemini', 'openai', 'kimi', 'hermes']
+          required_fields = ['name', 'version', 'description', 'skill_tier', 'triggers', 'use_to_evolve']
+          ute_fields = ['enabled', 'injected_by', 'injected_at', 'check_cadence',
+                        'micro_patch_enabled', 'feedback_detection', 'certified_lean_score',
+                        'last_ute_check', 'pending_patches', 'total_micro_patches_applied',
+                        'cumulative_invocations']
+          errors = []
+          warnings = []
 
-    - name: Check code style
-      run: |
-        cd builder
-        npm run lint
+          for platform in platforms:
+            ext = 'mdc' if platform == 'cursor' else 'md'
+            skill_file = f'{platform}/skill-writer.{ext}'
+            if not os.path.exists(skill_file):
+              warnings.append(f'{skill_file}: missing (platform not yet added)')
+              continue
 
-    - name: Run tests
-      run: |
-        cd builder
-        npm test
+            content = open(skill_file).read()
 
-  build:
-    needs: validate
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        # Need full history so we can push back
-        fetch-depth: 0
+            # Extract YAML frontmatter (skip mdc's leading --- block for cursor)
+            matches = list(re.finditer(r'^---\n', content, re.MULTILINE))
+            if len(matches) < 2:
+              errors.append(f'{skill_file}: no YAML frontmatter found')
+              continue
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: builder/package.json
+            # Find the skill-writer YAML frontmatter (contains 'name: skill-writer')
+            fm_start = -1
+            fm_end = -1
+            for i, m in enumerate(matches[:-1]):
+              segment = content[m.end():matches[i+1].start()]
+              if 'name: skill-writer' in segment:
+                fm_start = m.end()
+                fm_end = matches[i+1].start()
+                break
 
-    - name: Install dependencies
-      run: cd builder && npm ci
+            if fm_start == -1:
+              errors.append(f'{skill_file}: no frontmatter with "name: skill-writer" found')
+              continue
 
-    - name: Build all platforms (release build)
-      run: |
-        cd builder
-        node bin/skill-writer-builder.js build \
-          --all \
-          --release \
-          --output ../platforms
+            frontmatter = content[fm_start:fm_end]
 
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: skill-writer-all-platforms
-        path: platforms/
+            # Check required fields
+            for field in required_fields:
+              if not re.search(rf'^{re.escape(field)}[:\s]', frontmatter, re.MULTILINE):
+                errors.append(f'{skill_file}: missing required field "{field}"')
 
-    - name: Commit updated platform files (main branch only)
-      # Auto-commit freshly built platform files so cloners never need to run the builder.
-      # [skip ci] prevents an infinite build loop.
-      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-      run: |
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        if git diff --quiet platforms/; then
-          echo "platforms/ is already up to date — nothing to commit."
-        else
-          git add platforms/
-          git commit -m "chore: refresh pre-built platform files [skip ci]"
-          git push origin main
-          echo "  ✓ Updated platforms/ committed to main."
-        fi
+            # Check use_to_evolve subfields
+            for uf in ute_fields:
+              if uf not in frontmatter:
+                errors.append(f'{skill_file}: use_to_evolve missing subfield "{uf}"')
 
+            # Check skill_tier value
+            if 'skill_tier: planning' not in frontmatter and 'skill_tier: functional' not in frontmatter and 'skill_tier: atomic' not in frontmatter:
+              errors.append(f'{skill_file}: skill_tier must be planning|functional|atomic')
+
+            # Check description length
+            desc_match = re.search(r'^description:\s+"(.+)"', frontmatter, re.MULTILINE)
+            if desc_match and len(desc_match.group(1)) > 1024:
+              errors.append(f'{skill_file}: description exceeds 1024 chars ({len(desc_match.group(1))})')
+
+            # Check triggers
+            if 'triggers:' not in frontmatter:
+              errors.append(f'{skill_file}: missing triggers field')
+            else:
+              en_triggers = re.findall(r'en:\s*\n((?:\s+-\s+.+\n)+)', frontmatter)
+              if en_triggers:
+                count = len(re.findall(r'^\s+-\s+', en_triggers[0], re.MULTILINE))
+                if count < 3:
+                  errors.append(f'{skill_file}: triggers.en needs ≥3 phrases (found {count})')
+              zh_triggers = re.findall(r'zh:\s*\n((?:\s+-\s+.+\n)+)', frontmatter)
+              if zh_triggers:
+                count = len(re.findall(r'^\s+-\s+', zh_triggers[0], re.MULTILINE))
+                if count < 2:
+                  errors.append(f'{skill_file}: triggers.zh needs ≥2 phrases (found {count})')
+
+            # Check Skill Summary section
+            if '## Skill Summary' not in content:
+              errors.append(f'{skill_file}: missing "## Skill Summary" section')
+
+            # Check Negative Boundaries section
+            if 'Negative Boundaries' not in content:
+              errors.append(f'{skill_file}: missing "Negative Boundaries" section')
+
+            print(f'✓ {skill_file}: frontmatter valid')
+
+          if warnings:
+            for w in warnings:
+              print(f'⚠ {w}')
+          if errors:
+            for e in errors:
+              print(f'✗ ERROR: {e}', file=sys.stderr)
+            sys.exit(1)
+          else:
+            print(f'\n✓ All skill files pass validation')
+          EOF
+
+      - name: Check install scripts are executable
+        run: |
+          failed=0
+          for script in claude/install.sh openclaw/install.sh opencode/install.sh \
+                        cursor/install.sh gemini/install.sh openai/install.sh \
+                        kimi/install.sh hermes/install.sh install.sh; do
+            if [[ -f "$script" ]]; then
+              if [[ ! -x "$script" ]]; then
+                echo "✗ $script is not executable"
+                failed=$((failed+1))
+              else
+                echo "✓ $script"
+              fi
+            else
+              echo "⚠ $script missing (skipped)"
+            fi
+          done
+          [[ $failed -eq 0 ]] || exit 1
+
+      - name: Validate install.sh --dry-run (claude)
+        run: |
+          bash claude/install.sh --dry-run
+          echo "✓ claude/install.sh --dry-run passed"
+
+      - name: Check skill-framework.md exists and has frontmatter
+        run: |
+          [[ -f skill-framework.md ]] || { echo "✗ skill-framework.md missing"; exit 1; }
+          head -5 skill-framework.md | grep -q '^---' || { echo "✗ skill-framework.md: no YAML frontmatter"; exit 1; }
+          echo "✓ skill-framework.md present with frontmatter"
+
+  # ── Create GitHub Release ───────────────────────────────────────────────────
   release:
-    needs: build
+    name: Create GitHub Release
+    needs: validate
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Download all build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: skill-writer-all-platforms
-        path: release-assets
+      - name: Prepare release assets
+        run: |
+          mkdir -p dist
 
-    - name: Prepare release assets with clean names
-      run: |
-        mkdir -p dist
-        # Release build already uses clean names (no -dev suffix).
-        for platform in opencode openclaw claude cursor gemini; do
-          src="release-assets/skill-writer-${platform}.md"
-          if [[ -f "${src}" ]]; then
-            cp "${src}" "dist/skill-writer-${platform}.md"
-            echo "  ✓ dist/skill-writer-${platform}.md"
+          # Platform Markdown skill files
+          for platform in claude openclaw opencode gemini openai kimi hermes; do
+            src="${platform}/skill-writer.md"
+            if [[ -f "$src" ]]; then
+              cp "$src" "dist/skill-writer-${platform}.md"
+              echo "✓ dist/skill-writer-${platform}.md"
+            else
+              echo "⚠ $src not found — skipped"
+            fi
+          done
+
+          # Cursor uses .mdc format
+          if [[ -f "cursor/skill-writer.mdc" ]]; then
+            cp cursor/skill-writer.mdc dist/skill-writer-cursor.mdc
+            echo "✓ dist/skill-writer-cursor.mdc"
           fi
-        done
-        # OpenAI produces JSON
-        if [[ -f "release-assets/skill-writer-openai.json" ]]; then
-          cp "release-assets/skill-writer-openai.json" "dist/skill-writer-openai.json"
-          echo "  ✓ dist/skill-writer-openai.json"
-        fi
-        # MCP produces JSON manifest
-        if [[ -f "release-assets/skill-writer-mcp.json" ]]; then
-          cp "release-assets/skill-writer-mcp.json" "dist/skill-writer-mcp.json"
-          echo "  ✓ dist/skill-writer-mcp.json"
-        fi
-        # Universal asset: skill-framework.md → skill-writer.md
-        cp skill-framework.md dist/skill-writer.md
-        echo "  ✓ dist/skill-writer.md (universal)"
 
-    - name: Generate release body with agent install instructions
-      run: |
-        VERSION="${{ github.ref_name }}"
-        BASE="https://github.com/${{ github.repository }}/releases/download/${VERSION}"
-        cat > release-body.md << EOF
-        ## Install skill-writer ${VERSION}
+          # Universal asset: skill-framework.md → skill-writer.md
+          cp skill-framework.md dist/skill-writer.md
+          echo "✓ dist/skill-writer.md (universal / skill-framework)"
 
-        Paste one of the commands below into your AI agent to install skill-writer.
+          echo ""
+          echo "Release assets:"
+          ls -lh dist/
 
-        ### What's new in v3.3.0 — Three-Tier Hook Routing + SkillRouter Weighted Ranking
+      - name: Generate release notes
+        run: |
+          VERSION="${{ github.ref_name }}"
+          BASE="https://github.com/${{ github.repository }}/releases/download/${VERSION}"
 
-        - **Three-Tier Routing Model** — AGENTS.md (session-constant) → UserPromptSubmit Hook (per-message) → trigger phrases; solves "LLM forgets skills exist" without relying on trigger-phrase matching alone
-        - **INSTALL steps 4e + 4f** — Auto-generate \`CLAUDE.md\`/\`AGENTS.md\` routing rules and \`UserPromptSubmit\` hook config in one install pass; idempotent (safe to re-run)
-        - **Progressive Disclosure Layer -1** — ≤50-token Hook Injection layer; five-layer architecture (Layer -1 through Layer 3)
-        - **SkillRouter Weighted Ranking** — Multi-factor rank formula (trigger×0.4 + lean\_score×0.3 + usage\_freq×0.2 + source\_quality×0.1); quality threshold gate (0.35) prevents low-confidence routing
-        - **Trigger Discovery Pipeline** — AGGREGATE Rule 4 mines \`candidate_triggers\` from session artifacts; promotes phrases at ≥5 count / ≥70% confidence to canonical triggers
-        - **\`trigger_signals\`** — New session artifact field: \`trigger_used\`, \`matched_trigger\`, \`match_type\`, \`trigger_miss\`, \`candidate_triggers[]\`
-        - **\`usage_stats\`** — New registry field: \`total_invocations\`, \`trigger_phrase_counts\`, \`success_rate\`, \`prm_distribution\`
-        - **Incremental Build Cache** — \`source_hash\` per file; \`.build-cache.json\` skips unchanged platforms; release builds always bypass cache
+          # Extract changelog entry for this version
+          CHANGELOG_SECTION=""
+          if [[ -f CHANGELOG.md ]]; then
+            CHANGELOG_SECTION=$(awk "/^## \[${VERSION#v}\]|^## ${VERSION}/,/^## \[/{if(/^## \[/ && !/^## \[${VERSION#v}\]|^## ${VERSION}/){exit}print}" CHANGELOG.md | head -50)
+          fi
 
-        ### Agent Install — per platform
+          cat > release-body.md << EOF
+          ## Install skill-writer ${VERSION}
 
-        | Platform | Command (paste into your agent) |
-        |----------|---------------------------------|
-        | **Claude** | \`read ${BASE}/skill-writer-claude.md and install to claude\` |
-        | **OpenCode** | \`read ${BASE}/skill-writer-opencode.md and install to opencode\` |
-        | **OpenClaw** | \`read ${BASE}/skill-writer-openclaw.md and install to openclaw\` |
-        | **Cursor** | \`read ${BASE}/skill-writer-cursor.md and install to cursor\` |
-        | **Gemini** | \`read ${BASE}/skill-writer-gemini.md and install to gemini\` |
-        | **OpenAI** | \`read ${BASE}/skill-writer-openai.json and install to openai\` |
-        | **MCP** | \`read ${BASE}/skill-writer-mcp.json and install to mcp\` |
-        | **All platforms** | \`read ${BASE}/skill-writer.md and install\` |
+          Paste a command into your AI agent to install skill-writer instantly.
 
-        ### Agent Install — latest release (always up to date)
+          ### Agent Install — per platform
 
-        \`\`\`
-        read https://github.com/${{ github.repository }}/releases/latest/download/skill-writer.md and install
-        \`\`\`
+          | Platform | Command (paste into your AI agent) |
+          |----------|------------------------------------|
+          | **Claude** | \`read ${BASE}/skill-writer-claude.md and install to claude\` |
+          | **OpenClaw** | \`read ${BASE}/skill-writer-openclaw.md and install to openclaw\` |
+          | **OpenCode** | \`read ${BASE}/skill-writer-opencode.md and install to opencode\` |
+          | **Cursor** | \`read ${BASE}/skill-writer-cursor.mdc and install to cursor\` |
+          | **Gemini** | \`read ${BASE}/skill-writer-gemini.md and install to gemini\` |
+          | **OpenAI** | \`read ${BASE}/skill-writer-openai.md and install to openai\` |
+          | **Kimi** | \`read ${BASE}/skill-writer-kimi.md and install to kimi\` |
+          | **Hermes** | \`read ${BASE}/skill-writer-hermes.md and install to hermes\` |
+          | **All (auto-detect)** | \`read ${BASE}/skill-writer.md and install\` |
 
-        ### Shell script
+          ### Shell script install
 
-        \`\`\`bash
-        # Install from this release (all platforms)
-        curl -fsSL ${BASE}/skill-writer.md -o /tmp/skill-writer.md
-        ./install.sh --url ${BASE}/skill-writer.md
+          \`\`\`bash
+          git clone https://github.com/${{ github.repository }}.git
+          cd skill-writer
+          ./install.sh               # auto-detect platforms
+          ./install.sh --all         # all 8 platforms
+          ./install.sh --platform claude
+          \`\`\`
 
-        # Single platform
-        ./install.sh --url ${BASE}/skill-writer-claude.md --platform claude
-        \`\`\`
+          ### Release assets
 
-        ### Release assets
+          | File | Platform | Format |
+          |------|----------|--------|
+          | \`skill-writer.md\` | Universal (skill-framework) | Markdown |
+          | \`skill-writer-claude.md\` | Claude | Markdown |
+          | \`skill-writer-openclaw.md\` | OpenClaw | Markdown |
+          | \`skill-writer-opencode.md\` | OpenCode | Markdown |
+          | \`skill-writer-cursor.mdc\` | Cursor | MDC rule |
+          | \`skill-writer-gemini.md\` | Gemini | Markdown |
+          | \`skill-writer-openai.md\` | OpenAI | Markdown |
+          | \`skill-writer-kimi.md\` | Kimi | Markdown |
+          | \`skill-writer-hermes.md\` | Hermes | Markdown |
 
-        | File | Platform |
-        |------|----------|
-        | \`skill-writer.md\` | Universal (skill-framework.md) |
-        | \`skill-writer-claude.md\` | Claude |
-        | \`skill-writer-opencode.md\` | OpenCode |
-        | \`skill-writer-openclaw.md\` | OpenClaw |
-        | \`skill-writer-cursor.md\` | Cursor |
-        | \`skill-writer-gemini.md\` | Gemini |
-        | \`skill-writer-openai.json\` | OpenAI (JSON) |
-        | \`skill-writer-mcp.json\` | MCP (JSON manifest) |
-        EOF
+          ${CHANGELOG_SECTION:+### What's New
+          ${CHANGELOG_SECTION}}
+          EOF
 
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v2
-      with:
-        files: dist/*
-        body_path: release-body.md
-        generate_release_notes: true
-        prerelease: ${{ contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          body_path: release-body.md
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -24,8 +24,8 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 
 - **Agent Install**: One-line install via "read [URL] and install" — works in any supported platform
 - **Zero CLI Interface**: Natural language interaction - no commands to memorize
-- **Cross-Platform**: Works on Claude, OpenClaw, and OpenCode — no build pipeline
-- **Seven Powerful Modes**: CREATE, LEAN, EVALUATE, OPTIMIZE, INSTALL, COLLECT, and GRAPH
+- **Cross-Platform**: Works on 8 platforms — Claude, OpenClaw, OpenCode, Cursor, Gemini, OpenAI, Kimi, Hermes
+- **Eight Powerful Modes**: CREATE, LEAN, EVALUATE, OPTIMIZE, INSTALL, COLLECT, SHARE, and GRAPH
 - **Template-Based**: 4 built-in templates for common skill patterns
 - **Quality Assurance**: 1000-point scoring system with certification tiers
 - **Tier-Aware Evaluation**: Tier-adjusted scoring weights for `planning` / `functional` / `atomic` skills (SkillX three-tier hierarchy)
@@ -39,24 +39,30 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 
 ## Supported Platforms
 
-| Platform | Installation Path | Routing File |
-|----------|-------------------|--------------|
-| [Claude](https://claude.ai) | `~/.claude/skills/` | `~/.claude/CLAUDE.md` |
-| [OpenClaw](https://openclaw.ai) | `~/.openclaw/skills/` | `~/.openclaw/AGENTS.md` |
-| [OpenCode](https://opencode.ai) | `~/.config/opencode/skills/` | `~/.config/opencode/AGENTS.md` |
+| Platform | Installation Path | Routing File | Format |
+|----------|-------------------|--------------|--------|
+| [Claude](https://claude.ai) | `~/.claude/skills/` | `~/.claude/CLAUDE.md` | Markdown |
+| [OpenClaw](https://openclaw.ai) | `~/.openclaw/skills/` | `~/.openclaw/AGENTS.md` | Markdown |
+| [OpenCode](https://opencode.ai) | `~/.config/opencode/skills/` | `~/.config/opencode/AGENTS.md` | Markdown |
+| [Cursor](https://cursor.com) | `.cursor/rules/` (project) | Built-in rules | MDC |
+| [Gemini](https://gemini.google.com) | `~/.gemini/skills/` | `~/.gemini/GEMINI.md` | Markdown |
+| [OpenAI](https://openai.com) | `{project}/skills/` | `{project}/AGENTS.md` | Markdown |
+| [Kimi](https://kimi.moonshot.cn) | `~/.config/kimi/skills/` | `~/.config/kimi/AGENTS.md` | Markdown |
+| [Hermes](https://hermes.ai) | `~/.hermes/skills/` | `~/.hermes/AGENTS.md` | Markdown |
 
-All three platforms are functionally equivalent — each gets the same skill file, companion files (refs/, templates/, eval/, optimize/), routing rules, and install script.
+All platforms receive the same skill file, companion files (refs/, templates/, eval/, optimize/), routing rules, and install script — full feature parity.
 
 ### Platform Feature Matrix
 
-| Feature | Claude | OpenClaw | OpenCode |
-|---------|--------|----------|----------|
-| All 8 modes (CREATE/LEAN/EVALUATE/OPTIMIZE/INSTALL/COLLECT/SHARE/GRAPH) | ✅ | ✅ | ✅ |
-| Companion files (refs/, templates/, eval/, optimize/) | ✅ | ✅ | ✅ |
-| UTE self-evolution tracking | ✅ | ✅ | ✅ |
-| Hook routing (UserPromptSubmit / AGENTS.md) | ✅ | ✅ | ✅ |
-| OpenClaw-specific metadata | — | ✅ | — |
-| Triggers footer | — | — | ✅ |
+| Feature | Claude | OpenClaw | OpenCode | Cursor | Gemini | OpenAI | Kimi | Hermes |
+|---------|--------|----------|----------|--------|--------|--------|------|--------|
+| All 8 modes | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Companion files | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| UTE self-evolution | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Routing file | CLAUDE.md | AGENTS.md | AGENTS.md | .mdc rules | GEMINI.md | AGENTS.md | AGENTS.md | AGENTS.md |
+| Platform metadata | — | openclaw block | triggers footer | alwaysApply | — | — | bilingual | — |
+| Hook injection | ✅ settings.json | — | — | — | — | — | — | — |
+| Keyword-only triggers | — | — | — | ✅ (IDE intercepts /) | — | — | — | — |
 
 ## Quick Start
 
@@ -87,7 +93,7 @@ cd skill-writer
 ./install.sh --platform openclaw
 ./install.sh --platform opencode
 
-# Install to all three platforms
+# Install to all 8 platforms
 ./install.sh --all
 
 # Preview without making changes
@@ -532,7 +538,7 @@ Say any of the following to enter SHARE mode:
 ### 5-Step SHARE Workflow
 
 1. **VALIDATE** — Checks that the skill has at minimum a BRONZE LEAN score (≥350/500). Skills below BRONZE are blocked from sharing.
-2. **PACKAGE** — Wraps the skill in the standard format for the target platform (Markdown for most; JSON for OpenAI/MCP).
+2. **PACKAGE** — Wraps the skill in standard Markdown format for all 8 supported platforms.
 3. **STAMP** — Adds certification metadata: tier badge, version, author, publish date.
 4. **DELIVER** — Outputs the packaged skill as:
    - A copyable code block (all platforms `[CORE]`)
@@ -775,13 +781,13 @@ UTE state tracking upgrades from `[EXTENDED]` to `[CORE]` when platform hooks ar
 // ~/.claude/settings.json
 {
   "hooks": {
-    "PostToolUse": [{"command": "node ~/.claude/skills/ute-tracker.js post-tool"}],
-    "Stop": [{"command": "node ~/.claude/skills/ute-tracker.js stop"}]
+    "PostToolUse": [{"command": "bash ~/.claude/skills/ute-hook.sh post-tool"}],
+    "Stop": [{"command": "bash ~/.claude/skills/ute-hook.sh stop"}]
   }
 }
 ```
 
-See `refs/use-to-evolve.md §8` for full hook setup and `ute-tracker.js` implementation.
+See `refs/use-to-evolve.md §8` for full hook setup instructions. The hook script is a plain bash file — no Node.js required.
 
 ## Project Structure
 
@@ -853,7 +859,7 @@ skill-writer/
 │  ┌─────────────┐  ┌─────────────┐  ┌──────────────────────────┐  │
 │  │OPTIMIZE Mode│  │INSTALL Mode │  │      COLLECT Mode        │  │
 │  │             │  │             │  │                          │  │
-│  │ • 8-dim     │  │ • 7-platform│  │ • Session artifact log   │  │
+│  │ • 8-dim     │  │ • 8-platform│  │ • Session artifact log   │  │
 │  │   analysis  │  │   support   │  │ • Lesson classification  │  │
 │  │ • 10-step   │  │ • Dep tree  │  │ • Bundle context (GoS)   │  │
 │  │   loop      │  │   resolution│  │ • trigger_signals (v3.3) │  │

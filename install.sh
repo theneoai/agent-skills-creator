@@ -2,14 +2,20 @@
 # install.sh — Install skill-writer to AI platforms.
 #
 # Usage:
-#   ./install.sh                         # auto-detect installed platforms
-#   ./install.sh --platform claude       # Claude only
-#   ./install.sh --platform openclaw     # OpenClaw only
-#   ./install.sh --platform opencode     # OpenCode only
-#   ./install.sh --all                   # all three platforms
-#   ./install.sh --dry-run               # preview only, no changes
+#   ./install.sh                          # auto-detect installed platforms
+#   ./install.sh --platform claude        # Claude only
+#   ./install.sh --platform openclaw      # OpenClaw only
+#   ./install.sh --platform opencode      # OpenCode only
+#   ./install.sh --platform cursor        # Cursor (project-level .cursor/rules/)
+#   ./install.sh --platform cursor --global  # Cursor user-level ~/.cursor/rules/
+#   ./install.sh --platform gemini        # Gemini (~/.gemini/)
+#   ./install.sh --platform openai [DIR]  # OpenAI Agents SDK (project dir)
+#   ./install.sh --platform kimi          # Kimi / Moonshot AI (~/.config/kimi/)
+#   ./install.sh --platform hermes        # Hermes (~/.hermes/)
+#   ./install.sh --all                    # all 8 platforms
+#   ./install.sh --dry-run                # preview only, no changes
 #
-# Supported platforms: claude, openclaw, opencode
+# Supported platforms: claude, openclaw, opencode, cursor, gemini, openai, kimi, hermes
 
 set -euo pipefail
 
@@ -17,6 +23,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLATFORM=""
 INSTALL_ALL=false
 DRY_RUN=false
+EXTRA_ARGS=()
 
 info()    { echo "  $*"; }
 success() { echo "  ✓ $*"; }
@@ -28,20 +35,25 @@ err()     { echo "  ✗ $*" >&2; }
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --platform|-p)
-      PLATFORM="${2:?--platform requires a value (claude|openclaw|opencode)}"
+      PLATFORM="${2:?--platform requires a value}"
       shift 2 ;;
     --all|-a)
       INSTALL_ALL=true
       shift ;;
     --dry-run)
       DRY_RUN=true
+      EXTRA_ARGS+=(--dry-run)
+      shift ;;
+    --global)
+      EXTRA_ARGS+=(--global)
       shift ;;
     -h|--help)
-      grep '^#' "$0" | head -15 | sed 's/^# \?//'
+      grep '^#' "$0" | head -20 | sed 's/^# \?//'
       exit 0 ;;
     *)
-      err "Unknown option: $1"
-      exit 1 ;;
+      # Pass unknown args to platform scripts (e.g. TARGET_DIR for openai)
+      EXTRA_ARGS+=("$1")
+      shift ;;
   esac
 done
 
@@ -52,17 +64,21 @@ detect_platforms() {
   [[ -d "${HOME}/.claude" ]]               && detected+=(claude)
   [[ -d "${HOME}/.openclaw" ]]             && detected+=(openclaw)
   [[ -d "${HOME}/.config/opencode" ]]      && detected+=(opencode)
+  [[ -d "${HOME}/.cursor" ]]               && detected+=(cursor)
+  [[ -d "${HOME}/.gemini" ]]               && detected+=(gemini)
+  [[ -d "${HOME}/.config/kimi" ]]          && detected+=(kimi)
+  [[ -d "${HOME}/.hermes" ]]               && detected+=(hermes)
+  # OpenAI: no standard home dir to detect; skipped in auto-detect
   echo "${detected[@]:-}"
 }
 
 # Determine target platform list
 declare -a TARGETS
 if [[ "${INSTALL_ALL}" == "true" ]]; then
-  TARGETS=(claude openclaw opencode)
+  TARGETS=(claude openclaw opencode cursor gemini openai kimi hermes)
 elif [[ -n "${PLATFORM}" ]]; then
   TARGETS=("${PLATFORM}")
 else
-  # Auto-detect: install only to platforms that appear to be set up
   TARGETS=()
   while IFS= read -r _line; do
     [[ -n "${_line}" ]] && TARGETS+=("${_line}")
@@ -95,20 +111,20 @@ for p in "${TARGETS[@]}"; do
     continue
   fi
 
-  echo "── Installing to ${p} ───────────────────────────────────────────────────────"
-  if $DRY_RUN; then
-    bash "${PLATFORM_SCRIPT}" --dry-run
+  echo "── Installing to ${p} ──────────────────────────────────────────────────────"
+  if bash "${PLATFORM_SCRIPT}" "${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}"; then
+    INSTALLED=$((INSTALLED + 1))
   else
-    bash "${PLATFORM_SCRIPT}"
+    warn "${p} install reported errors — continuing"
+    FAILED=$((FAILED + 1))
   fi
-  INSTALLED=$((INSTALLED + 1))
 done
 
 echo "──────────────────────"
 if [[ ${FAILED} -eq 0 ]]; then
   success "Installed to ${INSTALLED} platform(s)."
 else
-  warn "Installed to ${INSTALLED} platform(s). ${FAILED} failed — see warnings above."
+  warn "Installed to ${INSTALLED} platform(s). ${FAILED} had errors — see warnings above."
 fi
 echo ""
 echo "Quick reference: create a skill | lean eval | evaluate | optimize | graph view"

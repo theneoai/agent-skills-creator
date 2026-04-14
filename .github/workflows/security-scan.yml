@@ -8,43 +8,130 @@ on:
 
 jobs:
   security-scan:
+    name: Security scan
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: builder/package.json
+      # ── Shell script security (shellcheck) ─────────────────────────────────
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
 
-    - name: Install dependencies
-      run: |
-        cd builder
-        npm ci
+      - name: Lint all install scripts
+        run: |
+          scripts=(
+            install.sh
+            claude/install.sh
+            openclaw/install.sh
+            opencode/install.sh
+            gemini/install.sh
+            openai/install.sh
+            kimi/install.sh
+            hermes/install.sh
+          )
+          failed=0
+          for script in "${scripts[@]}"; do
+            if [[ -f "$script" ]]; then
+              echo "Checking $script ..."
+              if shellcheck --severity=warning "$script"; then
+                echo "✓ $script"
+              else
+                failed=$((failed+1))
+              fi
+            else
+              echo "⚠ $script not found — skipped"
+            fi
+          done
+          # Cursor install separately (may not exist yet)
+          if [[ -f "cursor/install.sh" ]]; then
+            shellcheck --severity=warning cursor/install.sh && echo "✓ cursor/install.sh" || failed=$((failed+1))
+          fi
+          [[ $failed -eq 0 ]] || { echo "✗ shellcheck found $failed error(s)"; exit 1; }
 
-    - name: Run npm audit
-      run: |
-        cd builder
-        npm audit --audit-level moderate
-      continue-on-error: true
+      # ── Secret scanning (TruffleHog) ───────────────────────────────────────
+      - name: Scan for secrets (TruffleHog)
+        uses: trufflesecurity/trufflehog@v3
+        with:
+          path: ./
+          base: ${{ github.event_name == 'push' && github.event.before || 'HEAD~1' }}
+          head: HEAD
+          extra_args: --only-verified
 
-    - name: Check for secrets
-      uses: trufflesecurity/trufflehog@v3
-      with:
-        path: ./
-        base: main
-        head: HEAD
-        extra_args: --only-verified
+      # ── YAML frontmatter security checks ───────────────────────────────────
+      - name: Check for hardcoded credentials in skill files
+        run: |
+          python3 - <<'EOF'
+          import os, re, sys
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: javascript
+          # CWE-798: No hardcoded credentials
+          CREDENTIAL_PATTERNS = [
+            (r'(?i)(api[_-]?key|secret|password|token)\s*[:=]\s*["\']?[A-Za-z0-9+/]{20,}', 'CWE-798 potential hardcoded credential'),
+            (r'(?i)sk-[A-Za-z0-9]{20,}', 'CWE-798 OpenAI-style API key'),
+            (r'(?i)ghp_[A-Za-z0-9]{36}', 'CWE-798 GitHub PAT'),
+            (r'(?i)AKIA[A-Z0-9]{16}', 'CWE-798 AWS access key'),
+          ]
 
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v3
+          skill_files = []
+          for root, dirs, files in os.walk('.'):
+            # Skip .git, node_modules, etc.
+            dirs[:] = [d for d in dirs if d not in {'.git', 'node_modules', '.github'}]
+            for f in files:
+              if f.endswith(('.md', '.mdc', '.json', '.sh')):
+                skill_files.append(os.path.join(root, f))
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
+          errors = []
+          for filepath in skill_files:
+            try:
+              content = open(filepath).read()
+              for pattern, label in CREDENTIAL_PATTERNS:
+                matches = re.findall(pattern, content)
+                if matches:
+                  errors.append(f'{filepath}: {label} ({len(matches)} match(es))')
+            except Exception:
+              pass
+
+          if errors:
+            for e in errors:
+              print(f'✗ {e}', file=sys.stderr)
+            sys.exit(1)
+          else:
+            print(f'✓ No hardcoded credentials found in {len(skill_files)} files')
+          EOF
+
+      # ── Markdown/YAML structure integrity ──────────────────────────────────
+      - name: Validate skill file structure integrity
+        run: |
+          python3 - <<'EOF'
+          import os, re, sys
+
+          platforms = ['claude', 'openclaw', 'opencode', 'cursor', 'gemini', 'openai', 'kimi', 'hermes']
+          issues = []
+
+          for platform in platforms:
+            ext = 'mdc' if platform == 'cursor' else 'md'
+            skill_file = f'{platform}/skill-writer.{ext}'
+            if not os.path.exists(skill_file):
+              continue
+            content = open(skill_file).read()
+
+            # Check for SQL injection patterns (CWE-89)
+            if re.search(r'(?i)(SELECT|INSERT|UPDATE|DELETE)\s+.+\s+FROM\s+\{', content):
+              issues.append(f'{skill_file}: CWE-89 potential SQL injection template')
+
+            # Check for shell=True with user input (CWE-78)
+            if re.search(r'shell=True.*user|user.*shell=True', content):
+              issues.append(f'{skill_file}: CWE-78 shell=True with potential user input')
+
+            # Check ASI01: No instruction injection in external content handlers
+            if '<!-- INJECT' in content or '{{SYSTEM_PROMPT}}' in content:
+              issues.append(f'{skill_file}: ASI01 potential prompt injection vector')
+
+            print(f'✓ {skill_file}: security checks passed')
+
+          if issues:
+            for i in issues:
+              print(f'✗ {i}', file=sys.stderr)
+            sys.exit(1)
+          EOF

@@ -119,7 +119,7 @@
         <div class="hero-content">
             <div class="container">
                 <div class="hero-badge">
-                    <span class="badge">🎉 v3.1.0 正式发布</span>
+                    <span class="badge">🎉 v3.3.0 正式发布</span>
                 </div>
                 <h1 class="hero-title">
                     让 AI 技能像软件一样<br>
@@ -158,11 +158,11 @@
                         <div class="stat-label">平均认证分数</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">7</div>
+                        <div class="stat-number">8</div>
                         <div class="stat-label">支持平台</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">6</div>
+                        <div class="stat-number">8</div>
                         <div class="stat-label">工作模式</div>
                     </div>
                 </div>
@@ -185,7 +185,9 @@
                     <button class="install-tab" data-panel="openclaw">OpenClaw</button>
                     <button class="install-tab" data-panel="cursor">Cursor</button>
                     <button class="install-tab" data-panel="gemini">Gemini</button>
-                    <button class="install-tab" data-panel="mcp">MCP</button>
+                    <button class="install-tab" data-panel="openai">OpenAI</button>
+                    <button class="install-tab" data-panel="kimi">Kimi</button>
+                    <button class="install-tab" data-panel="hermes">Hermes</button>
                 </div>
 
                 <div class="install-panel active" id="ip-all">
@@ -193,7 +195,7 @@
                         <code>curl -fsSL https://raw.githubusercontent.com/theneoai/skill-writer/main/install.sh | bash</code>
                         <button class="copy-btn" onclick="copyInstall(this)">复制</button>
                     </div>
-                    <p class="install-hint">安装到本机所有支持的 AI 平台（Claude / OpenCode / OpenClaw / Cursor / Gemini / OpenAI / MCP）</p>
+                    <p class="install-hint">安装到本机所有支持的 AI 平台（Claude / OpenCode / OpenClaw / Cursor / Gemini / OpenAI / Kimi / Hermes）</p>
                 </div>
 
                 <div class="install-panel" id="ip-claude">
@@ -222,10 +224,10 @@
 
                 <div class="install-panel" id="ip-cursor">
                     <div class="install-cmd-row">
-                        <code>read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-cursor.md and install to cursor</code>
+                        <code>read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-cursor.mdc and install to cursor</code>
                         <button class="copy-btn" onclick="copyInstall(this)">复制</button>
                     </div>
-                    <p class="install-hint">安装到 <code>~/.cursor/skills/</code></p>
+                    <p class="install-hint">安装 MDC rule 到 <code>.cursor/rules/</code>（项目级）或 <code>~/.cursor/rules/</code>（--global）</p>
                 </div>
 
                 <div class="install-panel" id="ip-gemini">
@@ -233,15 +235,31 @@
                         <code>read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-gemini.md and install to gemini</code>
                         <button class="copy-btn" onclick="copyInstall(this)">复制</button>
                     </div>
-                    <p class="install-hint">安装到 <code>~/.gemini/skills/</code></p>
+                    <p class="install-hint">安装到 <code>~/.gemini/skills/</code>，路由规则写入 <code>~/.gemini/GEMINI.md</code></p>
                 </div>
 
-                <div class="install-panel" id="ip-mcp">
+                <div class="install-panel" id="ip-openai">
                     <div class="install-cmd-row">
-                        <code>read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-mcp.json and install to mcp</code>
+                        <code>read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-openai.md and install to openai</code>
                         <button class="copy-btn" onclick="copyInstall(this)">复制</button>
                     </div>
-                    <p class="install-hint">安装 MCP JSON manifest 到 <code>~/.mcp/servers/skill-writer/mcp-manifest.json</code></p>
+                    <p class="install-hint">安装到当前项目 <code>skills/skill-writer.md</code>，路由规则写入 <code>AGENTS.md</code></p>
+                </div>
+
+                <div class="install-panel" id="ip-kimi">
+                    <div class="install-cmd-row">
+                        <code>read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-kimi.md and install to kimi</code>
+                        <button class="copy-btn" onclick="copyInstall(this)">复制</button>
+                    </div>
+                    <p class="install-hint">安装到 <code>~/.config/kimi/skills/</code>，支持中英双语触发词</p>
+                </div>
+
+                <div class="install-panel" id="ip-hermes">
+                    <div class="install-cmd-row">
+                        <code>read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-hermes.md and install to hermes</code>
+                        <button class="copy-btn" onclick="copyInstall(this)">复制</button>
+                    </div>
+                    <p class="install-hint">安装到 <code>~/.hermes/skills/</code>，适用于本地 LLM 助手</p>
                 </div>
             </div>
         </div>
@@ -578,7 +596,7 @@
                             <li>Session Artifact 会话记录协议</li>
                             <li>Edit Audit Guard 编辑防护</li>
                             <li>Skill Registry 技能注册表</li>
-                            <li>MCP 平台支持（7th platform）</li>
+                            <li>扩展平台支持（Cursor / Gemini / OpenAI / Kimi / Hermes）</li>
                         </ul>
                     </div>
                 </div>
