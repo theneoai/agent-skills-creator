@@ -19,6 +19,9 @@ const fs = require('fs-extra');
 const config = require('../config');
 const { getSkillMetadata } = require('../metadata');
 
+// JSON_OUTPUT_PLATFORMS is the canonical SSOT in config — do not redefine here.
+const { JSON_OUTPUT_PLATFORMS } = config;
+
 // Source directories to watch — use PATHS from config (SSoT) instead of a
 // hard-coded nonexistent 'builder/core/' path.
 const WATCH_DIRS = [
@@ -86,35 +89,18 @@ async function buildForPlatform(platform) {
     // Read all core data
     const coreData = await readAllCoreData();
 
-    // Prepare data for embedder (metadata sourced from shared metadata.js — SSoT)
-    const embedData = {
+    // Prepare enriched core data (metadata sourced from shared metadata.js — SSoT).
+    // Spread coreData directly so all reader.js fields (securityPatterns, selfReview,
+    // evolution, useToEvolve, convergence, sessionArtifact, editAudit, skillRegistry,
+    // progressiveDisclosure, rubrics, benchmarks, strategies, antiPatterns, templates)
+    // are passed through unchanged — matching exactly what build.js does.
+    const enrichedCoreData = {
+      ...coreData,
       metadata: getSkillMetadata(platform),
-      create: {
-        workflow: coreData.create.workflow,
-        elicitation: coreData.create.elicitation,
-        templates: coreData.create.templates,
-        securityChecks: null,
-        config: null
-      },
-      evaluate: {
-        phases: coreData.evaluate.phases,
-        rubrics: coreData.evaluate.rubrics,
-        certification: coreData.evaluate.certification,
-        scoring: null,
-        config: null
-      },
-      optimize: {
-        dimensions: coreData.optimize.dimensions,
-        strategies: coreData.optimize.strategies,
-        convergence: coreData.optimize.convergence,
-        loopConfig: null,
-        config: null
-      },
-      shared: coreData.shared
     };
 
     // Generate skill file
-    const result = generateSkillFile(platform, embedData);
+    const result = generateSkillFile(platform, enrichedCoreData);
 
     // Get platform install path
     const platformAdapter = getPlatform(platform);
@@ -123,8 +109,9 @@ async function buildForPlatform(platform) {
     // Ensure output directory exists
     await fs.ensureDir(outputDir);
 
-    // Write output file
-    const outputFile = path.join(outputDir, 'skill-writer.md');
+    // Write output file — use .json for JSON platforms (openai, mcp, a2a), .md for all others
+    const fileExtension = JSON_OUTPUT_PLATFORMS.has(platform) ? 'json' : 'md';
+    const outputFile = path.join(outputDir, `skill-writer.${fileExtension}`);
     await fs.writeFile(outputFile, result.content, 'utf8');
 
     const duration = Date.now() - startTime;

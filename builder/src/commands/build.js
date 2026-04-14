@@ -51,6 +51,22 @@ async function build(options) {
     dryRun: options.dryRun || false,
   };
 
+  // Validate output path — reject null bytes and well-known OS system directories
+  // to prevent accidental writes caused by path traversal in the --output option.
+  const resolvedOutput = path.resolve(buildOptions.output);
+  if (buildOptions.output.includes('\0')) {
+    throw new Error('Invalid --output path: null bytes are not allowed');
+  }
+  const FORBIDDEN_PREFIXES = ['/', '/etc', '/usr', '/bin', '/sbin', '/root', '/boot', '/sys', '/proc'];
+  const isForbidden = FORBIDDEN_PREFIXES.some(
+    (prefix) => resolvedOutput === prefix || resolvedOutput.startsWith(prefix + path.sep)
+  );
+  if (isForbidden) {
+    throw new Error(
+      `Invalid --output path "${resolvedOutput}": writing to system directories is not allowed`
+    );
+  }
+
   console.log(chalk.bold.blue('\n🔨 Skill Writer Builder\n'));
   console.log(chalk.gray('Building platform-specific skills from core engine...\n'));
 
@@ -123,7 +139,7 @@ async function build(options) {
 
         // Determine output path
         // JSON_OUTPUT_PLATFORMS (openai, mcp, a2a) emit .json; all others emit .md
-        const outputDir = path.resolve(buildOptions.output);
+        const outputDir = resolvedOutput;
         const fileExtension = JSON_OUTPUT_PLATFORMS.has(platform) ? 'json' : 'md';
         const outputFile = buildOptions.release
           ? `skill-writer-${platform}.${fileExtension}`

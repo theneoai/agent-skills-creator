@@ -26,7 +26,11 @@ async function parseFile(filePath) {
   const content = await fs.readFile(filePath, 'utf-8');
 
   if (ext === '.json') {
-    return JSON.parse(content);
+    try {
+      return JSON.parse(content);
+    } catch (error) {
+      throw new Error(`Failed to parse JSON file "${filePath}": ${error.message}`);
+    }
   }
 
   return {

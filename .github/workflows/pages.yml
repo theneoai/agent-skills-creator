@@ -6,6 +6,9 @@ on:
       - main
     paths:
       - 'docs/**'
+      - 'refs/**'
+      - 'skill-framework.md'
+      - 'README.md'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 

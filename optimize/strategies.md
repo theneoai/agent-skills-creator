@@ -1,9 +1,10 @@
 # Optimization Strategies
 
-> **Purpose**: 7-dimension strategy catalog for the 10-step OPTIMIZE loop (v3.1.0).
+> **Purpose**: 8-dimension strategy catalog for the 10-step OPTIMIZE loop (v3.2.0).
 > **Load**: When §9 (OPTIMIZE Mode) of `claude/skill-writer.md` is accessed.
 > **Main doc**: `claude/skill-writer.md §9`
 > **SSOT**: `builder/src/config.js SCORING.dimensions` — canonical dimension definitions
+> **v3.2.0**: Added D8 Composability dimension + S10/S11/S12 graph-level strategies
 
 ---
 
@@ -21,6 +22,10 @@ Canonical weights are defined in `builder/src/config.js` — this table reflects
 | D5 | Examples | 15% (45 pts) | 75 | Count, bilingual, output shown, realistic | S7 |
 | D6 | Security | 10% (30 pts) | 45 | Security Baseline, CWE + OWASP ASI01-ASI10, Red Lines | S8 |
 | D7 | Metadata | 5% (15 pts) | 40 | YAML, skill_tier, trigger phrases, negative boundaries, UTE fields | S9 |
+| **D8** | **Composability** | **0% Phase 2** *(Phase 5 v4.0+)* | **20 (bonus)** | Graph block, tier consistency, edge ID format; enables bundle retrieval | S10, S11, S12 |
+
+> **D8 note**: D8 is a bonus dimension. Skills without `graph:` block score 0 on D8 — no penalty.
+> LEAN max 520 when D8 is present; core max remains 500. EVALUATE Phase 5 (+100 pts) is v4.0+ only.
 
 > **v3.1.0 LEAN rebalancing**: D1 and D2 LEAN maxes reduced 100→95; D6 Security reduced 50→45;
 > D7 Metadata increased 25→40 (now covers trigger phrase coverage + negative boundaries).
@@ -332,6 +337,125 @@ Targeted fixes are less efficient than a clean rebuild.
 
 ---
 
+### S10 — Graph Extraction (Split Skill into Composable Units)
+
+**Target dimension**: D8 (Composability); secondary: D1 (System Design), D3 (Workflow)
+**When to use**: Skill body > 400 lines AND contains 2+ clearly independent functional segments.
+**Estimated delta**: +15 to +40 pts (D8 + secondary dimensions)
+**Research basis**: SkillNet (arxiv:2603.04448) — modular skills with explicit interfaces
+outperform monolithic skills in multi-agent pipelines.
+
+**Steps**:
+1. Identify candidate sub-segments: look for self-contained workflow phases, each with its
+   own clear input/output contract and no shared mutable state between them.
+2. For each candidate sub-segment:
+   - Can it be invoked independently? (YES → good extraction candidate)
+   - Does it have a distinct trigger phrase? (YES → strong candidate)
+   - Is it referenced from other skills? (YES → must extract — it's already a dependency)
+3. For confirmed candidates, create a new `atomic` or `functional` skill:
+   - Use `/create` mode with the sub-segment as the description
+   - Assign `skill_tier: atomic` if it has hard input constraints; `functional` otherwise
+   - Add `graph.provides` and `graph.consumes` declarations
+4. In the parent skill:
+   - Remove the extracted logic
+   - Add `graph.depends_on` pointing to the new sub-skill
+   - If parent coordinates ≥ 2 sub-skills, upgrade to `skill_tier: planning`
+   - Add `graph.composes` listing all sub-skills
+5. Re-run LEAN on both parent and extracted sub-skill.
+   If LEAN(parent) + LEAN(sub-skill) > LEAN(original): extraction was beneficial.
+   If worse: revert (git rollback or restore from backup).
+
+**Example**:
+```
+Before: api-tester (550 lines)
+  [phase 1: schema validation — 150 lines]
+  [phase 2: test execution    — 250 lines]
+  [phase 3: report generation — 150 lines]
+
+After: api-orchestrator (planning, 150 lines)
+  composes:
+    - schema-validator (atomic, 150 lines)   ← extracted
+    - api-runner       (functional, 250 lines) ← extracted
+    - report-builder   (functional, 150 lines) ← extracted
+
+LEAN improvement: 380 → 480 (api-orchestrator) + 3 × ~420 (sub-skills)
+```
+
+**Edit Audit guard**: Extraction counts as a MAJOR version bump on the parent skill
+(interface changes). Bump version, add changelog entry, update registry.
+
+---
+
+### S11 — Coupling Reduction (Break Circular Dependencies)
+
+**Target dimension**: D8 (Composability); secondary: D4 (Error Handling)
+**When to use**: `detectCycles()` finds a cycle between skills A and B; or two skills
+have mutual `depends_on` entries.
+**Estimated delta**: +10 to +30 pts
+**Research basis**: GoS invariant — `depends_on`/`composes` edges must form a DAG (§2.3).
+
+**Steps**:
+1. Identify the circular dependency pair (A depends_on B; B depends_on A).
+2. Analyse what specifically each depends on from the other:
+   - A needs output type X from B
+   - B needs output type Y from A
+3. Determine if X and Y can be provided by an independent intermediate skill C:
+   ```
+   Before: A ↔ B (circular)
+   After:  A → C (provides X)
+           B → C (provides Y)
+           A and B both: depends_on C
+   ```
+4. Create skill C (`atomic` or `functional`) that computes X and Y without depending
+   on A or B.
+5. Update A and B to remove their cross-dependency and add C to their `depends_on`.
+6. Run LEAN on A, B, and C; verify no new cycles with `/graph check`.
+
+**If the shared state is minimal** (e.g. just a configuration value):
+- Prefer passing it as an input parameter rather than creating skill C.
+- Remove the dependency edge; document the parameter in `interface.input`.
+
+**Exit criteria**: `/graph check` reports 0 cycles; LEAN(A) + LEAN(B) ≥ pre-refactor scores.
+
+---
+
+### S12 — Similarity Consolidation (Merge Near-Duplicate Skills)
+
+**Target dimension**: D8 (Composability); secondary: D7 (Metadata — registry coherence)
+**When to use**: GRAPH-004 warning fires (similar_to similarity ≥ 0.95); or `/graph check`
+identifies merge candidates.
+**Estimated delta**: +5 to +20 pts (D8) + registry cleanliness
+**Research basis**: SkillNet similar_to edge + GoS deduplication in bundle retrieval (§4 Step 3).
+
+**Steps**:
+1. Present the two similar skills side by side:
+   - Show Skill Summary, triggers, workflow sections, score
+   - Highlight diffs: what is unique to each?
+2. Classify the diffs:
+   - `config-only`: same logic, different config (e.g. different API keys) → MERGE with params
+   - `additive`: A has everything in B plus more → SUBSUME B into A
+   - `conflicting`: core workflow differs → DO NOT MERGE; reduce similarity score instead
+3. For `config-only` merges:
+   - Add a parameter to the merged skill's `interface.input` for the varying config
+   - Rename to a more general name if needed
+   - Update all consumers' `depends_on` to point to the merged skill
+4. For `additive` merges:
+   - Port B's unique content (triggers, examples, error paths) into A
+   - Deprecate B in registry: `"deprecated": true, "superseded_by": "A's id"`
+   - Add `graph.similar_to[A].similarity: 1.0` to B's frontmatter as migration pointer
+5. Run LEAN on merged skill; verify score ≥ max(score_A, score_B).
+6. Update all skills that `depends_on` the deprecated skill to point to merged skill.
+
+**Do NOT merge if**:
+- Similarity is between 0.90–0.94 (similar but distinct — keep as alternatives)
+- The two skills serve different audiences (different `skill_tier`, different `target_user`)
+- Merging would make the new skill exceed 500 lines (Progressive Disclosure limit)
+
+**Exit criteria**: Registry has 0 duplicate skill pairs at similarity ≥ 0.95; merged skill
+passes LEAN ≥ max(original scores).
+
+---
+
 ### S9 — Targeted Metric Boost (Within 0.03 of Threshold)
 
 **When to use**: A single metric barely fails (within 0.03 of threshold). Surgical fix only.
@@ -361,10 +485,14 @@ Lowest-scoring dimension → apply strategy
   D3 Workflow          → S4
   D4 Error Handling    → S5
   D5 Examples          → S1 (trigger) or S3 (content)
-  D6 Metadata          → S6
-  D7 Long-Context      → S7
-  All < 50%            → S8 (rebuild)
+  D6 Security          → S8
+  D7 Metadata          → S9
+  D8 Composability     → S10 (extract), S11 (coupling), S12 (merge)
+  All < 50%            → S8 (full rebuild; S10–S12 apply after rebuild)
   Single metric fails  → S9 (targeted boost)
+  GRAPH-005 cycle      → S11 (coupling reduction, priority)
+  GRAPH-004 merge      → S12 (similarity consolidation)
+  Skill > 400 lines    → S10 (extraction, consider proactively)
 ```
 
 **Cycle budget**:
@@ -446,3 +574,41 @@ WARNING: skill_tier not declared. Defaulting to 'functional' weights.
 Add skill_tier: planning | functional | atomic to YAML frontmatter
 for accurate tier-adjusted scoring.
 ```
+
+---
+
+## §7  Graph-Level Strategy Guidelines (S10–S12)
+
+> v3.2.0 addition. Graph strategies operate across skill boundaries.
+> Unlike S1–S9 (single-skill improvements), S10–S12 may touch multiple skill files.
+> Run `/graph check` before and after applying any graph-level strategy.
+
+### When to trigger graph strategies
+
+Graph strategies are triggered by:
+- **OPTIMIZE loop Step 2 ANALYZE**: when D8 Composability is the lowest dimension
+- **`/graph check` output**: GRAPH-004 (merge) or GRAPH-005 (cycle) errors
+- **Proactive (no trigger needed)**: skill body > 400 lines → consider S10
+- **AGGREGATE output**: auto-inferred edges with confidence ≥ 0.85
+
+### Graph strategy execution guard
+
+Before applying S10–S12:
+1. Run `git commit` (or save backup) — graph changes touch multiple files
+2. Run `/graph check` — record the baseline health report
+3. Apply strategy changes (may span multiple files)
+4. Run `/graph check` again — verify error count did not increase
+5. Run LEAN on all modified skills — verify no regression > 5 pts
+6. If regression: revert the change; try narrower approach
+
+### Integration with the 10-step OPTIMIZE loop
+
+S10–S12 can be invoked in any loop round but are most effective at specific stages:
+
+| Loop Round | Recommended Use |
+|-----------|----------------|
+| Round 1–3 | Focus on D1–D7 first (higher weights) |
+| Round 4+  | Apply S10–S12 if D8 is still at 0 or score plateaued |
+| Post-convergence | Run S12 (merge) after VERIFY to clean up registry |
+
+Graph strategies do NOT reset the convergence counter — they are counted as normal rounds.

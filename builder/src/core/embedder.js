@@ -20,6 +20,10 @@ const PLATFORM_CONFIGS = config.PLATFORMS;
 // Default configuration
 const DEFAULT_CONFIG = PLATFORM_CONFIGS.opencode;
 
+// Template cache: populated lazily on first generateSkillFile() call per platform.
+// Avoids repeated synchronous disk reads when building multiple skills in one session.
+const _templateCache = new Map();
+
 /**
  * Get platform-specific configuration
  * @param {string} platform - Platform name
@@ -451,8 +455,10 @@ function generateSkillFile(platform, coreData) {
   let template;
   if (coreData.template) {
     template = coreData.template;
+  } else if (_templateCache.has(platform)) {
+    template = _templateCache.get(platform);
   } else {
-    // Try to load platform-specific template
+    // Try to load platform-specific template (read once, then cache)
     const platformTemplatePath = path.join(__dirname, '../../templates', `${platform}.md`);
     const platformTemplateJsonPath = path.join(__dirname, '../../templates', `${platform}.json`);
 
@@ -468,6 +474,7 @@ function generateSkillFile(platform, coreData) {
       console.warn(`Could not load platform template for ${platform} (${error.message}), using default`);
       template = getDefaultTemplate(platform);
     }
+    _templateCache.set(platform, template);
   }
 
   // Replace metadata placeholders

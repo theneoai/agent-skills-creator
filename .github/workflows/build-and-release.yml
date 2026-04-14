@@ -140,6 +140,19 @@ jobs:
 
         Paste one of the commands below into your AI agent to install skill-writer.
 
+        ### What's new in v3.2.0 — Graph of Skills (GoS)
+
+        - **GRAPH Mode** — 7th mode: \`/graph view\`, \`/graph check\`, \`/graph plan\`, \`/graph bundle\`, \`/graph diff\`
+        - **D8 Composability** — Optional LEAN bonus dimension (+0–20 pts) for skills with \`graph:\` block
+        - **Typed edge schema** — 6 edge types: \`depends_on\`, \`composes\`, \`similar_to\`, \`uses_resource\`, \`provides\`, \`consumes\`
+        - **Bundle retrieval** — BFS + PageRank resolves execution-complete skill bundles from a seed skill
+        - **Graph health checks** — GRAPH-001–008: dangling edges, cycles, isolated nodes, merge advisories
+        - **INSTALL dependency resolution** — Step 2a resolves the dependency tree and installs in topological order
+        - **COLLECT bundle context** — New \`bundle_context\` + \`graph_signals\` fields; AGGREGATE auto-infers graph edges
+        - **Registry schema v2.0** — Top-level \`graph:\` section in \`registry.json\` with \`edges[]\` + \`bundles[]\`
+        - **Progressive Disclosure Layer 0** — ≤200-token bundle context injected before ADVERTISE stubs
+        - **GoS algorithm library** — \`builder/src/core/graph.js\`: buildGraph, detectCycles, topologicalSort, resolveBundle, checkGraphHealth, scoreD8Composability
+
         ### Agent Install — per platform
 
         | Platform | Command (paste into your agent) |
