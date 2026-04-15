@@ -146,7 +146,25 @@ wsl --install                 # enable WSL2
 
 ### Installation
 
-#### Option 1 — Shell Script (from git clone, recommended)
+#### Option 1 — Agent Install (recommended — no git, no scripts)
+
+Paste one line into your AI agent. The agent reads the skill file and installs itself.
+
+| Platform | Paste into your AI agent |
+|----------|--------------------------|
+| **Claude** | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-claude.md and install` |
+| **OpenClaw** | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-openclaw.md and install` |
+| **OpenCode** | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-opencode.md and install` |
+| **Cursor** | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-cursor.mdc and install` |
+| **Gemini** | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-gemini.md and install` |
+| **OpenAI** | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-openai.md and install` |
+| **Kimi** | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-kimi.md and install` |
+| **Hermes** | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-hermes.md and install` |
+| **Auto-detect** | `read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer.md and install` |
+
+The agent writes the skill file to the correct location, merges routing rules, and confirms activation.
+
+#### Option 2 — Shell Script (from git clone)
 
 ```bash
 git clone https://github.com/theneoai/skill-writer.git
@@ -184,7 +202,7 @@ That's it. The AI will ask 8 questions and generate a complete skill file.
 > ✓ `lean eval`       ✗ `/lean`
 > ✓ `evaluate this skill`  ✗ `/eval`
 
-#### Option 2 — Manual Copy (no script needed)
+#### Option 3 — Manual Copy (no script needed)
 
 ```bash
 # Claude
@@ -230,8 +248,8 @@ cp opencode/skill-writer.md ~/.config/opencode/skills/skill-writer.md
 
 **Install skill-writer (agent-driven):**
 ```
-"read https://raw.githubusercontent.com/theneoai/skill-writer/main/skill-framework.md and install"
-"read https://raw.githubusercontent.com/theneoai/skill-writer/main/skill-framework.md and install to claude"
+"read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-claude.md and install"
+"read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer.md and install"
 "安装 skill-writer"
 ```
 
