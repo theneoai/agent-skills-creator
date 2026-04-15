@@ -321,6 +321,23 @@ See `claude/refs/self-review.md §1` for full spec.
 
 ## §3  Mode Router
 
+**How it works**: Paste any natural-language request — the AI auto-detects the mode from keywords.
+You never need to type slash commands.
+
+| If your request mentions... | Mode triggered | Time |
+|-----------------------------|---------------|------|
+| create / build / new / 新建 + skill | CREATE | ~5 min (9 phases) |
+| lean / quick check / 快评 | LEAN | <5 s |
+| evaluate / score / 评测 | EVALUATE | ~60 s |
+| optimize / improve / 优化 | OPTIMIZE | ~2 min/round |
+| install skill-writer / 安装 | INSTALL | ~30 s |
+| share / publish / 发布 | SHARE | ~30 s |
+| collect session / 采集 | COLLECT | ~2 min |
+| graph view / dependencies / 技能图 | GRAPH | ~30 s |
+
+> **Ambiguous input?** The router shows a 3-option menu. You pick.
+> **ZH input?** All modes work in Chinese — keywords above accept Chinese equivalents.
+
 > **Cursor users — read this first**: Cursor's IDE command palette intercepts `/` key presses.
 > Do NOT type `/create`, `/lean`, `/eval`, etc. — they will open the IDE command palette,
 > not the skill framework. Instead, use **keyword phrases only**:
@@ -1345,6 +1362,29 @@ When VOLATILITY or PLATEAU detected AND score < 350 (FAIL), output structured di
 Strategy catalog: `claude/optimize/strategies.md`
 Convergence spec: `claude/refs/convergence.md`
 
+### Score Persistence (`.optimize-history.jsonl`)
+
+After each OPTIMIZE session, append one record to `.skill-audit/optimize-history.jsonl`:
+
+```json
+{
+  "timestamp": "<ISO-8601>",
+  "skill_name": "<name>",
+  "rounds_completed": 0,
+  "start_lean": 0,
+  "end_lean": 0,
+  "delta": 0,
+  "session_best": 0,
+  "verify_score": 0,
+  "strategy": "A|B|C|D",
+  "rollbacks": 0,
+  "outcome": "IMPROVED|PLATEAU|VOLATILITY|ROLLBACK"
+}
+```
+
+> `[CORE]` — Output this record as part of your response.
+> `[EXTENDED]` — Auto-write to `.skill-audit/optimize-history.jsonl` with file system access.
+
 ---
 
 ## §11  Self-Evolution (3-Trigger System)
@@ -1661,7 +1701,7 @@ read https://github.com/theneoai/skill-writer/releases/latest/download/skill-wri
 ```bash
 git clone https://github.com/theneoai/skill-writer.git && cd skill-writer
 ./install.sh              # auto-detect + install
-./install.sh --all        # all 6 platforms
+./install.sh --all        # all 8 platforms
 ./install.sh --platform claude
 ```
 
@@ -2298,7 +2338,11 @@ skill generation respectively.
 
 ---
 
-## §19  COLLECT Mode — Session Data Recording
+## §19  COLLECT + AGGREGATE Mode
+
+> **COLLECT** `[CORE]` — Record one session's skill performance as a structured artifact.
+> **AGGREGATE** `[EXTENDED — basic flow available]` — Synthesize 2+ COLLECT artifacts into ranked improvement priorities.
+> Both are invoked via COLLECT mode; AGGREGATE runs after you have multiple artifacts.
 
 > **COLLECT at a Glance**
 >

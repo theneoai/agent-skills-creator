@@ -217,6 +217,14 @@ jobs:
           cp skill-framework.md dist/skill-writer.md
           echo "✓ dist/skill-writer.md (universal / skill-framework)"
 
+          # MCP integration guide
+          if [[ -f "docs/mcp-integration.md" ]]; then
+            cp docs/mcp-integration.md dist/mcp-integration.md
+            echo "✓ dist/mcp-integration.md"
+          else
+            echo "⚠ docs/mcp-integration.md not found — skipped"
+          fi
+
           echo ""
           echo "Release assets:"
           ls -lh dist/

@@ -60,6 +60,11 @@ temp/
 .opencode/
 docs/superpowers/
 
+# skill-writer runtime artifacts (local machine state — not committed)
+.skill-audit/
+optimize-history.jsonl
+*.bak.*
+
 # Environment variables
 .env
 .env.local

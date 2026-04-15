@@ -230,8 +230,8 @@ cp opencode/skill-writer.md ~/.config/opencode/skills/skill-writer.md
 
 **Install skill-writer (agent-driven):**
 ```
-"read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install"
-"read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install to claude"
+"read https://raw.githubusercontent.com/theneoai/skill-writer/main/skill-framework.md and install"
+"read https://raw.githubusercontent.com/theneoai/skill-writer/main/skill-framework.md and install to claude"
 "安装 skill-writer"
 ```
 
@@ -958,7 +958,8 @@ skill-writer/
 │   ├── code-reviewer/             # GOLD 947/1000
 │   └── doc-generator/             # GOLD 895/1000
 ├── docs/                          # Documentation
-│   └── skill-creator-analysis.md  # Architecture analysis and design decisions
+│   ├── skill-creator-analysis.md  # Architecture analysis and design decisions
+│   └── mcp-integration.md         # MCP server integration guide
 ├── skill-framework.md             # Complete specification (source of truth)
 └── install.sh                     # Top-level dispatcher → delegates to platform scripts
 ```
@@ -976,7 +977,7 @@ skill-writer/
 │  │ CREATE Mode │  │    LEAN Mode     │  │   EVALUATE Mode     │  │
 │  │             │  │                  │  │                     │  │
 │  │ • Templates │  │ • 500-pt scoring │  │ • 4-Phase pipeline  │  │
-│  │ • Elicit 8Q │  │ • 17 checks      │  │ • 1000-pt scoring   │  │
+│  │ • Elicit 8Q │  │ • 16 checks      │  │ • 1000-pt scoring   │  │
 │  │ • 9-Phase   │  │ • [STATIC] +     │  │ • Tier-adjusted     │  │
 │  │   Workflow  │  │   [HEURISTIC]    │  │   Phase 2 weights   │  │
 │  └─────────────┘  └──────────────────┘  └─────────────────────┘  │

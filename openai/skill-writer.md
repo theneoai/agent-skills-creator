@@ -3,8 +3,8 @@ name: skill-writer
 version: "3.4.0"
 description: "Meta-skill framework: CREATE from templates, LEAN/EVALUATE/OPTIMIZE lifecycle, GRAPH mode for GoS bundle retrieval, COLLECT for collective skill evolution, Edit Audit Guard, Skill Registry v2.0 + SkillRouter weighted ranking, three-tier Hook routing layer (AGENTS.md + UserPromptSubmit Hook + triggers), Trigger Discovery pipeline, UTE 2.0 two-tier self-improvement, and deploy to 8 platforms including MCP."
 description_i18n:
-  en: "Full lifecycle meta-skill framework: CREATE from templates (3-tier hierarchy, negative boundaries, Skill Summary, optional graph: block), LEAN fast-eval + D8 Composability bonus, EVALUATE 4-phase 1000pt pipeline + OWASP Agentic Top 10, OPTIMIZE 8-dim loop + S10/S11/S12 graph strategies + co-evolutionary VERIFY, GRAPH mode (GoS bundle retrieval, health checks, dependency resolution), COLLECT with bundle context for collective evolution (SkillClaw + SkillRL-compatible), skill registry v2.0 + SHARE, SkillRouter weighted ranking + quality threshold gate, three-tier Hook routing (AGENTS.md + UserPromptSubmit Hook + trigger phrases), Trigger Discovery pipeline (AGGREGATE Rule 4), UTE 2.0 L1/L2, deploy to 8 platforms."
-  zh: "全生命周期元技能框架：支持可选graph:块的三层层级结构+负向边界+检索优化摘要的CREATE、带D8可组合性奖励的LEAN快速评测、OWASP Agentic Top 10安全检测的4阶段EVALUATE、含S10/S11/S12图策略+协同进化VERIFY的OPTIMIZE、GoS包检索+健康检查+依赖解析的GRAPH模式、含包上下文的SkillRL+SkillClaw兼容COLLECT、技能注册表v2.0+共享、SkillRouter加权排序+质量阈值门控、三层Hook路由（AGENTS.md+UserPromptSubmit Hook+触发词短语）、触发词发现流水线（AGGREGATE规则4）、UTE 2.0双层自进化、部署至8平台。"
+  en: "Full lifecycle meta-skill framework: CREATE from templates (3-tier hierarchy, negative boundaries, Skill Summary, optional graph: block), LEAN fast-eval (500pt triage), EVALUATE 4-phase 1000pt pipeline + OWASP Agentic Top 10, OPTIMIZE 8-dim loop + S10/S11/S12 graph strategies + co-evolutionary VERIFY, GRAPH mode (GoS bundle retrieval, health checks, dependency resolution), COLLECT with bundle context for collective evolution (SkillClaw + SkillRL-compatible), skill registry v2.0 + SHARE, SkillRouter weighted ranking + quality threshold gate, three-tier Hook routing (AGENTS.md + UserPromptSubmit Hook + trigger phrases), Trigger Discovery pipeline (AGGREGATE Rule 4), UTE 2.0 L1/L2, deploy to 8 platforms."
+  zh: "全生命周期元技能框架：支持可选graph:块的三层层级结构+负向边界+检索优化摘要的CREATE、LEAN快速评测（500分分诊）、OWASP Agentic Top 10安全检测的4阶段EVALUATE、含S10/S11/S12图策略+协同进化VERIFY的OPTIMIZE、GoS包检索+健康检查+依赖解析的GRAPH模式、含包上下文的SkillRL+SkillClaw兼容COLLECT、技能注册表v2.0+共享、SkillRouter加权排序+质量阈值门控、三层Hook路由（AGENTS.md+UserPromptSubmit Hook+触发词短语）、触发词发现流水线（AGGREGATE规则4）、UTE 2.0双层自进化、部署至8平台。"
 
 license: MIT
 author:
@@ -120,7 +120,7 @@ questions, direct API calls, or non-skill automation tasks — see Negative Boun
 | Deploy to platforms | `/install [platform]` | `/安装 [平台]` | <30s |
 | Record session data | `/collect` | `/采集` | ~10s |
 
-> **双语支持 / Bilingual**: All 6 modes work in English and Chinese. The router auto-detects
+> **双语支持 / Bilingual**: All 8 modes work in English and Chinese. The router auto-detects
 > your language — use `/eval` or `评测`, `create a skill` or `创建新技能`, interchangeably.
 > Cursor exception: use keyword phrases, not `/commands` (IDE intercepts `/` key).
 > See §3 Mode Router for the full keyword list in both languages.
@@ -167,8 +167,8 @@ questions, direct API calls, or non-skill automation tasks — see Negative Boun
 │               Requires file system access, hooks, or external store. │
 │               框架不依赖此类功能——它们增加持久化能力，但非必要。      │
 │                                                                     │
-│  不确定有没有后端？→ 假设只有 [CORE]，全部 6 个模式仍可正常使用。    │
-│  Unsure? → Assume [CORE] only. All 6 modes work fully.             │
+│  不确定有没有后端？→ 假设只有 [CORE]，全部 8 个模式均可正常使用（AGGREGATE 需要 [EXTENDED]）。    │
+│  Unsure? → Assume [CORE] only. All 8 modes work; AGGREGATE requires [EXTENDED].             │
 └─────────────────────────────────────────────────────────────────────┘
 
 ```
@@ -386,7 +386,7 @@ Not sure which mode to use. Please choose:
                Time: 2–5 min
 
   2. /lean    — Quick quality check on an existing skill (5 seconds)
-               Runs 17 structural checks. Tells you if the skill is well-formed.
+               Runs 16 structural checks. Tells you if the skill is well-formed.
                Best for: After writing a draft, before running full eval
                Time: ~5s
 
@@ -1592,9 +1592,18 @@ read https://github.com/theneoai/skill-writer/releases/latest/download/skill-wri
 ```bash
 git clone https://github.com/theneoai/skill-writer.git && cd skill-writer
 ./install.sh              # auto-detect + install
-./install.sh --all        # all 6 platforms
+./install.sh --all        # all 8 platforms
 ./install.sh --platform claude
 ```
+
+**`--bundle` flag** (deploy a GoS skill bundle instead of the framework itself):
+```
+/install --bundle          → install all skills in the active graph plan resolution
+/install --bundle api-tester  → install skill + its full dependency tree
+```
+> Use `--bundle` after `/graph plan` resolves a task's required skill set.
+> The install proceeds in topological order (deepest deps first).
+> See §20 GRAPH mode for bundle planning workflow.
 
 **Option D — Manual copy**
 Pre-built files are committed in `platforms/`; copy the right one to your platform's skills directory.
@@ -1626,6 +1635,18 @@ URL examples:
    - Fetch content from URL
    - Verify it contains YAML frontmatter with name: skill-writer
    - If verification fails → ABORT with message
+
+2b. SHA-256 VERIFY (external skills) `[CORE]`
+    IF skill came from an external URL (not local clone):
+      - Compute SHA-256 of fetched content
+      - IF skill YAML frontmatter contains use_to_evolve.content_hash:
+          Compare computed SHA-256 with content_hash
+          IF mismatch → ABORT: "Content hash mismatch — skill may have been tampered in transit"
+          Ask user: "Trust and install anyway? (yes/no)"
+          On "no" → ABORT
+      - ELSE:
+          Embed computed SHA-256 into use_to_evolve.content_hash before install
+          Log: ✓ SHA-256 computed and embedded
 
 2a. RESOLVE DEPENDENCIES (v3.2.0 — GoS dependency resolution) `[CORE]`
     IF skill has graph.depends_on entries in its YAML frontmatter:
