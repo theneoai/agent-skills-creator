@@ -63,10 +63,16 @@ Heuristic checks only. Fast, no LLM.
 | Quality Gates section with numeric thresholds | 10 | Thresholds must be numbers |
 | No `{{PLACEHOLDER}}` tokens remaining | 5 | Any remaining = hard deduction |
 | No TODO / FIXME markers | 5 | Advisory |
+| `generation_method` field present and valid | 0 | Advisory only — missing → P2 INFO |
+| `validation_status` field present and valid | 0 | Advisory only — missing → P2 INFO |
 
 > **v3.1.0 Phase 1 changes**: Added `triggers`, `skill_tier`, and **Negative Boundaries** checks
 > (+15 pts new; Quality Gates reduced from 15→10; no-placeholders reduced from 15→5; file-size
 > advisory removed). Total still 100 pts.
+>
+> **v3.3.0 Phase 1 note**: `generation_method` and `validation_status` fields are advisory (0 pts
+> each) in Phase 1 — their absence emits INFO; they affect routing score and SHARE gate (§12 of
+> skill-registry.md) but do not penalize the certification score itself.
 
 **Hard deduction**: If `{{PLACEHOLDER}}` found → Phase1 score capped at 70, WARNING issued.
 **Hard deduction**: If Negative Boundaries section missing → Phase1 deduct 10 pts, P2 advisory added.
@@ -198,6 +204,103 @@ Scored in Pass 3 (Reconciliation). Integrates all previous phases.
 - P0 security violation → Phase 4 = 0, overall = FAIL, status = ABORT
 - F1 < 0.80 → Phase 4 capped at 80 points regardless of other scores
 - UNRESOLVED review outcome → Phase 4 capped at 120 points
+
+### §6.4  Behavioral Verifier (Phase 4 sub-step, v3.4.0)
+
+> **Research basis**: EvoSkills (arxiv:2604.01687) — independent verifier co-evolving alongside
+> generator eliminates generator bias and lifts pass rates from 32% to 75%. The same model that
+> generates cannot reliably self-verify without informational isolation.
+
+After the standard Phase 4 gates, run a **Behavioral Verifier** step:
+
+```
+BEHAVIORAL VERIFIER SEQUENCE:
+  1. GENERATE TEST CASES
+     From the skill's Skill Summary and Negative Boundaries, auto-generate:
+       - 3 positive test cases (inputs that SHOULD trigger the skill correctly)
+       - 2 negative test cases (inputs that MUST NOT trigger or must be rejected)
+     Use ONLY the skill's documented interface — no knowledge of optimization history.
+
+  2. EXECUTE TESTS (simulated)
+     For each test case, predict the skill's output given its documented behavior.
+     Record: {test_id, input, expected, predicted, pass: bool}
+
+  3. SCORE
+     behavioral_pass_rate = passed_tests / total_tests
+     behavioral_score = behavioral_pass_rate × 20   (max 20 pts bonus in Phase 4)
+
+  4. REPORT
+     behavioral_verifier: {
+       tests_generated: 5,
+       tests_passed: 4,
+       pass_rate: 0.80,
+       bonus_pts: 16,
+       failed_cases: [<description of failing test>]
+     }
+```
+
+**Behavioral Verifier scoring adjustments**:
+- `pass_rate ≥ 0.80` → +20 pts bonus (max, added to Phase 4 total — ceiling: 220 pts)
+- `pass_rate 0.60–0.79` → +10 pts
+- `pass_rate < 0.60` → 0 pts + WARNING: "Behavioral verifier < 60% — skill may not perform reliably on real inputs"
+- If user provided explicit test samples (`/eval --pragmatic`): use those instead of auto-generated cases (higher reliability)
+
+> **Note**: The Behavioral Verifier is a supplementary check. It does NOT change certification
+> tier boundaries (PLATINUM/GOLD/etc.) — it adds up to 20 bonus pts to Phase 4. EVALUATE total
+> maximum becomes 1020 pts when behavioral verifier passes fully.
+
+---
+
+## §6.5  Pragmatic Test Phase (Optional — `[CORE]` with user samples)
+
+> **Research basis**: "Skills in the Wild" (arxiv:2604.04323) — "skill benefits are fragile:
+> performance gains degrade consistently as settings become more realistic." High theoretical
+> scores do not predict real-world task success. The Pragmatic Test Phase bridges this gap.
+>
+> Trigger: `/eval --pragmatic` (user must supply 3–5 task samples) OR automatically after
+> Phase 4 when `validation_status == "lean-only"` and user is about to SHARE.
+
+### Pragmatic Test Execution
+
+```
+USER PROVIDES:
+  3–5 real task examples in this format:
+    Sample 1: "<actual input I would give the skill>"
+              Expected: "<what I expect the skill to do>"
+
+AI EXECUTES:
+  For each sample:
+  1. Apply skill as if user said those exact words
+  2. Produce expected output (following skill's documented behavior)
+  3. Self-assess: does output match the user's stated expectation?
+  4. Classify: PASS | PARTIAL | FAIL
+  5. If FAIL: note which skill section failed (routing? workflow? error handling?)
+
+OUTPUT:
+  pragmatic_success_rate = PASS_count / total_samples
+  failure_modes = [list of failing sections]
+```
+
+### Pragmatic Test Score Tiers
+
+| pragmatic_success_rate | Label | Deployment Action |
+|------------------------|-------|------------------|
+| ≥ 80% (4–5/5 pass) | `PRAGMATIC_GOOD` | Deploy cleared |
+| 60–79% (3/5 pass) | `PRAGMATIC_ADEQUATE` | Deploy with advisory |
+| 40–59% (2/5 pass) | `PRAGMATIC_WEAK` | Optimize against failing samples before deploy |
+| < 40% (0–1/5 pass) | `PRAGMATIC_FAIL` | Deploy blocked — skill not fit for stated purpose |
+
+### Pragmatic Test Interaction with Certification
+
+Pragmatic Test does NOT modify the 1000-pt theoretical score. It produces an independent
+`pragmatic_success_rate` metric shown alongside the certification tier:
+
+```
+THEORETICAL: 920/1000 → GOLD
+PRAGMATIC:   3/5 tasks passed (60%) → PRAGMATIC_ADEQUATE
+VERDICT:     Certified GOLD for structural quality. Real-world utility: ADEQUATE.
+             Consider optimizing against failing sample #2 (error handling) and #4 (edge case).
+```
 
 ---
 
@@ -416,10 +519,12 @@ Before running Phase 1–4, apply LEAN heuristics (§6 of skill-writer.md).
 ```
 SKILL EVALUATION REPORT
 =======================
-Skill:      <name> v<version>
-Evaluated:  <ISO-8601>
-Evaluator:  skill-writer v3.1.0
-Skill Tier: <planning | functional | atomic>   (Phase 2 weights adjusted per rubrics.md §8)
+Skill:             <name> v<version>
+Evaluated:         <ISO-8601>
+Evaluator:         skill-writer v3.4.0
+Skill Tier:        <planning | functional | atomic>   (Phase 2 weights adjusted per §8)
+Generation Method: <auto-generated | human-authored | hybrid>
+Validation Status: <unvalidated | lean-only | full-eval | pragmatic-verified>
 
 PHASE SCORES
   Phase 1 — Parse & Validate:   XX / 100
@@ -435,16 +540,27 @@ PHASE SCORES
     Variance Gate:    XX/40    F1 Gate:    XX/40
     Security Scan:    XX/60    MRR Gate:   XX/30
     Consensus:        XX/30
+  Phase 4 Behavioral Verifier:  XX / 20  (bonus)
+    Tests Generated:   5    Tests Passed: X
+    Pass Rate:         0.XX  [PASS|WARN|FAIL]
 
-TOTAL SCORE:     XXX / 1000   (+ XXX D8 bonus / 20 if graph: declared)
+TOTAL SCORE:     XXX / 1000   (+ XX behavioral bonus / 20 + XX D8 bonus / 20)
 VARIANCE:        X.XX  (threshold for tier: <N)
 F1:              0.XX  (threshold: ≥ 0.90)  [PASS|FAIL]
 MRR:             0.XX  (threshold: ≥ 0.85)  [PASS|FAIL]
 TRIGGER ACC:     0.XX  (threshold: ≥ 0.90)  [PASS|FAIL]
 
 SECURITY SCAN
+  Source:  self-authored | registry-pull | url-fetch
+  Trust:   TRUSTED | VERIFIED | UNVERIFIED | LOW_TRUST | UNTRUSTED
   P0: [CLEAR | VIOLATION: <cwe> at <location>]
   P1: [CLEAR | <count> warnings, −<N> pts]
+
+PRAGMATIC TEST   (if --pragmatic flag or auto-triggered pre-SHARE)
+  Samples Tested:       X / 5
+  Tasks Passed:         X
+  pragmatic_success_rate: 0.XX  [PRAGMATIC_GOOD|ADEQUATE|WEAK|FAIL]
+  Failing Modes:        [none | <section names>]
 
 CONSENSUS MATRIX
   | Dimension       | Pass 1 | Pass 2 | Pass 3 | Consensus   |
@@ -454,7 +570,7 @@ CONSENSUS MATRIX
 ISSUES
   ERROR:   <blocking issues — must fix before delivery>
   WARNING: <advisory issues — document or fix>
-  INFO:    <informational notes>
+  INFO:    <informational notes — e.g. generation_method not declared>
 
 D8 COMPOSABILITY   (LEAN bonus — optional)
   graph_block_present:         X/5   [graph: block absent → 0 pts, no penalty]
@@ -463,6 +579,7 @@ D8 COMPOSABILITY   (LEAN bonus — optional)
   D8 TOTAL:                    X/20
 
 CERTIFICATION TIER:  PLATINUM | GOLD | SILVER | BRONZE | FAIL
+PRAGMATIC LABEL:     PRAGMATIC_GOOD | PRAGMATIC_ADEQUATE | PRAGMATIC_WEAK | PRAGMATIC_FAIL | NOT_TESTED
 STATUS:              CERTIFIED | TEMP_CERT | LEAN_CERT | HUMAN_REVIEW | ABORT
 NEXT ACTION:         <recommendation>
 ```

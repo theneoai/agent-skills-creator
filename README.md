@@ -2,9 +2,9 @@
 
 A cross-platform meta-skill for creating, evaluating, and optimizing AI assistant skills through natural language interaction.
 
-[![Version](https://img.shields.io/badge/version-3.3.0-blue.svg)](https://github.com/theneoai/skill-writer)
+[![Version](https://img.shields.io/badge/version-3.4.0-blue.svg)](https://github.com/theneoai/skill-writer)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Platforms](https://img.shields.io/badge/platforms-3-orange.svg)](#supported-platforms)
+[![Platforms](https://img.shields.io/badge/platforms-8-orange.svg)](#supported-platforms)
 
 ## What is a skill?
 
@@ -30,12 +30,37 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 - **Quality Assurance**: 1000-point scoring system with certification tiers
 - **Tier-Aware Evaluation**: Tier-adjusted scoring weights for `planning` / `functional` / `atomic` skills (SkillX three-tier hierarchy)
 - **Reliable LEAN Scoring**: 17 checks split into `[STATIC]` (deterministic, 335 pts, zero variance) and `[HEURISTIC]` (LLM-judged, 165 pts) — score variance documented per phase
-- **Security Built-In**: CWE-based + OWASP Agentic Skills Top 10 (ASI01–ASI10) detection
-- **Continuous Improvement**: Automated optimization with convergence detection + co-evolutionary VERIFY step
-- **Self-Evolution**: UTE (Use-to-Evolve) protocol for automatic skill improvement (L1 enforced + L2 collective)
+- **Security Built-In**: CWE-based + OWASP Agentic Skills Top 10 (ASI01–ASI10) detection + supply-chain trust verification for pulled skills
+- **Continuous Improvement**: Automated optimization with convergence detection + co-evolutionary VERIFY step + persistent score history
+- **Self-Evolution**: UTE (Use-to-Evolve) L1 in-session always active; L2 collective with hooks/backend
+- **Honest Skill Labeling**: `generation_method` + `validation_status` fields prevent unvalidated skills from silently reaching production
+- **Behavioral Verifier**: Optional task-sample testing produces a `pragmatic_success_rate` independent of theoretical score
 - **Multi-Pass Self-Review**: Generate/Review/Reconcile quality protocol
-- **Graph of Skills (GoS)**: Typed dependency graph between skills — bundle retrieval, dependency resolution, D8 Composability dimension (v3.2.0)
+- **Graph of Skills (GoS)**: Typed dependency graph with minimum viable `depends_on` runtime; full bundle retrieval for v4.0+
 - **Bilingual**: Full English + Chinese (中文) support for all modes. Framework documentation (refs/ companion files) is in English.
+
+### Feature Availability — CORE vs. EXTENDED
+
+Not all features require infrastructure. This table shows what works out-of-the-box vs. what needs hooks or a backend.
+
+| Feature | Availability | Requirement |
+|---------|-------------|-------------|
+| CREATE / LEAN / EVALUATE | `[CORE]` | None — works in any LLM session |
+| OPTIMIZE (up to 20 rounds) | `[CORE]` | None |
+| INSTALL (local platform deploy) | `[CORE]` | File system write access |
+| Security scan (self-authored skills) | `[CORE]` | None |
+| UTE L1 — in-session feedback + micro-patches | `[CORE]` | None |
+| COLLECT — output Session Artifact JSON | `[CORE]` | None (save manually) |
+| Pragmatic Test Phase (task-sample validation) | `[CORE]` | User provides 3–5 task samples |
+| GoS `depends_on` dependency resolution | `[CORE]` | `graph:` block in skill YAML |
+| UTE L1 — cross-session invocation counts | `[EXTENDED]` | Claude Code hooks (`ute-tracker.js`) |
+| UTE L2 — collective multi-user evolution | `[EXTENDED]` | AGGREGATE pipeline + shared backend |
+| SHARE — push/pull to remote registry | `[EXTENDED]` | S3 / OSS / HTTP backend |
+| COLLECT — auto-write artifacts to disk | `[EXTENDED]` | File system hooks |
+| Trust-chain verification for pulled skills | `[EXTENDED]` | Registry with SHA-256 signing |
+| GoS full bundle retrieval + health checks | `[EXTENDED]` | `builder/src/core/graph.js` (v4.0+) |
+
+> **Unsure?** Assume `[CORE]` only. All 8 modes work fully without any backend — `[EXTENDED]` features add persistence and collective learning but are never required.
 
 ## Supported Platforms
 
@@ -58,11 +83,15 @@ All platforms receive the same skill file, companion files (refs/, templates/, e
 |---------|--------|----------|----------|--------|--------|--------|------|--------|
 | All 8 modes | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Companion files | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| UTE self-evolution | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| UTE L1 (in-session) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| UTE L1 cross-session | ✅ (hooks) | — | — | — | — | — | — | — |
+| UTE L2 collective | ✅ (backend) | ✅ (backend) | ✅ (backend) | — | — | — | — | — |
 | Routing file | CLAUDE.md | AGENTS.md | AGENTS.md | .mdc rules | GEMINI.md | AGENTS.md | AGENTS.md | AGENTS.md |
 | Platform metadata | — | openclaw block | triggers footer | alwaysApply | — | — | bilingual | — |
 | Hook injection | ✅ settings.json | — | — | — | — | — | — | — |
 | Keyword-only triggers | — | — | — | ✅ (IDE intercepts /) | — | — | — | — |
+
+> **UTE L1 in-session** works on all platforms with no configuration — the AI observes feedback and proposes micro-patches within the conversation. **UTE L1 cross-session** (persistent invocation counts and cadence gates) requires Claude Code hooks; see `refs/use-to-evolve.md §8` for setup. **UTE L2 collective** requires a shared backend (S3/OSS/HTTP) and the AGGREGATE pipeline.
 
 ## Quick Start
 
@@ -173,6 +202,31 @@ Generates new skills from scratch using structured templates and elicitation.
 8. **INJECT UTE**: Add Use-to-Evolve self-improvement hooks
 9. **DELIVER**: Output final skill file with activation instructions
 
+#### Failure-Driven CREATE (Recommended for Domain-Specific Skills)
+
+Instead of starting from scratch, you can feed recent task failures directly to CREATE:
+
+```
+/create --from-failures
+```
+
+You'll be prompted to paste 1–3 conversation snippets where the AI produced incorrect or incomplete results. CREATE extracts the recurring failure patterns and uses them to pre-fill the Workflow, Error Handling, and Negative Boundaries sections — resulting in a domain-grounded skill rather than a generic template output.
+
+> **Research basis**: SkillForge (arxiv:2604.08618) shows that domain-contextualized skill creation (grounded in failure trajectories) produces skills significantly better aligned with real-world task requirements than template-only generation.
+
+#### Honest Skill Labeling
+
+Every generated skill includes two machine-readable fields in its YAML frontmatter:
+
+```yaml
+generation_method: "auto-generated"   # auto-generated | human-authored | hybrid
+validation_status: "lean-only"         # unvalidated | lean-only | full-eval | pragmatic-verified
+```
+
+These fields are checked at SHARE and INSTALL time. Skills marked `auto-generated + lean-only` trigger a deployment warning and require at minimum a full EVALUATE before being pushed to a shared registry. This prevents unvalidated skills from silently reaching production.
+
+> **Research basis**: SkillsBench (arxiv:2602.12670) found that self-generated skills provide zero average benefit and can degrade performance. Explicit labeling ensures users know what they are deploying.
+
 #### What's in the Generated Skill File
 
 Every skill file includes two mandatory sections that new users often wonder about:
@@ -269,12 +323,31 @@ Assesses skill quality with rigorous 1000-point scoring and certification.
 
 | Phase | Points | Focus | Variance |
 |-------|--------|-------|---------|
-| Phase 1: Structural | 100 | YAML syntax, format, metadata | ±0–5 pts |
+| Phase 1: Structural | 100 | YAML syntax, format, metadata, `generation_method`/`validation_status` fields | ±0–5 pts |
 | Phase 2: Content Quality | 300 | Clarity, completeness, accuracy, safety, maintainability, usability | ±15–30 pts |
 | Phase 3: Runtime Tests | 400 | Unit, integration, sandbox, error handling, performance, security tests | ±20–40 pts |
-| Phase 4: Certification | 200 | Documentation, coverage, quality, compatibility, review | ±5–10 pts |
+| Phase 4: Certification | 200 | Variance gate, security scan, F1/MRR gates, behavioral verifier, consensus | ±5–10 pts |
 
 > **Total score variance**: ±30–60 pts across runs. Re-run if the score falls in a confidence zone (see below).
+
+#### Pragmatic Test Phase (Optional — recommended before production deploy)
+
+After the 4-phase pipeline, you can trigger an additional Pragmatic Test by providing real task samples:
+
+```
+/eval --pragmatic  (then provide 3–5 actual task examples)
+```
+
+The Pragmatic Test executes the skill against your samples and reports a **pragmatic_success_rate** independently of the theoretical score:
+
+```
+THEORETICAL SCORE:  920/1000  →  GOLD
+PRAGMATIC RESULTS:  4/5 tasks passed  (80%)  →  PRAGMATIC_GOOD
+```
+
+This closes the gap between "looks good on paper" and "works in my actual workflow". If `pragmatic_success_rate < 60%`, deployment is blocked until the skill is optimized against the failing samples.
+
+> **Research basis**: "Skills in the Wild" (arxiv:2604.04323) found that 39 of 49 evaluated skills yielded zero pass-rate improvement in realistic settings — high theoretical scores do not guarantee real-world utility.
 
 #### Tier-Adjusted Phase 2 Weights
 
@@ -743,7 +816,7 @@ Self-improvement protocol that enables skills to evolve through usage. Two-tier 
 ```yaml
 use_to_evolve:
   enabled: true
-  injected_by: "skill-writer v3.2.0"
+  injected_by: "skill-writer v3.4.0"
   injected_at: "2026-04-11"
   check_cadence: {lightweight: 10, full_recompute: 50, tier_drift: 100}
   micro_patch_enabled: true
@@ -753,6 +826,8 @@ use_to_evolve:
   pending_patches: 0
   total_micro_patches_applied: 0
   cumulative_invocations: 0
+  generation_method: "auto-generated"   # auto-generated | human-authored | hybrid
+  validation_status: "lean-only"        # unvalidated | lean-only | full-eval | pragmatic-verified
 ```
 
 ### Cadence-Gated Health Checks

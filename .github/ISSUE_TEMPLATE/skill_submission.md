@@ -26,11 +26,15 @@ Describe the problem this skill solves and why it's valuable.
 
 ## Evaluation Results
 <!-- 评估结果 -->
-- [ ] LEAN score ≥ 350
-- [ ] Full score ≥ 700
-- [ ] No P0 issues
-- [ ] 2+ examples provided
-- [ ] Bilingual support (Chinese/English)
+- [ ] LEAN score ≥ 350 (report score: ___/500)
+- [ ] Full EVALUATE score ≥ 700 (report score: ___/1000)
+- [ ] No P0 security issues (CWE-798, CWE-89, CWE-78)
+- [ ] 2+ examples provided (EN + ZH triggers shown)
+- [ ] Bilingual support (Chinese/English: Skill Summary + Negative Boundaries)
+- [ ] `generation_method` field set (`auto-generated` / `human-authored` / `hybrid`)
+- [ ] `validation_status` field set (`lean-only` / `full-eval` / `pragmatic-verified`)
+- [ ] All 13 `use_to_evolve` fields present
+- [ ] Behavioral Verifier pass_rate ≥ 0.60 (report rate: ___)
 
 ## Certification Tier
 <!-- 认证等级 -->

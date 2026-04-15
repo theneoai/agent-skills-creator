@@ -1,14 +1,16 @@
 # skill-writer: Architecture Analysis & Refactoring Guide
 
-> Analysis date: 2026-04-14 | Version: v3.3.0 | Branch: skill-creator-analysis
+> Analysis date: 2026-04-15 | Version: v3.4.0 | Branch: skill-creator-analysis
 
 ---
 
 ## 1. Executive Summary
 
-This document captures the key design principles of skill-writer, a gap analysis against the Anthropic skills design philosophy, and the rationale behind the v3.3.0 refactoring to a simplified 3-platform direct-file architecture.
+This document captures the key design principles of skill-writer, a gap analysis against the Anthropic skills design philosophy, and the rationale behind the v3.3.0 refactoring to a simplified 8-platform direct-file architecture, updated through v3.4.0.
 
-**Key outcome**: Removed 2,400+ lines of Node.js build pipeline (builder/), 4 platforms (Cursor, Gemini, OpenAI, MCP, A2A), and replaced them with 3 self-contained platform directories — each a direct-usable skill document + companion files + install script. Zero build steps required.
+**Key outcome (v3.3.0)**: Removed 2,400+ lines of Node.js build pipeline (builder/), replaced with 8 self-contained platform directories (claude, openclaw, opencode, cursor, gemini, openai, kimi, hermes) — each a direct-usable skill document + companion files + install script. Zero build steps required.
+
+**v3.4.0 additions**: Honest Skill Labeling (`generation_method` + `validation_status` YAML fields), Behavioral Verifier (Phase 4 generator-bias elimination), Pragmatic Test Phase (`/eval --pragmatic`), Failure-Driven CREATE (`--from-failures`), Supply Chain Trust Verification (SHA-256 + trust tiers), GoS Minimum Viable Runtime [CORE], optimization strategies S13/S14, and anti-pattern categories G (auto-generated) + H (supply chain).
 
 ---
 
@@ -134,7 +136,7 @@ Research basis: SkillNet (arxiv:2603.04448) — typed dependency edges between s
 ```
 skill-writer/
 ├── claude/
-│   ├── skill-writer.md    ← Direct-use skill (SKILL.md v3.3.0 compliant)
+│   ├── skill-writer.md    ← Direct-use skill (SKILL.md v3.4.0 compliant)
 │   ├── CLAUDE.md          ← Routing rules (idempotent skill-writer:start/end block)
 │   └── install.sh         ← Installs to ~/.claude/{skills,refs,templates,eval,optimize}/
 │
@@ -155,7 +157,7 @@ skill-writer/
 ├── examples/              ← User-facing skill examples
 ├── skill-framework.md     ← Complete specification (reference document)
 ├── install.sh             ← Top-level dispatcher → delegates to platform install.sh
-└── README.md              ← Updated: 3-platform quick-start
+└── README.md              ← Updated: 8-platform ecosystem overview
 ```
 
 **Removed**: `builder/` (Node.js), `platforms/` (generated output), `package.json`, `install-claude.sh`
@@ -164,18 +166,16 @@ skill-writer/
 
 ## 6. Platform-Specific Differences
 
-| Feature | Claude | OpenClaw | OpenCode |
-|---------|--------|----------|----------|
-| Routing file | CLAUDE.md | AGENTS.md | AGENTS.md |
-| Install path | ~/.claude/ | ~/.openclaw/ | ~/.config/opencode/ |
-| Platform metadata | (none extra) | `metadata.openclaw` YAML block | Triggers footer |
-| LoongFlow §5 | In skill body | In skill body | In skill body |
-| Self-Review §13 | In skill body | In skill body | In skill body |
-| UTE tracking | Full 11 fields | Full 11 fields | Full 11 fields |
-| Hook routing | UserPromptSubmit + settings.json | AGENTS.md block | AGENTS.md block |
-| Companion files | refs/ templates/ eval/ optimize/ | Same | Same |
+| Feature | Claude | OpenClaw | OpenCode | Cursor | Gemini | OpenAI | Kimi | Hermes |
+|---------|--------|----------|----------|--------|--------|--------|------|--------|
+| Routing file | CLAUDE.md | AGENTS.md | AGENTS.md | `.mdc` alwaysApply | (in-skill) | (in-skill) | (in-skill) | (in-skill) |
+| Install path | ~/.claude/ | ~/.openclaw/ | ~/.config/opencode/ | .cursor/rules/ | ~/.gemini/ | project dir | ~/.config/kimi/ | ~/.hermes/ |
+| Platform metadata | — | `metadata.openclaw` YAML | Triggers footer | MDC header | — | — | — | — |
+| UTE tracking | Full 13 fields | Full 13 fields | Full 13 fields | Full 13 fields | Full 13 fields | Full 13 fields | Full 13 fields | Full 13 fields |
+| Hook routing | UserPromptSubmit + settings.json | AGENTS.md block | AGENTS.md block | alwaysApply | — | — | — | — |
+| Companion files | refs/ templates/ eval/ optimize/ | Same | Same | Same | Same | Same | Same | Same |
 
-All three platforms are functionally equivalent. Platform differences are minimal and contained to frontmatter and routing file format.
+All 8 platforms are functionally equivalent (v3.4.0). Platform differences are minimal and contained to frontmatter additions and routing file format.
 
 ---
 
@@ -186,7 +186,7 @@ All three platforms are functionally equivalent. Platform differences are minima
 | `skill_tier: planning` | ✓ | Added to frontmatter |
 | `triggers.en` ≥ 3 phrases | ✓ | 8 EN triggers (one per mode) |
 | `triggers.zh` ≥ 2 phrases | ✓ | 5 ZH triggers |
-| `use_to_evolve` 11 fields | ✓ | Full 11-field format |
+| `use_to_evolve` 13 fields | ✓ | Full 13-field format (incl. generation_method + validation_status, v3.4.0) |
 | `## Skill Summary` | ✓ | ≤8 dense sentences, WHAT/WHEN/WHO/NOT-FOR |
 | `## §2 Negative Boundaries` | ✓ | 5 anti-cases with alternatives |
 | Content < 500 lines | ✗ | Framework is a meta-document; 700+ lines justified |
@@ -216,7 +216,49 @@ All three platforms are functionally equivalent. Platform differences are minima
 
 ---
 
-## 9. Migration Guide
+## 9. v3.4.0 Additions (April 2026)
+
+The v3.4.0 release built on the v3.3.0 simplified architecture with quality and security improvements:
+
+### 9.1 Honest Skill Labeling
+
+**Problem**: Auto-generated skills were being deployed to production with no indication of their validation level. Research ("Skills in the Wild") showed 39/49 auto-generated skills had zero real-world benefit despite passing internal evaluations.
+
+**Solution**: Two new YAML fields in `use_to_evolve`:
+- `generation_method`: `auto-generated | human-authored | hybrid` — provenance tracking
+- `validation_status`: `unvalidated | lean-only | full-eval | pragmatic-verified` — evaluation milestone
+
+These affect SkillRouter ranking (lower source_quality_score for unvalidated skills) and SHARE gate (hard block on unvalidated, warning on lean-only).
+
+### 9.2 Behavioral Verifier (Generator Bias Elimination)
+
+**Problem**: LLM self-evaluation creates generator bias — the same model that created the skill evaluates it, inflating scores.
+
+**Solution**: EVALUATE Phase 4 auto-generates 5 test cases (3 positive + 2 negative) from the Skill Summary in informational isolation from optimization history. Pass_rate ≥ 0.80 → +20 pts BEHAVIORAL_VERIFIED bonus. See `eval/rubrics.md §6.4`.
+
+### 9.3 Pragmatic Test Phase
+
+**New mode**: `/eval --pragmatic` — tests against 3–5 real user tasks, producing `pragmatic_success_rate` independent of theoretical LEAN/EVALUATE scores. WEAK (<60%) or FAIL (<40%) results block SHARE. See `eval/rubrics.md §6.5`.
+
+### 9.4 Failure-Driven CREATE
+
+**New mode variant**: `/create --from-failures` — uses observed failure trajectories as input to generate skills targeting specific failure patterns (SkillForge: arxiv:2604.08618).
+
+### 9.5 Supply Chain Trust
+
+**Problem**: ToxicSkills/ClawHavoc research shows 26.1% of public skills have OWASP vulnerabilities.
+
+**Solution**: SHA-256 signature verification + trust tier system (TRUSTED/VERIFIED/UNVERIFIED/LOW_TRUST/UNTRUSTED) in `refs/security-patterns.md §6`. INSTALL mode runs security scan before loading external skills.
+
+### 9.6 GoS Minimum Viable Runtime [CORE]
+
+**Problem**: `builder/src/core/graph.js` was referenced in docs but never implemented (v4.0+ roadmap). This created a false impression that GoS features were functional.
+
+**Solution**: A [CORE] 5-step MVR algorithm was documented in `refs/skill-graph.md §2a` — an LLM can execute depends_on chain resolution from YAML reading alone, without any builder infrastructure. All full-graph features are annotated as [EXTENDED].
+
+---
+
+## 10. Migration Guide
 
 If you had skill-writer installed from v3.2.0 or earlier:
 

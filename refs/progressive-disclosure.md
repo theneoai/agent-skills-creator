@@ -77,7 +77,7 @@ from its system prompt — Hook injection makes it an active, per-message signal
 | OpenCode | `settings.json` → `hooks.UserPromptSubmit` | ✅ step 4f |
 | Cursor | Not supported (IDE intercepts hooks) | ❌ use AGENTS.md only |
 | Gemini | Not yet supported | ❌ use AGENTS.md only |
-| MCP | Server-side middleware | 🔲 planned v3.4.0 |
+| MCP | Server-side middleware | 🔲 platform file available; hook wiring not yet automated |
 
 **Example hook output** (≤ 50 tokens):
 ```
@@ -238,11 +238,11 @@ For Skill Writer INSTALL (three-tier routing model, v3.3.0):
       (Claude/OpenCode only; skipped with note for other platforms)
 - [ ] **Tier 3 — Triggers**: `triggers.en/zh` populated (≥ 3 EN, ≥ 2 ZH phrases)
 
-For Skill Writer builds (`npm run build`):
+For Skill Writer INSTALL validation (no build step — v3.3.0+):
 
-- [ ] `validate.js` emits WARNING for skills >500 lines
-- [ ] MCP Server Card generated at `.well-known/mcp-server-card.json` (Layer 1 for MCP)
-- [ ] MCP manifest `tools[].description` used as advertise stub
+- [ ] `build-and-release.yml` CI validates all platform skill files automatically on push
+- [ ] Skills > 500 lines emit WARNING during EVALUATE Phase 1 (line count check)
+- [ ] MCP server card (`mcp/skill-writer.md`) uses `description` as advertise stub
 
 ---
 

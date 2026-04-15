@@ -61,12 +61,12 @@ Patches are proposed to the user; applied only on confirmation.
 
 ## §2  YAML Frontmatter Block
 
-Every skill with UTE enabled **must** include a `use_to_evolve:` block in its YAML frontmatter with all 11 fields:
+Every skill with UTE enabled **must** include a `use_to_evolve:` block in its YAML frontmatter with all 13 fields:
 
 ```yaml
 use_to_evolve:
   enabled: true                          # (bool) UTE active
-  injected_by: "skill-writer v2.0.0"    # (string) injector version
+  injected_by: "skill-writer v3.4.0"    # (string) injector version
   injected_at: "2026-04-01"             # (ISO-8601) injection date
   check_cadence:                         # (dict) invocation thresholds
     lightweight: 10                      #   lightweight check every N invocations
@@ -79,9 +79,11 @@ use_to_evolve:
   pending_patches: 0                    # (int) staged but unapplied patches
   total_micro_patches_applied: 0        # (int) cumulative patches applied
   cumulative_invocations: 0             # (int) total invocations (cadence counter)
+  generation_method: "human-authored"   # (string) auto-generated | human-authored | hybrid
+  validation_status: "lean-only"        # (string) unvalidated | lean-only | full-eval | pragmatic-verified
 ```
 
-> **Note**: Phase 4 certification checks that all 11 fields are present. Missing any field fails the UTE injection check (−60 points).
+> **Note**: Phase 4 certification checks that all 13 fields are present. Missing any field fails the UTE injection check (−60 points). The two v3.4.0 fields (`generation_method`, `validation_status`) affect SkillRouter ranking and SHARE gate behavior — see `refs/security-patterns.md §6` for supply chain trust integration.
 
 ---
 

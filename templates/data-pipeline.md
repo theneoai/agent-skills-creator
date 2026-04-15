@@ -31,11 +31,25 @@ created: "{{DATE}}"
 updated: "{{DATE}}"
 type: data-pipeline
 
+# Skill tier (SkillX three-tier hierarchy — arxiv:2604.04804)
+skill_tier: {{TIER}}          # planning | functional | atomic
+# data-pipeline skills are typically: functional (ETL pipeline) or atomic (single transform)
+
 tags:
   - data
   - pipeline
   - {{DATA_DOMAIN}}
   - {{TAG_EXTRA}}
+
+# Trigger phrases (3–8 canonical user phrasings that invoke this skill)
+triggers:
+  en:
+    - "{{TRIGGER_PHRASE_EN_1}}"
+    - "{{TRIGGER_PHRASE_EN_2}}"
+    - "{{TRIGGER_PHRASE_EN_3}}"
+  zh:
+    - "{{TRIGGER_PHRASE_ZH_1}}"
+    - "{{TRIGGER_PHRASE_ZH_2}}"
 
 interface:
   input: {{INPUT_FORMAT}}       # e.g. csv, json, plain-text, multimodal
@@ -50,7 +64,7 @@ pipeline:
 
 use_to_evolve:
   enabled: true
-  injected_by: "skill-writer v2.1.0"
+  injected_by: "skill-writer v3.4.0"
   injected_at: "{{DATE}}"
   check_cadence: {lightweight: 10, full_recompute: 50, tier_drift: 100}
   micro_patch_enabled: true
@@ -60,6 +74,29 @@ use_to_evolve:
   pending_patches: 0
   total_micro_patches_applied: 0
   cumulative_invocations: 0
+  generation_method: "auto-generated"   # auto-generated | human-authored | hybrid
+  validation_status: "lean-only"        # unvalidated | lean-only | full-eval | pragmatic-verified
+
+# Graph of Skills — optional (v3.2.0, research: SkillNet arxiv:2603.04448)
+# graph:
+#   depends_on:
+#     - id: "{{GRAPH_DEP_ID}}"
+#       name: "{{GRAPH_DEP_NAME}}"
+#       required: true
+#   provides:
+#     - "{{GRAPH_OUTPUT_TYPE}}"   # e.g. "validated-dataset", "transformed-records"
+#   consumes:
+#     - "{{GRAPH_INPUT_TYPE}}"    # e.g. "raw-csv", "unstructured-log-data"
+---
+
+## Skill Summary
+
+<!-- REQUIRED — ≤5 sentences: WHAT / WHEN / WHO / NOT-FOR.
+     SkillRouter research: skill body is the decisive routing signal. Write this last.
+-->
+
+{{SKILL_NAME}} {{WHAT_IT_DOES}}. Use it when {{CANONICAL_USE_CASE_1}} or {{CANONICAL_USE_CASE_2}}. Designed for {{TARGET_USERS}}. This skill does NOT handle {{OUT_OF_SCOPE_TEASER}} — see Negative Boundaries.
+
 ---
 
 ## §1  Identity
@@ -93,20 +130,39 @@ use_to_evolve:
 
 ---
 
-## §2  Loop — Plan-Execute-Summarize
+## §2  Negative Boundaries
+
+<!-- REQUIRED — Provide 3–6 specific anti-cases. -->
+
+**Do NOT use this skill for**:
+
+- **{{ANTI_CASE_1}}**: {{REASON_1}}
+  → Recommended alternative: {{ALTERNATIVE_SKILL_1}}
+- **{{ANTI_CASE_2}}**: {{REASON_2}}
+  → Recommended alternative: {{ALTERNATIVE_SKILL_2}}
+- **{{ANTI_CASE_3}}**: {{REASON_3}}
+  → Recommended alternative: {{ALTERNATIVE_SKILL_3_OR_ESCALATION}}
+
+**The following trigger phrases should NOT activate this skill**:
+- "{{SIMILAR_BUT_DIFFERENT_PHRASE_1}}"
+- "{{SIMILAR_BUT_DIFFERENT_PHRASE_2}}"
+
+---
+
+## §3  Loop — Plan-Execute-Summarize
 
 | Phase | Description | Exit Criteria |
 |-------|-------------|---------------|
 | 1 INGEST | Load input, detect format, validate encoding | Record count reported |
 | 2 CHUNK | Split into chunks of `{{CHUNK_SIZE}}` if > `{{CHUNK_THRESHOLD}}` records | Chunks ready |
-| 3 TRANSFORM | Apply transformation rules per §3 | All chunks transformed |
-| 4 VALIDATE | Run schema + business rule checks per §4 | Validation report ready |
+| 3 TRANSFORM | Apply transformation rules per §4 | All chunks transformed |
+| 4 VALIDATE | Run schema + business rule checks per §5 | Validation report ready |
 | 5 EXPORT | Serialize to `{{OUTPUT_FORMAT}}`, write to destination | File/stream complete |
 | 6 SUMMARIZE | Counts: input/output/dropped/errors; quality score | Summary delivered |
 
 ---
 
-## §3  TRANSFORM Mode
+## §4  TRANSFORM Mode
 
 **Triggers**: transform, convert, process, parse, 转换, 处理, 解析
 
@@ -126,7 +182,7 @@ use_to_evolve:
 
 ---
 
-## §4  VALIDATE Mode
+## §5  VALIDATE Mode
 
 **Triggers**: validate, check, verify, 验证, 校验, 检查
 
@@ -146,7 +202,7 @@ use_to_evolve:
 
 ---
 
-## §5  INGEST Mode
+## §6  INGEST Mode
 
 **Triggers**: ingest, load, import, read, 导入, 加载, 读取
 
@@ -163,7 +219,7 @@ use_to_evolve:
 
 ---
 
-## §6  EXPORT Mode
+## §7  EXPORT Mode
 
 **Triggers**: export, save, write, output, 导出, 保存, 输出
 
@@ -187,7 +243,7 @@ Quarantine rate: X% | Status: PASS/FAIL
 
 ---
 
-## §7  Quality Gates
+## §8  Quality Gates
 
 | Metric | Threshold |
 |--------|-----------|
@@ -200,7 +256,7 @@ Quarantine rate: X% | Status: PASS/FAIL
 
 ---
 
-## §8  Security Baseline
+## §9  Security Baseline
 
 - **CWE-89**: Input fields sanitized before any query construction
 - **CWE-79**: String fields escaped before Markdown/HTML output
@@ -209,7 +265,7 @@ Quarantine rate: X% | Status: PASS/FAIL
 
 ---
 
-## §9  Usage Examples
+## §10  Usage Examples
 
 ### Single file transform
 
@@ -244,7 +300,7 @@ Quarantine rate: 0.6% ≤ 5% → PASS
 
 ## §UTE Use-to-Evolve
 
-<!-- Post-invocation protocol — auto-managed by skill-writer v2.1.0 -->
+<!-- Post-invocation protocol — auto-managed by skill-writer v3.4.0 -->
 
 After each invocation, increment `use_to_evolve.cumulative_invocations`.
 Run lightweight LEAN check every 10 invocations; full re-score every 50;
@@ -267,8 +323,15 @@ tier-drift detection every 100.
 - [ ] Quarantine threshold set (`MAX_QUARANTINE_PCT`) and enforced
 - [ ] Record count safety limit (`MAX_RECORDS`) set with user confirmation gate
 - [ ] PII fields identified and masking policy documented
-- [ ] `use_to_evolve:` block present in YAML frontmatter with all 11 fields
+- [ ] **Skill Summary** section present (≤5 sentences, dense domain encoding) — **REQUIRED**
+- [ ] **Negative Boundaries** section present (§1, ≥ 3 anti-cases) — **REQUIRED**
+- [ ] `skill_tier` declared in YAML (planning / functional / atomic)
+- [ ] `triggers` list in YAML (3–8 EN phrases + 2–5 ZH phrases)
+- [ ] `use_to_evolve:` block present with all 13 fields (including generation_method + validation_status)
+- [ ] `generation_method` set: "auto-generated" | "human-authored" | "hybrid"
+- [ ] `validation_status` updated after each eval: "lean-only" → "full-eval" → "pragmatic-verified"
 - [ ] `## §UTE Use-to-Evolve` section present at end of skill
+- [ ] **[OPTIONAL v3.2.0]** If skill has data dependencies: uncomment and fill `graph:` block (+20 LEAN pts)
 - [ ] LEAN eval score ≥ 350 and no `{{PLACEHOLDER}}` remaining
 - [ ] Full EVALUATE score ≥ 700 (BRONZE) confirmed
 - [ ] Security scan P0 clear: CWE-89 (query construction), CWE-22 (output path)

@@ -23,15 +23,23 @@ they are not loaded at startup to keep context lean.
 
 | File | Purpose | Load When |
 |------|---------|-----------|
-| `evolution.md` | 5-trigger evolution system, decision thresholds, staleness review, and deprecation logic | §10 (Self-Evolution) is accessed |
+| `evolution.md` | 6-trigger evolution system, decision thresholds, staleness review, and deprecation logic (v3.4.0: added Trigger 6 — Validation Status Drift) | §10 (Self-Evolution) is accessed |
 | `session-artifact.md` | Session Artifact canonical format: schema fields, prm_signal scoring, lesson classification (strategic/failure/neutral), AGGREGATE protocol | §18 (COLLECT Mode) is accessed or COLLECT fires automatically |
 | `skill-registry.md` | Skill Registry spec: deterministic IDs, version history, push/pull API, tier-based tags | §16 (INSTALL/SHARE) is accessed or a registry operation runs |
 
+## Routing & Graph
+
+| File | Purpose | Load When |
+|------|---------|-----------|
+| `progressive-disclosure.md` | Five-layer context loading architecture (Layer -1 Hook Injection through Layer 3 Resources); three-tier routing model; token budget rules | §16 (INSTALL) or §2 (Mode Router) is accessed |
+| `skill-graph.md` | Graph of Skills spec: depends_on chain resolution, GoS Minimum Viable Runtime [CORE] (§2a), bundle composition, edge types, health check rules | §19 (GRAPH Mode) is accessed |
+
 ## Usage Notes
 
+- **All 8 platforms**: Each platform directory (`claude/`, `openclaw/`, `opencode/`, `cursor/`,
+  `gemini/`, `openai/`, `kimi/`, `hermes/`) includes a platform-specific `install.sh` that
+  copies companion files to the correct platform directories.
 - **Claude platform**: Companion files are copied to `~/.claude/refs/` during installation.
   The framework references them as `claude/refs/<filename>`.
-- **Other platforms**: Only the core `skill-framework.md` is installed. Companion features
-  degrade gracefully — the framework notes which capabilities require the refs files.
 - **File authority**: These files are the authoritative specs for their subsystem.
   When `skill-framework.md` and a refs file conflict, the refs file wins for its subsystem.

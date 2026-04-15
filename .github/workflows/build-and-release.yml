@@ -40,7 +40,7 @@ jobs:
           ute_fields = ['enabled', 'injected_by', 'injected_at', 'check_cadence',
                         'micro_patch_enabled', 'feedback_detection', 'certified_lean_score',
                         'last_ute_check', 'pending_patches', 'total_micro_patches_applied',
-                        'cumulative_invocations']
+                        'cumulative_invocations', 'generation_method', 'validation_status']
           errors = []
           warnings = []
 

@@ -1,9 +1,10 @@
 # Self-Evolution Specification
 
-> **Purpose**: 5-trigger evolution system, decision thresholds, and continuous improvement logic.
+> **Purpose**: 6-trigger evolution system, decision thresholds, and continuous improvement logic.
 > **Load**: When §10 (Self-Evolution) of `claude/skill-writer.md` is accessed.
 > **Main doc**: `claude/skill-writer.md §10`
 > **v3.1.0**: Added Trigger 4 (OWASP Pattern Violation) and Trigger 5 (Skill Tier Drift)
+> **v3.4.0**: Added Trigger 6 (Validation Status Drift); Decision Engine updated with Behavioral Verifier + Pragmatic Test Phase paths
 
 ---
 
@@ -121,6 +122,34 @@ Within a single session: any edit to `skill_tier` field fires this trigger immed
 
 ---
 
+### Trigger 6 — Validation Status Drift `[CORE]`
+
+> v3.4.0: New trigger. Monitors `validation_status` and `generation_method` fields for
+> staleness — catches skills that were deployed before reaching adequate validation coverage.
+> Research basis: "Skills in the Wild" study (2026) — 39/49 auto-generated skills had zero
+> real-world benefit despite passing internal evaluations.
+
+| Condition | Threshold | Action |
+|-----------|-----------|--------|
+| `validation_status: unvalidated` AND invocations ≥ 20 | 20 invocations | Warn: recommend `/eval --pragmatic` |
+| `validation_status: lean-only` AND invocations ≥ 50 | 50 invocations | Suggest full EVALUATE + Behavioral Verifier |
+| `validation_status: lean-only` AND `generation_method: auto-generated` AND invocations ≥ 30 | 30 invocations | Warn: auto-generated + lean-only is high-risk; suggest full EVALUATE |
+| Pragmatic test ran with `pragmatic_success_rate < 0.60` | any | Flag WEAK; suggest targeted OPTIMIZE before SHARE |
+| Pragmatic test ran with `pragmatic_success_rate < 0.40` | any | Flag FAIL; block SHARE; queue HUMAN_REVIEW |
+| `validation_status: full-eval` but Behavioral Verifier pass_rate < 0.80 | any | Advisory: run Behavioral Verifier pass to earn +20 BEHAVIORAL_VERIFIED pts |
+
+**Detection method** `[CORE]`: Read `validation_status` and `generation_method` from YAML
+frontmatter. Compare against `cumulative_invocations` counter. All checks are AI-executable
+from YAML reading alone — no external state required.
+
+**Updating validation_status** `[CORE]`: After each evaluation milestone, the AI proposes
+updating `validation_status` in the skill's YAML frontmatter:
+- After LEAN eval ≥ 350: propose `lean-only`
+- After full EVALUATE ≥ 700: propose `full-eval`
+- After `/eval --pragmatic` with pass_rate ≥ 0.60: propose `pragmatic-verified`
+
+---
+
 ## §2  Decision Engine
 
 When a trigger fires, the decision engine determines the right action:
@@ -166,6 +195,18 @@ TRIGGER FIRED
 │                                                                  │
 │ skill_tier changed (Trigger 5)                                   │
 │   → Force full EVALUATE; log tier change in registry history     │
+│                                                                  │
+│ validation_status: unvalidated + invocations ≥ 20 (Trigger 6)  │
+│   → Warn; recommend /eval --pragmatic                           │
+│                                                                  │
+│ validation_status: lean-only + invocations ≥ 50 (Trigger 6)    │
+│   → Suggest full EVALUATE + run Behavioral Verifier (Phase 4)   │
+│                                                                  │
+│ pragmatic_success_rate < 0.60 (Trigger 6)                       │
+│   → Flag WEAK; run S13 Pragmatic Failure Recovery before SHARE  │
+│                                                                  │
+│ pragmatic_success_rate < 0.40 (Trigger 6)                       │
+│   → Flag FAIL; BLOCK SHARE; escalate to HUMAN_REVIEW            │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -285,6 +326,7 @@ UTE Post-Hook fires (inline)
 | 3 | Usage | 90-day inactivity | Deprecation review |
 | 4 | OWASP Scan | P0/P1 pattern found | Security remediation (S8 or ABORT) |
 | 5 | Tier Drift | skill_tier changed | Force full EVALUATE |
+| 6 | Validation Drift | validation_status stale vs invocations | Pragmatic Test / Behavioral Verifier / SHARE gate |
 
 **Data flow**: UTE usage.jsonl → Tier 1 threshold check reads this same file.
 `compute_rolling_metrics()` in §3 works identically whether data came from

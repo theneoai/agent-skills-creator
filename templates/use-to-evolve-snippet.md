@@ -141,6 +141,8 @@ use_to_evolve:
   pending_patches: 0
   total_micro_patches_applied: 0
   cumulative_invocations: 0
+  generation_method: "{{GENERATION_METHOD}}"   # auto-generated | human-authored | hybrid
+  validation_status: "{{VALIDATION_STATUS}}"   # unvalidated | lean-only | full-eval | pragmatic-verified
 ```
 
 ---
@@ -151,17 +153,21 @@ use_to_evolve:
 |------------|--------|---------|
 | `{{SKILL_NAME}}` | Skill's `name` field | `weather-query` |
 | `{{VERSION}}` | Skill's `version` field | `1.0.0` |
-| `{{FRAMEWORK_VERSION}}` | skill-writer version | `2.1.0` |
-| `{{INJECTION_DATE}}` | Today's ISO-8601 date | `2026-03-31` |
+| `{{FRAMEWORK_VERSION}}` | skill-writer version | `3.4.0` |
+| `{{INJECTION_DATE}}` | Today's ISO-8601 date | `2026-04-15` |
 | `{{CERTIFIED_LEAN_SCORE}}` | LEAN score from last EVALUATE | `460` |
+| `{{GENERATION_METHOD}}` | How the skill was created | `human-authored` |
+| `{{VALIDATION_STATUS}}` | Highest evaluation milestone reached | `lean-only` |
 
 ---
 
 ## Injection Checklist
 
 - [ ] `§UTE` section appended to skill (after last `## §N`)
-- [ ] All 4 placeholders filled (SKILL_NAME, VERSION, FRAMEWORK_VERSION, INJECTION_DATE)
+- [ ] All 6 placeholders filled (SKILL_NAME, VERSION, FRAMEWORK_VERSION, INJECTION_DATE, GENERATION_METHOD, VALIDATION_STATUS)
 - [ ] CERTIFIED_LEAN_SCORE filled from last eval report (or use 350 if unknown)
-- [ ] YAML frontmatter `use_to_evolve:` block added
+- [ ] YAML frontmatter `use_to_evolve:` block added with all 13 fields
+- [ ] `generation_method` set to `auto-generated`, `human-authored`, or `hybrid`
+- [ ] `validation_status` set to current milestone: `unvalidated`, `lean-only`, `full-eval`, or `pragmatic-verified`
 - [ ] `.skill-audit/` directory exists (create if not)
 - [ ] LEAN eval re-run after injection to confirm no regression

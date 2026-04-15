@@ -31,11 +31,25 @@ created: "{{DATE}}"
 updated: "{{DATE}}"
 type: workflow-automation
 
+# Skill tier (SkillX three-tier hierarchy — arxiv:2604.04804)
+skill_tier: {{TIER}}          # planning | functional | atomic
+# workflow-automation skills are typically: planning (multi-step orchestration) or functional
+
 tags:
   - workflow
   - automation
   - {{WORKFLOW_DOMAIN}}
   - {{TAG_EXTRA}}
+
+# Trigger phrases (3–8 canonical user phrasings that invoke this skill)
+triggers:
+  en:
+    - "{{TRIGGER_PHRASE_EN_1}}"
+    - "{{TRIGGER_PHRASE_EN_2}}"
+    - "{{TRIGGER_PHRASE_EN_3}}"
+  zh:
+    - "{{TRIGGER_PHRASE_ZH_1}}"
+    - "{{TRIGGER_PHRASE_ZH_2}}"
 
 interface:
   input: user-natural-language
@@ -51,7 +65,7 @@ workflow:
 
 use_to_evolve:
   enabled: true
-  injected_by: "skill-writer v2.1.0"
+  injected_by: "skill-writer v3.4.0"
   injected_at: "{{DATE}}"
   check_cadence: {lightweight: 10, full_recompute: 50, tier_drift: 100}
   micro_patch_enabled: true
@@ -61,6 +75,30 @@ use_to_evolve:
   pending_patches: 0
   total_micro_patches_applied: 0
   cumulative_invocations: 0
+  generation_method: "auto-generated"   # auto-generated | human-authored | hybrid
+  validation_status: "lean-only"        # unvalidated | lean-only | full-eval | pragmatic-verified
+
+# Graph of Skills — optional (v3.2.0, research: SkillNet arxiv:2603.04448)
+# graph:
+#   composes:                # Sub-skills this planning skill coordinates
+#     - id: "{{GRAPH_CHILD_ID}}"
+#       name: "{{GRAPH_CHILD_NAME}}"
+#   depends_on:
+#     - id: "{{GRAPH_DEP_ID}}"
+#       name: "{{GRAPH_DEP_NAME}}"
+#       required: true
+#   provides:
+#     - "{{GRAPH_OUTPUT_TYPE}}"   # e.g. "workflow-execution-report"
+---
+
+## Skill Summary
+
+<!-- REQUIRED — ≤5 sentences: WHAT / WHEN / WHO / NOT-FOR.
+     SkillRouter research: skill body is the decisive routing signal. Write this last.
+-->
+
+{{SKILL_NAME}} automates the {{WORKFLOW_NAME}} workflow, orchestrating {{STEP_COUNT}} steps in sequence with error handling, human checkpoints, and rollback support. Use it when {{CANONICAL_USE_CASE_1}} or {{CANONICAL_USE_CASE_2}}. Designed for {{TARGET_USERS}}. This skill does NOT handle {{OUT_OF_SCOPE_TEASER}} — see Negative Boundaries.
+
 ---
 
 ## §1  Identity
@@ -98,7 +136,26 @@ END → execution report
 
 ---
 
-## §2  Workflow Steps
+## §2  Negative Boundaries
+
+<!-- REQUIRED — Provide 3–6 specific anti-cases. -->
+
+**Do NOT use this skill for**:
+
+- **{{ANTI_CASE_1}}**: {{REASON_1}}
+  → Recommended alternative: {{ALTERNATIVE_SKILL_1}}
+- **{{ANTI_CASE_2}}**: {{REASON_2}}
+  → Recommended alternative: {{ALTERNATIVE_SKILL_2}}
+- **{{ANTI_CASE_3}}**: {{REASON_3}}
+  → Recommended alternative: {{ALTERNATIVE_SKILL_3_OR_ESCALATION}}
+
+**The following trigger phrases should NOT activate this skill**:
+- "{{SIMILAR_BUT_DIFFERENT_PHRASE_1}}"
+- "{{SIMILAR_BUT_DIFFERENT_PHRASE_2}}"
+
+---
+
+## §3  Workflow Steps
 
 | Step | Name | Action | Tool / Agent | Rollback Action | Timeout |
 |------|------|--------|--------------|-----------------|---------|
@@ -115,7 +172,7 @@ END → execution report
 
 ---
 
-## §3  RUN Mode
+## §4  RUN Mode
 
 **Triggers**: run, execute, start, begin, go, 运行, 执行, 开始
 
@@ -142,14 +199,14 @@ FOR each step in §2:
 
 ---
 
-## §4  DRY-RUN Mode
+## §5  DRY-RUN Mode
 
 **Triggers**: dry-run, preview, simulate, what-would, 预演, 模拟, 预览
 
 **Purpose**: Show exactly what RUN mode would do — without executing any mutations.
 
 **Steps**:
-1. Run all pre-flight checks (§3)
+1. Run all pre-flight checks (§4)
 2. For each step: log planned action + estimated output (no execution)
 3. Identify checkpoints and destructive steps
 4. Estimate total duration
@@ -159,7 +216,7 @@ FOR each step in §2:
 
 ---
 
-## §5  STATUS Mode
+## §6  STATUS Mode
 
 **Triggers**: status, progress, check, where are we, 状态, 进度, 查看
 
@@ -177,7 +234,7 @@ Duration so far: <elapsed>
 
 ---
 
-## §6  ROLLBACK Mode
+## §7  ROLLBACK Mode
 
 **Triggers**: rollback, undo, revert, cancel, 回滚, 撤销, 还原
 
@@ -204,7 +261,7 @@ System state: RESTORED | PARTIALLY_RESTORED
 
 ---
 
-## §7  Quality Gates
+## §8  Quality Gates
 
 | Metric | Threshold |
 |--------|-----------|
@@ -217,7 +274,7 @@ System state: RESTORED | PARTIALLY_RESTORED
 
 ---
 
-## §8  Security Baseline
+## §9  Security Baseline
 
 - **CWE-78**: Shell commands constructed from validated, whitelisted parameters only
 - **CWE-22**: File paths validated — no path traversal (`../`)
@@ -226,7 +283,7 @@ System state: RESTORED | PARTIALLY_RESTORED
 
 ---
 
-## §9  Usage Examples
+## §10  Usage Examples
 
 ### Full workflow run
 
@@ -267,7 +324,7 @@ Proceed with RUN? [y/n]
 
 ## §UTE Use-to-Evolve
 
-<!-- Post-invocation protocol — auto-managed by skill-writer v2.1.0 -->
+<!-- Post-invocation protocol — auto-managed by skill-writer v3.4.0 -->
 
 After each invocation, increment `use_to_evolve.cumulative_invocations`.
 Run lightweight LEAN check every 10 invocations; full re-score every 50;
@@ -290,8 +347,15 @@ tier-drift detection every 100.
 - [ ] Retry logic specified: max retries + backoff (1s, 2s, 4s)
 - [ ] Rollback sequence covers ALL mutating steps
 - [ ] DRY-RUN mode implemented and tested
-- [ ] `use_to_evolve:` block present in YAML frontmatter with all 11 fields
+- [ ] **Skill Summary** section present (≤5 sentences, dense domain encoding) — **REQUIRED**
+- [ ] **Negative Boundaries** section present (§1, ≥ 3 anti-cases) — **REQUIRED**
+- [ ] `skill_tier` declared in YAML (planning / functional / atomic)
+- [ ] `triggers` list in YAML (3–8 EN phrases + 2–5 ZH phrases)
+- [ ] `use_to_evolve:` block present with all 13 fields (including generation_method + validation_status)
+- [ ] `generation_method` set: "auto-generated" | "human-authored" | "hybrid"
+- [ ] `validation_status` updated after each eval: "lean-only" → "full-eval" → "pragmatic-verified"
 - [ ] `## §UTE Use-to-Evolve` section present at end of skill
+- [ ] **[OPTIONAL v3.2.0]** If skill composes sub-skills: uncomment and fill `graph: composes:` block (+20 LEAN pts)
 - [ ] LEAN eval score ≥ 350 and no `{{PLACEHOLDER}}` remaining
 - [ ] Full EVALUATE score ≥ 700 (BRONZE) confirmed
 - [ ] Security scan P0 clear: CWE-78 (command injection), CWE-798 (credentials)

@@ -405,14 +405,92 @@ Heuristic triggers:
 
 ---
 
-## §6  Security Scan Report Format
+## §6  External Skill Trust Chain Verification
+
+> **Context**: Snyk ToxicSkills study (2026-02) audited 3,984 skills from ClawHub and skills.sh.
+> 13.4% had critical-level issues; 36.82% had at least one security flaw. The ClawHavoc campaign
+> compromised 1,184 skills in a single marketplace operation. This section defines the verification
+> protocol applied to all skills obtained via SHARE pull or external registry.
+
+### §6.1  Trust Tiers for External Skills
+
+| Source | Trust Level | Required Verification |
+|--------|------------|----------------------|
+| Self-authored (current session) | `TRUSTED` | Standard CWE + OWASP scan |
+| Registry pull — author in user's trust list | `VERIFIED` | Signature check + CWE scan |
+| Registry pull — author unknown | `UNVERIFIED` | Signature check + full P0+P1 scan + user confirmation |
+| Registry pull — experimental tag | `LOW_TRUST` | Full scan + pragmatic test required before deploy |
+| Direct URL fetch (not from registry) | `UNTRUSTED` | P0 scan + ABORT on any P1 + explicit user sign-off |
+
+### §6.2  Signature Verification Protocol `[EXTENDED — requires registry backend]`
+
+When a skill is pulled from a shared registry, verify before installation:
+
+```
+PULL VERIFICATION SEQUENCE:
+  1. FETCH   — Download skill file from registry (skills/<skill_id>/current.md)
+  2. HASH    — Compute SHA-256 of downloaded file content
+  3. COMPARE — Compare against registry entry sha256 field
+               IF mismatch → ABORT("SHA-256 mismatch — file tampered in transit")
+  4. AUTHOR  — Read signed_by field from skill YAML frontmatter
+               IF author NOT in user trust list → escalate to UNVERIFIED flow
+  5. SCAN    — Run full P0 + P1 security scan on downloaded content
+               (even if author is trusted — content may have drifted since signing)
+  6. CONFIRM — If UNVERIFIED or LOW_TRUST:
+               Display: "Installing from unknown author: <name>. Scan result: <summary>.
+                         Type 'confirm install' to proceed."
+               Await explicit user confirmation before writing to platform directory.
+```
+
+### §6.3  Skill Signature YAML Fields
+
+Add to skill YAML frontmatter when publishing to a registry:
+
+```yaml
+signature:
+  sha256: "<SHA-256 of skill file content at publish time>"
+  signed_by: "<author identifier — GitHub username, email, or DID>"
+  signed_at: "<ISO-8601>"
+  registry_verified: false   # set to true by registry on successful push
+```
+
+**AI approximation** `[CORE]`: AI cannot compute SHA-256, but can:
+1. Prompt the user to confirm the hash via `sha256sum <skill_file>`
+2. Record it in the signature block
+3. Flag any pull where the declared hash cannot be verified as `UNVERIFIED`
+
+### §6.4  Pull-Time Security Scan — Fast Path
+
+For skills pulled from trusted authors with GOLD/PLATINUM registry tier, apply a
+reduced scan (P0 only, no P1 scoring). For all others, run full scan.
+
+```
+trusted_author AND certified_tier IN (GOLD, PLATINUM):
+  → P0_ONLY scan (~2s)
+  → If P0 CLEAR: install directly
+  → If P0 VIOLATION: ABORT regardless of trust level
+
+all_other_sources:
+  → FULL scan (P0 + P1 + OWASP ASI01–ASI10)
+  → P0 VIOLATION → ABORT
+  → P1 count > 2 → UNVERIFIED warning + user confirmation required
+  → Display scan summary before install
+```
+
+---
+
+## §7  Security Scan Report Format
 
 ```
 SECURITY SCAN REPORT
 ====================
 Skill: <name> v<version>
 Scanned: <ISO-8601>
-Scanner: skill-writer v3.1.0
+Scanner: skill-writer v3.3.0
+Source:  self-authored | registry-pull (<backend>) | url-fetch
+Trust:   TRUSTED | VERIFIED | UNVERIFIED | LOW_TRUST | UNTRUSTED
+Signature: MATCH | MISMATCH | ABSENT
+Author:  <signed_by value or "unsigned">
 
 P0 FINDINGS (ABORT triggers):
   [NONE | list of findings with CWE ID and location]
@@ -439,9 +517,14 @@ OWASP AGENTIC TOP 10 STATUS:
   ASI09 Human Oversight:      CLEAR | ADVISORY
   ASI10 Audit Gaps:           CLEAR | ADVISORY
 
+TRUST CHAIN:
+  Source trust level: <tier>
+  Confirmation required: YES | NO
+  Install blocked: YES | NO
+
 SCORE IMPACT: −<N> points total from P1 findings
 
-RESULT: CLEAR | ABORT
+RESULT: CLEAR | ABORT | CONFIRM_REQUIRED
 ```
 
 ---
@@ -455,8 +538,14 @@ Every scan appends to `.skill-audit/security.jsonl`:
   "timestamp": "<ISO-8601>",
   "skill_name": "<name>",
   "skill_version": "<semver>",
-  "scanner_version": "skill-writer v3.1.0",
+  "scanner_version": "skill-writer v3.3.0",
   "mode": "<scan_mode>",
+  "source": "self-authored|registry-pull|url-fetch",
+  "trust_level": "TRUSTED|VERIFIED|UNVERIFIED|LOW_TRUST|UNTRUSTED",
+  "signature_status": "MATCH|MISMATCH|ABSENT",
+  "signed_by": "<author or null>",
+  "sha256_declared": "<hash or null>",
+  "sha256_computed": "<hash or null>",
   "p0_findings": [],
   "p1_findings": [],
   "p2_advisories": [],
@@ -473,7 +562,8 @@ Every scan appends to `.skill-audit/security.jsonl`:
     "ASI10": "CLEAR|ADVISORY"
   },
   "score_penalty": 0,
-  "result": "CLEAR|ABORT",
+  "result": "CLEAR|ABORT|CONFIRM_REQUIRED",
+  "user_confirmed": false,
   "resume_authorized": false,
   "resolved": false
 }

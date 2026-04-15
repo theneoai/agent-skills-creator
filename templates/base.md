@@ -3,7 +3,7 @@
 > **Type**: base
 > **Use when**: The skill doesn't fit a more specific category (api-integration, data-pipeline, workflow-automation).
 > **Variables**: Replace every `{{PLACEHOLDER}}` with values from the requirement elicitation phase (§7 of skill-framework.md).
-> **Updated**: v3.1.0 — Added Skill Summary, Negative Boundaries, skill_tier, trigger phrases (research-backed)
+> **Updated**: v3.4.0 — Added generation_method, validation_status (v3.4.0); graph: block (v3.2.0); Behavioral Verifier, Pragmatic Test, Failure-Driven CREATE (v3.4.0)
 
 ---
 
@@ -88,7 +88,7 @@ interface:
 
 use_to_evolve:
   enabled: true
-  injected_by: "skill-writer v3.2.0"
+  injected_by: "skill-writer v3.4.0"
   injected_at: "{{DATE}}"
   check_cadence: {lightweight: 10, full_recompute: 50, tier_drift: 100}
   micro_patch_enabled: true
@@ -98,6 +98,8 @@ use_to_evolve:
   pending_patches: 0
   total_micro_patches_applied: 0
   cumulative_invocations: 0
+  generation_method: "auto-generated"   # auto-generated | human-authored | hybrid
+  validation_status: "lean-only"        # unvalidated | lean-only | full-eval | pragmatic-verified
 
 # Graph of Skills — optional (v3.2.0, research: SkillNet arxiv:2603.04448)
 # Declare typed relationships to other skills. All lists are optional — omit any
@@ -283,7 +285,7 @@ Output: {{EXAMPLE_2_OUTPUT}}
 
 ## §UTE Use-to-Evolve
 
-<!-- Post-invocation protocol — auto-managed by skill-writer v3.1.0 -->
+<!-- Post-invocation protocol — auto-managed by skill-writer v3.4.0 -->
 
 After each invocation, increment `use_to_evolve.cumulative_invocations`.
 Run lightweight LEAN check every 10 invocations; full re-score every 50;
@@ -309,7 +311,9 @@ tier-drift detection every 100.
 - [ ] Quality gates section complete with numeric thresholds (F1 ≥ 0.90, MRR ≥ 0.85)
 - [ ] Security baseline section present: CWE fields + OWASP ASI01/ASI02/ASI05 checks
 - [ ] Red Lines section present with ≥ 2 specific prohibitions
-- [ ] `use_to_evolve:` block present in YAML frontmatter with all 11 fields
+- [ ] `use_to_evolve:` block present in YAML frontmatter with all 13 fields (including generation_method + validation_status)
+- [ ] `generation_method` set: "auto-generated" | "human-authored" | "hybrid"
+- [ ] `validation_status` updated after each eval: "lean-only" → "full-eval" → "pragmatic-verified"
 - [ ] `## §UTE Use-to-Evolve` section present at end of skill
 - [ ] LEAN eval score ≥ 350 (lean_score/500)
 - [ ] Full EVALUATE score ≥ 700 (BRONZE) confirmed

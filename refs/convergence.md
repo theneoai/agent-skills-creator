@@ -191,7 +191,7 @@ and re-scores the final skill independently to eliminate generator bias. The VER
 
 ## §7  Score History Format
 
-The optimization loop maintains a score history list:
+The optimization loop maintains a score history list (persisted to `.<skill-name>.optimize-history.jsonl` when file system is available; see §8 for persistence spec):
 
 ```json
 {
@@ -225,7 +225,91 @@ The optimization loop maintains a score history list:
 
 ---
 
-## §8  Curation at Round 10
+## §8  Score History Persistence (v3.3.0)
+
+> **Problem fixed**: The convergence signals in §2–§4 depend on an accurate `score_history` list.
+> Without persistence, each OPTIMIZE round exists only in the LLM's context window — history is
+> lost if the conversation is compacted, the context rolls over, or the session is restarted.
+> This caused convergence detection to rely on LLM estimation rather than precise arithmetic.
+
+### §8.1  `.optimize-history.jsonl` Format
+
+For every OPTIMIZE run, the AI writes one JSON line per round to a companion file alongside
+the skill being optimized. The file is named `.<skill-name>.optimize-history.jsonl`.
+
+Each line:
+```json
+{
+  "run_id": "<ISO-8601>-<first-4-of-skill-hash>",
+  "round": 1,
+  "score": 820,
+  "lean_score": 410,
+  "dimension_targeted": "Workflow Definition",
+  "strategy_used": "S5",
+  "delta": null,
+  "convergence_signals": {"volatility": false, "plateau": false, "trend": "IMPROVING"},
+  "decision": "continue",
+  "rollback": false,
+  "ts": "<ISO-8601>"
+}
+```
+
+Example after 5 rounds:
+```
+{"run_id":"2026-04-14-a3b2","round":1,"score":820,"delta":null,"decision":"continue","ts":"..."}
+{"run_id":"2026-04-14-a3b2","round":2,"score":843,"delta":23,"decision":"continue","ts":"..."}
+{"run_id":"2026-04-14-a3b2","round":3,"score":858,"delta":15,"decision":"continue","ts":"..."}
+{"run_id":"2026-04-14-a3b2","round":4,"score":861,"delta":3,"decision":"continue","ts":"..."}
+{"run_id":"2026-04-14-a3b2","round":5,"score":862,"delta":1,"decision":"continue","ts":"..."}
+```
+
+### §8.2  Convergence Reading from File `[EXTENDED — file system write]`
+
+When the `.optimize-history.jsonl` file exists, convergence signals are computed from file:
+
+```python
+# Precise computation from persisted history
+score_history = [line["score"] for line in read_jsonl(history_file)
+                 if line["run_id"] == current_run_id]
+volatility  = volatility_check(score_history)
+plateau     = plateau_check(score_history)
+trend       = trend_check(score_history)
+```
+
+When the file does NOT exist (no file system access):
+
+```python
+# AI natural-language reasoning fallback [CORE]
+# AI tracks the score list in conversation context
+# Convergence check: "comparing the last 3 listed scores..."
+# Less precise but functional for short OPTIMIZE runs (< 10 rounds)
+```
+
+### §8.3  Git Commit Integration (Step 9)
+
+Step 9 of the OPTIMIZE loop commits every 10 rounds. Include the history file:
+
+```bash
+git add .<skill-name>.optimize-history.jsonl <skill-name>.md
+git commit -m "[optimize-round-10 score=858 delta=+38 from=820]"
+```
+
+This creates a clean audit trail: the history file captures round-by-round deltas, and
+git history captures the skill file at each 10-round checkpoint.
+
+### §8.4  History File Lifecycle
+
+| Event | Action |
+|-------|--------|
+| OPTIMIZE starts | Create `.<skill-name>.optimize-history.jsonl` if absent; append new `run_id` |
+| Each round completes | Append one JSON line |
+| VERIFY completes | Append final line with `"decision": "VERIFY"` and verify score |
+| OPTIMIZE ends | Leave file in place (audit trail) |
+| `/eval` after OPTIMIZE | Read history file to auto-populate the Optimization History section of report |
+
+---
+
+## §9  Curation at Round 10
 
 Every 10 rounds, the 10-step optimization loop performs a curation step to prevent context bloat:
 

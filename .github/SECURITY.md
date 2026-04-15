@@ -77,8 +77,34 @@ We scan for agentic-specific vulnerabilities including:
 - **ASI01**: Prompt Injection / Goal Hijack (P1 — −50 pts)
 - **ASI02**: Insecure Tool Use (P1 — −50 pts)
 - **ASI03**: Excessive Agency (P1 — −50 pts)
-- **ASI04**: Uncontrolled Resource Consumption (P1 — −50 pts)
+- **ASI04**: Uncontrolled Resource Consumption / Supply Chain (P1 — −30 pts)
 - **ASI05–ASI10**: Advisory patterns (P2 — reported but not blocking)
+
+### Supply Chain Trust Verification (v3.4.0)
+
+Context: The Snyk ToxicSkills study (2026-02) audited 3,984 skills from ClawHub and skills.sh —
+**13.4% had critical-level issues**; **36.82% had at least one security flaw**. The ClawHavoc
+campaign injected 300+ malicious skills via compromised registry entries. Skills from untrusted
+sources must be treated as hostile until verified.
+
+We enforce a **5-tier trust model** for all external skills (full spec: `refs/security-patterns.md §6`):
+
+| Trust Tier | Source | Required Scan |
+|------------|--------|--------------|
+| `TRUSTED` | Self-authored in current session | Standard CWE + OWASP scan |
+| `VERIFIED` | Signed registry entry (SHA-256 verified) | Standard CWE + OWASP scan |
+| `UNVERIFIED` | Public registry, no signature | Full scan + warn user before install |
+| `LOW_TRUST` | Fork/modified version of known skill | Full scan + diff against original |
+| `UNTRUSTED` | Direct URL fetch / unknown origin | P0 scan + ABORT on any P1 + explicit user sign-off |
+
+**SHA-256 verification**: INSTALL mode computes or verifies the SHA-256 hash of downloaded
+skill files against the registry-published `sha256:` field. Mismatch → ABORT immediately.
+
+**Anti-patterns** caught by supply chain scan (see `optimize/anti-patterns.md §H`):
+- **H1 UNTRUSTED_PULL**: Installing external skills without signature verification
+- **H2 SKILL_INJECTION**: ASI01 prompt injection patterns in skill body text
+- **H3 UNPINNED_DEPENDENCY**: Missing `version_constraint:` in `depends_on:` edges
+- **H4 SIMILARITY_HIJACK**: Malicious skill claiming high similarity score to a trusted skill
 
 ## Security Best Practices
 
