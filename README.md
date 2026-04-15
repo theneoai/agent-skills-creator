@@ -1067,11 +1067,102 @@ All example skills are certified with detailed evaluation reports.
 
 | Skill | Type | Tier | Score | Description |
 |-------|------|------|-------|-------------|
+| [git-commit-writer](examples/git-commit-writer/) | Base | 🏆 PLATINUM | 1007/1020 | Conventional Commits message generator — **full lifecycle walkthrough** |
 | [api-tester](examples/api-tester/) | API Integration | 🥇 GOLD | 920/1000 | HTTP API testing automation |
 | [code-reviewer](examples/code-reviewer/) | Workflow Automation | 🥇 GOLD | 947/1000 | Code review with security scanning |
 | [doc-generator](examples/doc-generator/) | Data Pipeline | 🥇 GOLD | 895/1000 | Documentation generation |
 
-**Average Score: 920.7/1000**
+### Walkthrough: Full Lifecycle Example (git-commit-writer)
+
+The `git-commit-writer` example shows **every step** of the skill-writer process with real
+inputs, scores, and diffs. Read it to understand what creating a skill actually looks like.
+
+#### The 8-Question Elicitation Session
+
+You type: `"create a skill that writes conventional commit messages"`
+
+The AI asks 8 guided questions:
+
+```
+Q1  Skill name?                → git-commit-writer
+Q2  Core functionality?        → Generate Conventional Commits 1.0.0 messages
+                                  from git diff or description
+Q3  Target user?               → Developers on teams that enforce conventional
+                                  commits in CI
+Q4  ≥3 English trigger phrases → "write commit message", "generate commit for
+                                  this diff", "help me commit", ...
+Q5  ≥2 Chinese trigger phrases → "写提交信息", "生成提交消息", "帮我写提交"
+Q6  3+ things NOT to do        → no squash/rebase, no PR descriptions,
+                                  no changelog, no explaining past commits
+Q7  Modes needed?              → GENERATE (diff→message), VALIDATE (check message)
+Q8  Security boundaries?       → read-only, no shell, no network
+```
+
+The AI selects `base.md` template (text generation, no API/pipeline/workflow), fills all
+placeholders from your answers, and produces a complete 9-section skill file.
+
+#### What the LEAN Output Looks Like
+
+```
+LEAN Evaluation — git-commit-writer v1.0.0
+──────────────────────────────────────────────────────────
+  ✓ [STATIC]    Identity + Red Lines           95/95
+  ✓ [HEURISTIC] Template type matched          45/55   ← partial
+  ✗ [HEURISTIC] Field specificity              28/40   ← gap: no type table
+  ✓ [STATIC]    Workflow (9 §N sections)       75/75
+  ✓ [STATIC]    Error/recovery present         45/45
+  ✗ [HEURISTIC] Escalation HUMAN_REVIEW         0/30   ← MISSING
+  ✓ [STATIC]    Examples (2 code blocks)       75/75
+  ✓ [STATIC]    Security Baseline              45/45
+  ✓ [STATIC]    Metadata + triggers            40/40
+──────────────────────────────────────────────────────────
+  LEAN: 448/500  →  SILVER proxy (est. 896)  ✓ PASS
+
+  Weaknesses to fix:
+    1. Add HUMAN_REVIEW decision matrix  (-30 pts)
+    2. Add Conventional Commits type table  (-12 pts)
+```
+
+LEAN runs in ~5 seconds and tells you **exactly** what to fix — no guessing.
+
+#### What the OPTIMIZE Changes Look Like
+
+OPTIMIZE makes two targeted additions (no structural rewrites):
+
+**Fix 1 — HUMAN_REVIEW escalation matrix**:
+```markdown
+Escalation Decision Matrix:
+  Confidence ≥ 0.80   → Deliver message directly
+  Confidence 0.70–0.79 → Deliver with 2nd-best type alternative
+  Confidence < 0.70   → HUMAN_REVIEW: ask user to choose type manually
+    └── After 2 failed retries → output raw analysis, prompt user
+```
+
+**Fix 2 — Type classification table (10 types, not a plain list)**:
+```markdown
+| Type     | When to use                          | Trigger words in diff           |
+|----------|--------------------------------------|---------------------------------|
+| feat     | New user-visible feature             | add, new, introduce, implement  |
+| fix      | Bug fix                              | fix, resolve, correct, patch    |
+| refactor | Restructure, no behavior change      | rename, move, extract, inline   |
+| docs     | Documentation only                   | .md, docs/, # in diff           |
+| ...      | (10 types total)                     | ...                             |
+```
+
+#### Before and After
+
+```
+v1.0.0  448/500 LEAN  →  SILVER proxy  (est. 896/1000)
+v1.1.0  493/500 LEAN  →  PLATINUM proxy  (est. 986/1000)   +45 pts
+
+Full EVALUATE:  1007/1020  🏆 PLATINUM
+Behavioral Verifier:  5/5 test cases passed
+```
+
+**One round of targeted fixes. SILVER → PLATINUM.**
+
+> See the [full walkthrough](examples/git-commit-writer/README.md) for complete
+> LEAN outputs, all OPTIMIZE diffs, and the full EVALUATE report.
 
 ## Contributing
 
