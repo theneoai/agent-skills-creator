@@ -60,10 +60,12 @@ Node {
 Six edge types (canonical source: `builder/src/config.js GRAPH_EDGE_TYPES`):
 
 ```
-depends_on(A → B, required: bool)
+depends_on(A → B, required: bool, version: string?)
   A cannot execute correctly without B being available.
   required=true  → B must be installed before A; hard block on install.
   required=false → B enhances A but A degrades gracefully without it.
+  version        → SemVer constraint string (e.g. ">=2.0.0,<3.0.0"); null = any version.
+                   GRAPH-009: conflicts between version constraints in the same bundle → ERROR.
 
 composes(A → [B, C, D])
   A is a planning skill that orchestrates B, C, D.
@@ -90,7 +92,7 @@ consumes(A → type: string)
 
 ### §2.3  Graph Invariants
 
-These properties MUST hold in a valid graph (checked by validate.js GRAPH-001–005):
+These properties MUST hold in a valid graph (checked by validate.js GRAPH-001–009):
 
 1. **No dangling edges**: every `depends_on`/`composes` target ID must exist in the registry
 2. **No self-loops**: A cannot depend on itself
@@ -99,6 +101,7 @@ These properties MUST hold in a valid graph (checked by validate.js GRAPH-001–
    - `composes` edge from a non-`planning` skill → GRAPH-002 WARNING
    - `depends_on` on an `atomic` skill → GRAPH-003 WARNING
 5. **Merge advisory**: `similar_to` with similarity ≥ 0.95 → GRAPH-004 WARNING
+6. **Version conflict**: two bundle members require incompatible `version` constraints for the same dependency → GRAPH-009 ERROR
 
 ---
 
@@ -122,15 +125,28 @@ Step 1 — SEED (trigger matching)
   Route user request → primary skill via SkillRouter trigger matching.
   Read primary skill's YAML frontmatter.
 
-Step 2 — EXPAND (DFS on depends_on, max depth 5)
+Step 2 — EXPAND (DFS on depends_on, max depth 5, with cycle guard)
+  MAINTAIN: visited_set = {}  (skill IDs seen in current DFS path)
+
   For each skill with a `graph: depends_on:` block:
-    Read listed dependency names from YAML.
-    Locate each dependency skill file in the installed skills directory.
-    If found: add to dependency list, recurse (DFS, max depth 5).
-    If not found: mark as MISSING; do NOT abort (warn user instead).
-  
+    Read listed dependency names and IDs from YAML.
+    FOR each dependency D:
+      IF D.id IN visited_set:
+        → WARN "Cycle detected: <current_skill> → <D.name> already visited"
+        → SKIP this edge (do not recurse); mark edge as CYCLIC in bundle report
+        CONTINUE to next dependency (do NOT abort entire resolution)
+      ELSE:
+        ADD D.id to visited_set
+        Locate D skill file in the installed skills directory.
+        If found: add to dependency list; recurse (DFS, max depth 5).
+        If not found: mark as MISSING; do NOT abort (warn user instead).
+        REMOVE D.id from visited_set after recursion returns (backtrack)
+
   Only follow `depends_on:` edges (not composes, similar_to, etc.).
   required=true deps: list as mandatory; required=false: list as optional.
+
+  NOTE: The visited_set is per DFS path (backtracking), not a global seen set.
+  This correctly detects cycles (A→B→A) while allowing diamond patterns (A→B, A→C, B→C).
 
 Step 3 — DEDUPLICATE (similar_to ≥ 0.90)
   If two skills in the dependency list have `similar_to` with similarity ≥ 0.90:
@@ -152,7 +168,7 @@ Step 5 — TOKEN BUDGET CHECK (12,000 token limit)
 
 | Edge Type | [CORE] (LLM from YAML) | [EXTENDED] (graph.js) |
 |-----------|------------------------|----------------------|
-| `depends_on` | ✓ Full resolution | ✓ Full + cycle detection |
+| `depends_on` | ✓ Full resolution + cycle detection (visited_set) | ✓ Full + formal DAG validation |
 | `composes` | ✓ List sub-skills | ✓ Full orchestration graph |
 | `similar_to` | ✓ Dedup (score-based) | ✓ + Personalized PageRank |
 | `uses_resource` | ✓ Note companion files | ✓ Automated file verification |
@@ -171,9 +187,11 @@ Step 2 EXPAND:
       depends_on:
         - id: "a1b2c3d4e5f6"
           name: "schema-validator"
+          version: ">=2.0.0,<3.0.0"
           required: true
         - id: "7f8a9b0c1d2e"
           name: "auth-helper"
+          version: ">=1.0.0"
           required: false
   Read schema-validator.md → has no depends_on → stop DFS
   Read auth-helper.md → has no depends_on → stop DFS
@@ -196,7 +214,7 @@ MVR Bundle Result:
 
 | Feature | MVR [CORE] | Full Runtime [EXTENDED] |
 |---------|-----------|------------------------|
-| Cycle detection | ✗ Not detected (max depth 5 prevents infinite loops) | ✓ |
+| Cycle detection | ✓ visited_set DFS guard (warns + skips, does not abort) | ✓ Formal DAG validation (GRAPH-005 ERROR) |
 | Registry lookup | ✗ Local files only | ✓ Remote registry |
 | Personalized PageRank scoring | ✗ Uses lean_score as proxy | ✓ |
 | GRAPH-001–008 health checks | ✗ Not performed | ✓ |
@@ -414,6 +432,7 @@ Runs the following checks on the current registry graph:
 | Isolated nodes | GRAPH-006 | INFO | Skill has no edges of any type |
 | Orphan planning | GRAPH-007 | WARNING | planning skill's composes targets are all deprecated |
 | Provides/consumes mismatch | GRAPH-008 | INFO | A provides type X but no skill consumes X |
+| Version constraint conflict | GRAPH-009 | ERROR | Two bundle members require incompatible `version` constraints for the same dependency |
 
 ```
 /graph check output format:
@@ -423,9 +442,10 @@ Runs the following checks on the current registry graph:
   Edges: 87 typed relationships
   Bundles: 6 defined
 
-  ERRORS (2):
+  ERRORS (3):
     ✗ GRAPH-001: skill "api-tester" depends_on "7f8a9b0c1d2e" — ID not in registry
     ✗ GRAPH-005: Cycle detected: code-reviewer → lint-checker → code-reviewer
+    ✗ GRAPH-009: Version conflict: "api-tester" requires auth-helper >=2.0.0 but "token-cache" requires auth-helper <1.5.0
 
   WARNINGS (3):
     ⚠ GRAPH-002: "task-orchestrator" is planning tier but has no composes edges

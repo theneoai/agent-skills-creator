@@ -79,6 +79,11 @@ use_to_evolve:
   cumulative_invocations: 0
   generation_method: "human-authored"   # auto-generated | human-authored | hybrid
   validation_status: "full-eval"        # unvalidated | lean-only | full-eval | pragmatic-verified
+
+lifecycle_status: "active"              # active | maintenance | deprecated | archived
+deprecated_at: null
+deprecation_reason: null
+replacement_skill: null
 ---
 
 <!-- PATH CONVENTION (Claude)
@@ -296,6 +301,7 @@ No confirmation needed. These commands are LLM-evaluated (not platform CLI comma
 | `/aggregate` | AGGREGATE mode (multi-session synthesis) | `/聚合` |
 | `/graph` | GRAPH mode (skill graph view, health, bundle planning) | `/技能图` |
 | `/skip` | Accept current result as-is (TEMP_CERT if below BRONZE) | `/跳过` |
+| `/deprecate` | Mark skill as deprecated; check dependents; update lifecycle_status | `/废弃` |
 
 > `/skip` is only meaningful when the framework has displayed a "type /skip" prompt
 > (e.g., LEAN UNCERTAIN escalation, OPTIMIZE early exit). It does not trigger a mode
@@ -645,7 +651,21 @@ validation_status: "lean-only"         # updated by EVALUATE ("full-eval") and P
 ```
 
 **Routing impact**: `auto-generated + lean-only` → `source_quality_score = 0.2`; `lean-passed (≥350)` → 0.5.
-**SHARE gate**: `auto-generated + lean-only` blocks registry push until user confirms or runs `/eval`.
+**SHARE gate** (three-level check):
+
+| Condition | Gate | Action |
+|-----------|------|--------|
+| `validation_status: unvalidated` | HARD BLOCK | Must run `/eval` before SHARE allowed |
+| `auto-generated + lean-only` | BLOCK with override | Blocks until user confirms OR runs `/eval` |
+| `validation_status: lean-only` AND intent to share publicly | WARNING + pragmatic requirement | Prompt: "Run `/eval --pragmatic` to confirm real-world utility before sharing" |
+| `pragmatic_success_rate < 0.60` (PRAGMATIC_WEAK) | BLOCK | Must optimize against failing samples first |
+| `pragmatic_success_rate < 0.40` (PRAGMATIC_FAIL) | HARD BLOCK | Deploy blocked — skill not fit for stated purpose |
+| `lifecycle_status: deprecated` | HARD BLOCK | Cannot share deprecated skills |
+
+> **Design rationale**: "Skills in the Wild" (arxiv:2604.04323) — high theoretical scores do
+> not predict real-world utility. Requiring pragmatic test before public SHARE prevents
+> GOLD-certified skills with `PRAGMATIC_WEAK` from polluting the shared registry.
+
 Full spec: `refs/skill-registry.md §12`.
 
 ### Failure-Driven CREATE (`--from-failures` flag)
@@ -1550,6 +1570,84 @@ This closes the feedback loop: UTE observes usage → proposes improvements →
 OPTIMIZE applies fixes → updates UTE baseline → repeat.
 
 ---
+
+## §16a  Skill Deprecation Lifecycle
+
+Every skill has a `lifecycle_status` field in its YAML frontmatter that progresses through
+four states. The deprecation lifecycle integrates with UTE Trigger 3 (usage-based) and the
+SHARE gate.
+
+### YAML Field
+
+```yaml
+lifecycle_status: "active"    # active | maintenance | deprecated | archived
+deprecated_at: null           # ISO-8601 timestamp; set when status → deprecated
+deprecation_reason: null      # human-readable reason
+replacement_skill: null       # name of replacement skill, if any
+```
+
+**Injection**: `lifecycle_status: "active"` is injected by CREATE (Phase 9) alongside
+the `use_to_evolve` block. Skills created before v3.4.0 default to `active` if field absent.
+
+### Lifecycle States
+
+| Status | Meaning | Routing | SHARE |
+|--------|---------|---------|-------|
+| `active` | Normal operation | Full routing | Allowed |
+| `maintenance` | Receiving only bug fixes; no new features | Full routing with advisory | Allowed with note |
+| `deprecated` | Replaced or obsolete; use replacement instead | WARNING on every invocation | HARD BLOCKED |
+| `archived` | Removed from active use; registry read-only | Silenced from routing | BLOCKED |
+
+### DEPRECATE Mode `/deprecate` `[CORE]`
+
+Triggered by: `"deprecate skill"`, `"mark skill as deprecated"`, `/deprecate`
+
+```
+DEPRECATE SEQUENCE:
+  1. CHECK DEPENDENTS [CORE]
+     Read graph: depends_on entries across all installed skills.
+     IF any active skill lists this skill as a required depends_on:
+       → WARN: "N skills depend on <name>. Deprecating will break them."
+       → List dependents by name
+       → Require user to acknowledge before proceeding
+
+  2. CHECK REGISTRY [EXTENDED]
+     If registry is configured: check for downstream dependents not locally installed.
+     Report count; if > 0 → recommend notifying registry maintainer.
+
+  3. SET FIELDS [CORE]
+     Update skill YAML frontmatter:
+       lifecycle_status: "deprecated"
+       deprecated_at: "<today ISO-8601>"
+       deprecation_reason: "<user-provided or AI-inferred>"
+       replacement_skill: "<name of replacement, or null>"
+
+  4. UPDATE GRAPH [CORE]
+     If replacement_skill declared: propose similar_to edge with similarity 0.99
+     between this skill and replacement (for dedup/routing purposes).
+
+  5. NOTIFY [CORE]
+     Output deprecation notice:
+       "DEPRECATED: <skill-name> v<version>
+        Reason: <reason>
+        Replacement: <replacement or 'none'>
+        Any skill that depends_on <name> must update its graph: block."
+
+  6. REGISTER [EXTENDED]
+     If registry configured: push deprecation flag to registry.json entry.
+```
+
+### Routing Behavior for Deprecated Skills
+
+```
+IF skill trigger matches AND skill.lifecycle_status == "deprecated":
+  → Show WARNING before any output:
+    "⚠ This skill (<name>) is deprecated.
+     Reason: <deprecation_reason>
+     Replacement: <replacement_skill or 'see registry for alternatives'>
+     Type 'proceed anyway' to continue, or switch to the replacement skill."
+  → Do NOT silently execute a deprecated skill
+```
 
 ---
 

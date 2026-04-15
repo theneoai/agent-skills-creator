@@ -130,3 +130,70 @@ jobs:
           head -5 skill-framework.md | grep -q '^---' \
             || { echo "✗ skill-framework.md: no YAML frontmatter"; exit 1; }
           echo "  ✓ skill-framework.md present with frontmatter"
+
+  platform-sync:
+    name: Platform skill file sync check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check all platform skill files are in sync with claude/skill-writer.md
+        run: |
+          python3 - <<'EOF'
+          import os, sys, re
+          from difflib import unified_diff
+
+          CANONICAL = "claude/skill-writer.md"
+          PLATFORMS = {
+              "openclaw": "openclaw/skill-writer.md",
+              "opencode": "opencode/skill-writer.md",
+              "cursor":   "cursor/skill-writer.mdc",
+              "gemini":   "gemini/skill-writer.md",
+              "openai":   "openai/skill-writer.md",
+              "kimi":     "kimi/skill-writer.md",
+              "hermes":   "hermes/skill-writer.md",
+          }
+
+          # Lines legitimately different per platform — skip in comparison
+          IGNORE_PATTERNS = [
+              r'^metadata\.openclaw',
+              r'^\*\*Triggers\*\*:',
+              r'^alwaysApply',
+              r'^---$',
+              r'AGENTS\.md',
+              r'CLAUDE\.md',
+              r'GEMINI\.md',
+              r'\.mdc',
+              r'~\/\.(openclaw|opencode|gemini|config\/openai|config\/kimi|hermes)',
+          ]
+
+          def strip_platform_lines(lines):
+              return [l for l in lines if not any(re.search(p, l) for p in IGNORE_PATTERNS)]
+
+          if not os.path.exists(CANONICAL):
+              print(f"✗ canonical file missing: {CANONICAL}", file=sys.stderr)
+              sys.exit(1)
+
+          canonical_stripped = strip_platform_lines(open(CANONICAL).readlines())
+
+          diverged = []
+          for name, path in PLATFORMS.items():
+              if not os.path.exists(path):
+                  print(f"  ⚠ {path}: missing (skipped — platform may be in progress)")
+                  continue
+              platform_stripped = strip_platform_lines(open(path).readlines())
+              diff = list(unified_diff(canonical_stripped, platform_stripped,
+                                       fromfile=CANONICAL, tofile=path, lineterm=""))
+              if diff:
+                  diverged.append((name, len(diff)))
+                  print(f"  ✗ {path}: {len(diff)} diverged lines (showing first 15):")
+                  for line in diff[:15]:
+                      print(f"      {line.rstrip()}")
+              else:
+                  print(f"  ✓ {path}: in sync")
+
+          if diverged:
+              print(f"\nFAILED: {len(diverged)} platform(s) diverged from canonical.", file=sys.stderr)
+              print("Fix: update platform files or run 'make install-all' to re-sync.", file=sys.stderr)
+              sys.exit(1)
+          EOF

@@ -228,8 +228,8 @@ required permissions and trust boundaries."
 | Severity | Patterns | Detection | Action | Delivery |
 |----------|----------|-----------|--------|---------|
 | **P0** | CWE-798, CWE-89, CWE-78 | Regex match | ABORT immediately | BLOCKED |
-| **P1** | ASI01, CWE-22, CWE-306, CWE-862 | Regex + heuristic | Score penalty + WARNING | Allowed with doc |
-| **P2** | Missing boundaries, Executable risk | Heuristic only | Advisory note | No block |
+| **P1** | ASI01, CWE-22, CWE-306, CWE-862, ASI05 (conditional), ASI09 (conditional) | Regex + heuristic | Score penalty + WARNING | Allowed with doc |
+| **P2** | Missing boundaries, Executable risk, ASI05 (base), ASI09 (base) | Heuristic only | Advisory note | No block |
 
 ---
 
@@ -274,7 +274,7 @@ marked as `"resolved": true`).
 
 > **Authority**: OWASP Top 10 for Agentic Applications 2026 (100+ industry experts, peer-reviewed)
 > **Integration**: These checks run as part of EVALUATE Phase 3 and LEAN security dimension.
-> **Severity mapping**: ASI01 → P1; ASI02-ASI04 → P1; ASI05-ASI10 → P2 (advisory)
+> **Severity mapping**: ASI01 → P1; ASI02-ASI04 → P1; ASI05 → P1 conditional / P2 base; ASI06-ASI08 → P2; ASI09 → P1 conditional / P2 base; ASI10 → P2
 
 ### ASI01 — Agent Goal Hijack `[P1, −50 pts]`
 
@@ -330,18 +330,46 @@ ClawHavoc injected 300+ malicious skills via compromised registry entries.
 
 ---
 
-### ASI05 — Excessive Autonomy & Scope Creep `[P2, advisory]`
+### ASI05 — Excessive Autonomy & Scope Creep `[P1 conditional / P2 advisory]`
+
+> **v3.4.0 severity change**: ASI05 escalates from P2 (advisory) to **P1 (−30 pts)**
+> when the skill contains irreversible action verbs AND lacks explicit confirmation gates.
+> OWASP Agentic Top 10 2026 classifies unconfirmed irreversible actions as a tier-1 risk.
+> ClawHavoc (300+ skills compromised) exploited exactly this pattern.
 
 ```
-Heuristic triggers:
+Heuristic triggers (P2 — advisory baseline):
   - Skill performs irreversible actions (delete, send, publish, deploy) without confirmation
   - Skill makes decisions on behalf of user without explicit approval checkpoints
   - Skill scope expands based on initial request ("while I'm at it, I'll also...")
   - Workflow has no human-in-the-loop checkpoints for high-impact actions
+
+Conditional P1 escalation rule (−30 pts):
+  IF skill body contains ANY of:
+    [delete, drop, rm, purge, send, publish, deploy, push, overwrite, truncate,
+     rollout, force, destroy, wipe, archive, migrate, promote]
+  AND has NO mention of ANY of:
+    [confirm, checkpoint, approve, "are you sure", human-in-the-loop,
+     confirmation, sign-off, review before, proceed?, user approval]
+  → Escalate to P1 (−30 pts)
+  → Required remediation: add explicit confirmation gate documentation
+
+  REMAIN P2 if:
+    - Skill is read-only (no write/delete operations)
+    - Confirmation gate is explicitly documented in Security Baseline or workflow
+    - Skill declares DRY-RUN mode that is recommended before execution
 ```
 
-**Advisory**: "Irreversible actions detected. Add explicit user confirmation gates before
+**Advisory (P2 baseline)**: "Irreversible actions detected. Add explicit user confirmation gates before
 destructive operations."
+
+**Required remediation (P1 escalation)**: Add to Security Baseline section:
+```markdown
+## Security Baseline
+- Irreversible action gate: [specific step where user confirms before <action>]
+- Human-in-the-loop: user must type "confirm <action>" before execution proceeds
+- DRY-RUN mode available: `--dry-run` flag shows impact without executing
+```
 
 ---
 
@@ -383,13 +411,36 @@ Heuristic triggers:
 
 ---
 
-### ASI09 — Lack of Human Oversight `[P2, advisory]`
+### ASI09 — Lack of Human Oversight `[P1 conditional / P2 advisory]`
+
+> **v3.4.0 severity change**: ASI09 escalates to **P1 (−30 pts)** when the skill
+> explicitly claims "fully automated" or "no intervention required" AND performs
+> high-impact operations. This matches OWASP Agentic Top 10 2026 tier-1 classification.
 
 ```
-Heuristic triggers:
+Heuristic triggers (P2 — advisory baseline):
   - Skill executes multi-step workflows with no user interaction required
   - Skill has "fully automated" in description but performs high-impact operations
   - No mention of error recovery that surfaces to human
+
+Conditional P1 escalation rule (−30 pts):
+  IF skill description/body contains:
+    ["fully automated", "no manual intervention", "runs autonomously",
+     "zero human interaction", "unattended", "background task"]
+  AND skill performs ANY high-impact operation from ASI05 irreversible verb list
+  → Escalate to P1 (−30 pts)
+  → Required remediation: add explicit human oversight checkpoint
+
+  REMAIN P2 if:
+    - Skill has an error escalation path that surfaces to human
+    - Automation scope is clearly limited (read-only, idempotent, or reversible)
+```
+
+**Required remediation (P1 escalation)**: Add to Security Baseline:
+```markdown
+- Human oversight: failures and exceptions are surfaced to user at [specific checkpoint]
+- Automation scope: only [specific read-only or reversible operations] run unattended
+- Escalation path: on unexpected state → PAUSE and notify user before continuing
 ```
 
 ---
@@ -554,17 +605,115 @@ Every scan appends to `.skill-audit/security.jsonl`:
     "ASI02": "CLEAR|WARNING",
     "ASI03": "CLEAR|WARNING",
     "ASI04": "CLEAR|WARNING",
-    "ASI05": "CLEAR|ADVISORY",
+    "ASI05": "CLEAR|WARNING|ADVISORY",
     "ASI06": "CLEAR|ADVISORY",
     "ASI07": "CLEAR|ADVISORY",
     "ASI08": "CLEAR|ADVISORY",
-    "ASI09": "CLEAR|ADVISORY",
+    "ASI09": "CLEAR|WARNING|ADVISORY",
     "ASI10": "CLEAR|ADVISORY"
   },
   "score_penalty": 0,
+  "asi05_escalated_to_p1": false,
+  "asi09_escalated_to_p1": false,
   "result": "CLEAR|ABORT|CONFIRM_REQUIRED",
   "user_confirmed": false,
   "resume_authorized": false,
   "resolved": false
 }
 ```
+
+---
+
+## §8  Skill SBOM — Supply Chain Bill of Materials `[EXTENDED]`
+
+> **Research basis**: SkillNet (arxiv:2603.04448) — transitive dependency chains in real
+> skill ecosystems reach 4–5 levels deep. Verifying only direct dependencies misses
+> 60–80% of the actual attack surface (SkillProbe 2026 finding).
+>
+> **Context**: §6 verifies individual skills at install time. This section defines a
+> **complete transitive dependency manifest** — the skill's SBOM — generated at SHARE time
+> and verified at INSTALL time.
+
+### §8.1  SBOM Generation (at SHARE time) `[EXTENDED]`
+
+When `/share` is executed, generate `bundle_manifest.json` alongside the skill file:
+
+```json
+{
+  "sbom_version": "1.0",
+  "skill": "<name>",
+  "version": "<semver>",
+  "generated_at": "<ISO-8601>",
+  "generated_by": "skill-writer v3.4.0",
+  "direct_dependencies": [
+    {
+      "name": "<dep-name>",
+      "version_constraint": ">=1.0.0,<2.0.0",
+      "required": true,
+      "sha256": "<hash or null if unsigned>",
+      "trust_level": "TRUSTED|VERIFIED|UNVERIFIED"
+    }
+  ],
+  "transitive_dependencies": [
+    {
+      "name": "<transitive-dep>",
+      "version_constraint": ">=1.0.0",
+      "required_by": "<direct-dep-name>",
+      "depth": 2,
+      "sha256": "<hash or null>",
+      "trust_level": "TRUSTED|VERIFIED|UNVERIFIED"
+    }
+  ],
+  "total_skills": 4,
+  "all_verified": false,
+  "unverified_count": 1,
+  "security_summary": {
+    "p0_violations": 0,
+    "p1_warnings": 0,
+    "unverified_deps": ["<dep-name>"]
+  }
+}
+```
+
+### §8.2  SBOM Verification (at INSTALL time) `[EXTENDED]`
+
+When `/install [skill]` is run for a skill with a `bundle_manifest.json`:
+
+```
+SBOM VERIFICATION SEQUENCE:
+  1. READ    — Load bundle_manifest.json from the skill package
+  2. RESOLVE — For each transitive_dependency, locate in registry or local install
+  3. VERIFY  — For each resolved dep:
+               IF sha256 declared: verify hash matches installed file
+               IF unsigned: mark UNVERIFIED; prompt user to confirm
+  4. CONFLICT CHECK (GRAPH-009):
+               IF two deps require incompatible versions of same transitive dep:
+               → ABORT("Version conflict: <dep> requires <v1> but <dep2> requires <v2>")
+  5. REPORT  — Show SBOM summary before installing:
+
+    SBOM Verification Report
+    ========================
+    Skill: api-tester v1.2.0
+    Direct deps:    2  (1 verified, 1 unverified)
+    Transitive:     2  (both verified)
+    SBOM coverage:  75%
+
+    ⚠ UNVERIFIED: auth-helper (no SHA-256 declared)
+      → Type "trust auth-helper" to allow, or cancel to abort
+
+  6. INSTALL — Only proceed after user resolves any UNVERIFIED deps
+```
+
+### §8.3  AI Approximation `[CORE]`
+
+LLMs cannot compute SHA-256 hashes but can:
+
+1. Prompt user to run `sha256sum <dep-skill-file>` for each dependency
+2. Record results in the SBOM direct_dependencies entries
+3. Warn on any dependency with `sha256: null` (unsigned) before SHARE
+4. List all transitive deps by reading `depends_on` chains from YAML (using MVR algorithm in `refs/skill-graph.md §2a`)
+
+**Minimum viable SBOM** `[CORE]`: Even without hash verification, the AI can generate a
+`bundle_manifest.json` listing all transitive dependencies with their names and version
+constraints. This provides supply chain visibility even when cryptographic verification
+is unavailable.

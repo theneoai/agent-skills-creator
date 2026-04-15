@@ -445,6 +445,95 @@ weighted ranking (refs/skill-registry.md §11.4) over time.
 
 ---
 
+## §6a  AGGREGATE Conflict Resolution Protocol `[CORE]`
+
+> **Research basis**: SkillClaw (arxiv:2604.08377) — collective evolution aggregates signals
+> from many users, but provides no conflict resolution when user preferences diverge.
+> Without a protocol, the AGGREGATE ranked improvement list is unreliable for multi-user
+> skill ecosystems where different users report contradictory signals for the same dimension.
+
+When AGGREGATE processes N session artifacts for skill S and detects contradictory signals:
+
+### §6a.1  Conflict Detection
+
+```
+CONFLICT DETECTED when:
+  Two or more artifacts for the same skill + dimension contain:
+    - opposing improvement_hints (e.g. "add more examples" vs "examples are too verbose")
+    - opposing notable_patterns    (e.g. "ZH triggers work great" vs "ZH triggers miss")
+    - opposing prm_signal values   (e.g. "good" vs "poor" for same mode)
+
+  Detection rule:
+    FOR each dimension D in {systemDesign, domainKnowledge, workflow, errorHandling,
+                              examples, security, metadata}:
+      group_strong = count(dimension_observations.D = "strong")
+      group_weak   = count(dimension_observations.D = "weak")
+      IF group_strong > 0 AND group_weak > 0:
+        conflict_ratio = min(group_strong, group_weak) / max(group_strong, group_weak)
+        IF conflict_ratio ≥ 0.40:  # at least 40% of signals oppose majority
+          → Flag dimension D as DISPUTED
+```
+
+### §6a.2  Resolution Rules (apply in priority order)
+
+```
+Priority 1 — Quality-weighted voting:
+  Weight each artifact by the skill's certified_lean_score at time of session.
+  Higher-scoring context sessions carry more weight.
+  weighted_strong = sum(lean_score) for artifacts with D = "strong"
+  weighted_weak   = sum(lean_score) for artifacts with D = "weak"
+  IF |weighted_strong - weighted_weak| > 0.25 × total_weight:
+    → Accept majority by weighted vote
+    → Label: "RESOLVED (quality-weighted)"
+
+Priority 2 — Recency bias:
+  IF Priority 1 is inconclusive (within 25% margin):
+    Apply staleness discount: weight(artifact) *= 0.9^(days_since_session / 30)
+    Re-compute weighted_strong and weighted_weak
+    IF recency-weighted majority is clear:
+      → Accept; label: "RESOLVED (recency-weighted)"
+
+Priority 3 — Frequency threshold:
+  IF Priority 2 is still inconclusive:
+    IF one side has ≥ 3× more raw votes:
+      → Accept the higher-frequency side
+      → Label: "RESOLVED (frequency)"
+
+Priority 4 — DISPUTED (no resolution):
+  IF none of the above resolves the conflict:
+    → Mark dimension as DISPUTED
+    → Present BOTH sides to human in AGGREGATE output:
+      "DISPUTED — dimension <D>:
+         <N1> sessions say: <improvement_hint_A>
+         <N2> sessions say: <improvement_hint_B>
+       These signals contradict. Human review required before optimizing this dimension."
+    → Do NOT add DISPUTED dimensions to the ranked improvement list for /opt
+```
+
+### §6a.3  Output Format for DISPUTED Dimensions
+
+```
+AGGREGATE Report — Disputed Signals
+=====================================
+Skill: <name> v<version>
+Artifacts analyzed: N
+Disputes found: M
+
+DISPUTED: examples dimension
+  Signal A (3 sessions, avg lean_score 420): "examples are too verbose — trim to 2 per mode"
+  Signal B (2 sessions, avg lean_score 380): "need more examples — add 3 per mode"
+  Conflict ratio: 0.67 — no clear majority
+  → Requires human decision before /opt can target this dimension
+
+RESOLVED: workflow dimension
+  7 sessions (quality-weighted): "add explicit exit criteria to Phase 3"
+  2 sessions: "workflow is adequate"
+  Resolution: quality-weighted majority → add to /opt queue
+  → Ranked improvement #2
+```
+
+---
+
 ## §7  SkillClaw Interoperability
 
 Session Artifacts are designed to be compatible with the SkillClaw evolve server

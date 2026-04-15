@@ -138,7 +138,7 @@ Executed against benchmark test cases (`claude/eval/benchmarks.md`). Scored in P
 
 | Test Category | Max | What Is Tested |
 |---------------|-----|----------------|
-| **Trigger Routing Accuracy** | 120 | Mode router predicts correct mode for positive cases |
+| **Trigger Routing Accuracy** | 120 | 60 pts: frozen anchor set (`eval/benchmarks.md §10a`, deterministic); 60 pts: skill-specific cases (LLM-evaluated) |
 | **Bilingual Trigger Coverage** | 80 | Both EN and ZH inputs route correctly |
 | **Negative/Edge Cases** | 60 | Ambiguous inputs handled; negatives filtered; fallback activated |
 | **Output Contract** | 60 | Each mode's output format matches stated spec |
@@ -248,6 +248,50 @@ BEHAVIORAL VERIFIER SEQUENCE:
 > **Note**: The Behavioral Verifier is a supplementary check. It does NOT change certification
 > tier boundaries (PLATINUM/GOLD/etc.) — it adds up to 20 bonus pts to Phase 4. EVALUATE total
 > maximum becomes 1020 pts when behavioral verifier passes fully.
+
+### §6.4a  Behavioral Verifier Test Persistence `[EXTENDED]`
+
+> **Research basis**: EvoSkills (arxiv:2604.01687) — verifier quality improves as the test set
+> accumulates across iterations. Discarding tests after each EVALUATE run prevents convergence.
+
+Auto-generated Behavioral Verifier test cases MUST be persisted alongside the skill file
+so they accumulate across EVALUATE runs. New runs append to the existing test set rather
+than replacing it.
+
+**Storage**: `.<skill-name>.behavioral-tests.json` alongside the skill file (or in the
+same directory as the `.optimize-history.jsonl` file).
+
+**Format**:
+```json
+{
+  "skill": "<skill-name>",
+  "version": "<semver>",
+  "updated_at": "<ISO-8601>",
+  "tests": [
+    {
+      "id": "BV-<skill-prefix>-001",
+      "input": "<test input>",
+      "expected_behavior": "<what skill should do>",
+      "test_type": "positive | negative",
+      "pass": true,
+      "added_version": "<semver when test was first generated>",
+      "times_run": 1,
+      "last_run_at": "<ISO-8601>",
+      "source": "auto-generated | user-provided"
+    }
+  ]
+}
+```
+
+**Accumulation rules**:
+- On each EVALUATE run: load existing tests file if present, append any new cases
+- Do NOT delete passing tests — they form the regression suite
+- Do NOT duplicate: skip generation if a semantically equivalent test already exists (check `input` similarity ≥ 0.90)
+- User-provided test cases from `/eval --pragmatic` are tagged `"source": "user-provided"` and are never auto-removed
+- After OPTIMIZE convergence: re-run all accumulated tests; report pass_rate delta vs pre-optimization
+
+**AI fallback** `[CORE]`: When file system is unavailable, list the test cases in the conversation context
+and ask the user to save them. On the next EVALUATE run, paste saved cases back to restore continuity.
 
 ---
 
@@ -531,7 +575,8 @@ PHASE SCORES
   Phase 2 — Text Quality:       XX / 300
     System Design:     XX/60   Error Handling: XX/45
     Domain Knowledge:  XX/60   Examples:       XX/45
-    Workflow:          XX/60   Metadata:       XX/30
+    Workflow:          XX/45   Security:       XX/30
+    Metadata:          XX/15
   Phase 3 — Runtime Testing:    XX / 400
     Trigger Routing:   XX/120  Output Contract:   XX/60
     Bilingual:         XX/80   Error Handling RT: XX/50

@@ -362,6 +362,78 @@ A skill may add domain-specific test cases beyond these minimums.
 
 ---
 
+## §10a  Frozen Benchmark Anchors (Deterministic Phase 3 Scoring)
+
+> **Purpose**: Reduce LLM evaluation variance by replacing heuristic routing tests with a
+> fixed set of frozen test cases that never change between evaluations. These cases have
+> deterministic expected outputs — no LLM judgment required for pass/fail decision.
+>
+> **Research basis**: SkillRouter (arxiv:2603.22455) used 35,000 labeled examples with fixed
+> correct answers, achieving deterministic 74% routing accuracy with zero evaluation variance.
+>
+> **Integration**: These cases replace 60 pts of the "Trigger Routing Accuracy" sub-category
+> in Phase 3 (eval/rubrics.md §5). The remaining 60 pts of trigger routing remain LLM-evaluated
+> against the skill's own benchmark cases. Total Phase 3 max remains 400 pts.
+>
+> **Stability rule**: Frozen anchor cases are NEVER modified mid-version. Updates only allowed
+> at major version bumps (v4.0+) with a 90-day grace period for recertification.
+
+### §10a.1  Frozen Anchor Set — skill-writer meta-skill (20 cases, 60 pts)
+
+Each correct prediction = 3 pts. All 20 correct = 60 pts.
+
+| Anchor ID | Input | Expected Mode | Rationale |
+|-----------|-------|--------------|-----------|
+| ANC-001 | `"create a skill"` | CREATE | Canonical trigger — must always match |
+| ANC-002 | `"创建技能"` | CREATE | ZH canonical — must always match |
+| ANC-003 | `"evaluate this skill"` | EVALUATE | Canonical trigger |
+| ANC-004 | `"评测技能"` | EVALUATE | ZH canonical |
+| ANC-005 | `"lean eval"` | LEAN | Canonical trigger |
+| ANC-006 | `"快评"` | LEAN | ZH canonical |
+| ANC-007 | `"optimize this skill"` | OPTIMIZE | Canonical trigger |
+| ANC-008 | `"优化技能"` | OPTIMIZE | ZH canonical |
+| ANC-009 | `"install skill-writer"` | INSTALL | Framework install — must not route to SHARE |
+| ANC-010 | `"share my skill"` | SHARE | User's own skill — must not route to INSTALL |
+| ANC-011 | `"collect session"` | COLLECT | Canonical trigger |
+| ANC-012 | `"graph view"` | GRAPH | Canonical trigger |
+| ANC-013 | `"install my skill to claude"` | SHARE | "my skill" → SHARE (not INSTALL) |
+| ANC-014 | `"write me a script"` | NONE (negative) | Must NOT trigger any skill mode |
+| ANC-015 | `"explain this code"` | NONE (negative) | Must NOT trigger any skill mode |
+| ANC-016 | `"build a skill that sends emails"` | CREATE | "build" + "skill" → CREATE |
+| ANC-017 | `"score my skill"` | EVALUATE | "score" → EVALUATE |
+| ANC-018 | `"improve skill trigger accuracy"` | OPTIMIZE | "improve" → OPTIMIZE |
+| ANC-019 | `"read [URL] and install"` | INSTALL | Agent install pattern |
+| ANC-020 | `"from failures: agent kept failing on X"` | CREATE (from-failures=true) | Failure-driven create |
+
+### §10a.2  Anchor Scoring Rules
+
+```
+For each anchor case:
+  predicted_mode = apply skill's mode router to anchor input
+  IF predicted_mode == expected_mode (or "NONE" for negative cases): +3 pts
+  ELSE: +0 pts
+
+  For negative cases (ANC-014, ANC-015):
+    "NONE" means the skill produced a clarifying question or correctly said
+    "this doesn't match my scope" — any definite mode assignment = FAIL (0 pts)
+
+anchor_score = sum of all case scores (max 60)
+```
+
+### §10a.3  Anchor Fail Analysis
+
+When an anchor case fails, it indicates a structural routing defect — not just a quality gap:
+
+| Failing Anchors | Root Cause | Required Fix |
+|-----------------|------------|-------------|
+| ANC-001 or ANC-002 (CREATE) | Canonical trigger broken | Check triggers.en/zh field for "create" |
+| ANC-009 vs ANC-013 confused | INSTALL/SHARE disambiguation broken | Review §3 Mode Router routing note |
+| ANC-014 or ANC-015 (negatives) | No negative boundary | Add Negative Boundaries section |
+| Any ZH anchor (ANC-002,004,006,008,012) | Missing ZH triggers | Add ZH trigger keywords |
+| ANC-019 (Agent Install) | INSTALL pattern not recognized | Add "read.*install" pattern to INSTALL keywords |
+
+---
+
 ## §11  Adding Custom Benchmark Cases
 
 When creating a new skill with `skill-writer.md CREATE mode`, add at least:
