@@ -4,7 +4,8 @@
 > **Load**: When §17 (COLLECT Mode) of `claude/skill-writer.md` is accessed.
 > **Inspired by**: SkillClaw (arxiv:2604.08377) + SkillRL lesson distillation (arxiv:2602.08234)
 > **Main doc**: `claude/skill-writer.md §17`
-> **Last updated**: 2026-04-13 — v3.2.0: Added GoS `bundle_context` + `graph_signals` fields (§2, §3, §8)
+> **Last updated**: 2026-04-15 — v3.4.0: Added `generation_method`, `validation_status`, `pragmatic_success_rate` fields (§2, §3, §8a); schema_version bumped to "1.1"
+> **Previous**: 2026-04-13 — v3.2.0: Added GoS `bundle_context` + `graph_signals` fields
 
 ---
 
@@ -33,7 +34,7 @@ The Session Artifact is the atomic unit that enables this.
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "skill_id": "<SHA-256[:12] of skill name>",
   "skill_name": "<name field from YAML frontmatter>",
   "skill_version": "<semver from YAML frontmatter>",
@@ -99,6 +100,15 @@ The Session Artifact is the atomic unit that enables this.
         "language":    "en | zh"
       }
     ]
+  },
+
+  "skill_provenance": {
+    "generation_method":       "auto-generated | human-authored | hybrid",
+    "validation_status":       "unvalidated | lean-only | full-eval | pragmatic-verified",
+    "pragmatic_success_rate":  null,
+    "behavioral_verifier_pass_rate": null,
+    "certified_lean_score":    null,
+    "last_evaluated_at":       null
   }
 }
 ```
@@ -111,7 +121,7 @@ The Session Artifact is the atomic unit that enables this.
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `schema_version` | ✅ | Always `"1.0"` for this spec revision |
+| `schema_version` | ✅ | `"1.1"` for this spec revision (bumped from 1.0 in v3.4.0) |
 | `skill_id` | ✅ | `SHA-256[:12]` of `skill_name` (deterministic; used for registry lookup) |
 | `skill_name` | ✅ | Exact value of `name` from YAML frontmatter |
 | `skill_version` | ✅ | Semver string from YAML frontmatter |
@@ -194,6 +204,48 @@ Set `trigger_miss: true` when the skill was activated via the AGENTS.md routing
 block or UserPromptSubmit Hook (Layer -1), but the user's phrasing did not match
 any entry in `triggers.en` or `triggers.zh`. This is the highest-signal case for
 trigger discovery — the skill *worked* but its trigger list doesn't capture why.
+
+### Skill Provenance fields (v3.4.0) `[CORE]`
+
+> **Purpose**: Track skill provenance and validation status in artifacts.
+> Enables AGGREGATE pipeline to correlate skill quality (generation method, validation level)
+> with session outcomes — identifying which skill types produce reliable results.
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `skill_provenance.generation_method` | ✅ | How the skill was created: `auto-generated`, `human-authored`, or `hybrid` |
+| `skill_provenance.validation_status` | ✅ | Highest validation milestone reached: `unvalidated`, `lean-only`, `full-eval`, `pragmatic-verified` |
+| `skill_provenance.pragmatic_success_rate` | No | 0.0–1.0; populated after `/eval --pragmatic` run; `null` if not run |
+| `skill_provenance.behavioral_verifier_pass_rate` | No | 0.0–1.0; populated after EVALUATE Phase 4; `null` if not run |
+| `skill_provenance.certified_lean_score` | No | Last LEAN score (0–520 with D8 bonus); mirrors YAML frontmatter value |
+| `skill_provenance.last_evaluated_at` | No | ISO-8601 timestamp of last EVALUATE or LEAN run |
+
+**`generation_method` recording rule** `[CORE]`:
+Copy verbatim from `use_to_evolve.generation_method` in the skill's YAML frontmatter.
+If the field is absent (pre-v3.4.0 skill), set to `"human-authored"` as the default assumption.
+
+**`validation_status` recording rule** `[CORE]`:
+Copy verbatim from `use_to_evolve.validation_status` in the skill's YAML frontmatter.
+This captures the validation level *at the time of this session* — it will advance over time
+as the skill undergoes additional evaluation.
+
+**AGGREGATE Rule 5 — Provenance-Outcome Correlation** `[EXTENDED]`:
+```
+For each skill S with N ≥ 10 session artifacts:
+  Compute:
+    auto_gen_outcome_rate    = avg(outcome = 'success') where generation_method = 'auto-generated'
+    human_authored_rate      = avg(outcome = 'success') where generation_method = 'human-authored'
+    lean_only_outcome_rate   = avg(outcome = 'success') where validation_status = 'lean-only'
+    full_eval_outcome_rate   = avg(outcome = 'success') where validation_status = 'full-eval'
+
+  If auto_gen_outcome_rate < 0.60:
+    → Flag skill for `/eval --pragmatic` (add to improvement queue)
+  If lean_only_outcome_rate < full_eval_outcome_rate by > 0.15:
+    → Surface to user: "Pragmatic outcomes improve significantly after full evaluation"
+    → Recommend: run `/eval` to upgrade validation_status
+```
+
+---
 
 ### SkillRL Lesson Distillation fields `[CORE]`
 
@@ -406,3 +458,4 @@ session format. Key alignment points:
 | Skill reference | `skill_id` + `skill_name` | SHA-256[:12] IDs are compatible |
 | Sessions queue | `sessions/` directory | Same storage layout |
 | **v3.2.0 GoS extension** | `bundle_context` + `graph_signals` | Enables graph edge auto-inference |
+| **v3.4.0 Provenance** | `skill_provenance.*` | Correlates generation method + validation level with session outcomes |

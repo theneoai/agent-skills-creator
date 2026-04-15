@@ -168,26 +168,209 @@ Template: `claude/templates/workflow-automation.md`
 
 ---
 
-## §5  Minimum Pass Criteria (Summary)
+## §5  LEAN Mode Benchmarks
+
+> LEAN is a fast 500-pt pre-screen used before full EVALUATE. These cases verify that
+> LEAN correctly identifies passing (≥350) and failing (<350) skills based on static
+> + heuristic checks without triggering the full 1000-pt pipeline.
+
+### LEAN Pass Cases (expected score ≥ 350)
+
+| ID | Skill Condition | Expected LEAN Result | Key Signals |
+|----|-----------------|---------------------|-------------|
+| LN-P-01 | Skill with all required fields, 5+ triggers, Skill Summary, Negative Boundaries | LEAN_PASS (≥350) | D1–D4 all pass |
+| LN-P-02 | Skill with graph: block + all required sections | LEAN_PASS (≥370, +20 D8 bonus) | D8 composability bonus |
+| LN-P-03 | Skill with 8 triggers (EN+ZH), dense Skill Summary | LEAN_PASS (≥350) | High D2 trigger score |
+
+### LEAN Fail Cases (expected score <350)
+
+| ID | Skill Condition | Expected LEAN Result | Failing Dimension |
+|----|-----------------|---------------------|-------------------|
+| LN-F-01 | Skill missing `triggers:` block | LEAN_FAIL (<350) | D2 (Trigger Coverage) |
+| LN-F-02 | Skill missing Skill Summary and Negative Boundaries | LEAN_FAIL (<350) | D3 (Body Quality) |
+| LN-F-03 | Skill missing `skill_tier:` and `use_to_evolve:` YAML fields | LEAN_FAIL (<350) | D1 (YAML Completeness) |
+| LN-F-04 | Skill with `{{PLACEHOLDER}}` tokens remaining | LEAN_FAIL (<350) | D1 (YAML Completeness) |
+| LN-F-05 | Skill with CWE-798 violation (hardcoded credential) | LEAN_FAIL (P0 abort) | D6 (Security) |
+
+### LEAN Mode Trigger Cases
+
+| ID | Input | Expected Mode | Notes |
+|----|-------|--------------|-------|
+| LN-T-01 | "lean eval" | LEAN | Canonical trigger |
+| LN-T-02 | "快评" | LEAN | ZH canonical trigger |
+| LN-T-03 | "quick score this skill" | LEAN | Confidence ≥ 0.80 |
+| LN-T-04 | "pre-screen skill before evaluate" | LEAN | Confidence ≥ 0.75 |
+
+---
+
+## §6  Pragmatic Test Benchmarks
+
+> Pragmatic Test (`/eval --pragmatic`) checks real-world utility beyond theoretical scores.
+> These cases verify the pragmatic_success_rate computation and tier assignment.
+
+### Pragmatic Test Execution Cases
+
+| ID | Skill | Sample Task | Expected Outcome | Notes |
+|----|-------|------------|-----------------|-------|
+| PT-E-01 | git-diff-summarizer | User pastes a 50-line diff: "summarize this diff" | PASS | Core use case |
+| PT-E-02 | git-diff-summarizer | User pastes empty string: "summarize this" | FAIL | Edge case: empty input |
+| PT-E-03 | git-diff-summarizer | Binary diff output pasted | PARTIAL | Binary file skipped (documented) |
+| PT-E-04 | api-tester | "test GET /users endpoint returns 200" | PASS | Happy path |
+| PT-E-05 | api-tester | "test endpoint with malformed URL" | FAIL | Error handling |
+
+### Pragmatic Test Tier Classification
+
+| ID | pragmatic_success_rate | Expected Tier | Expected PRAGMATIC_LABEL | SHARE gate |
+|----|----------------------|---------------|--------------------------|------------|
+| PT-T-01 | ≥ 80% (4/5 PASS) | PRAGMATIC_GOOD | PRAGMATIC_VERIFIED | Allowed |
+| PT-T-02 | 60–79% (3/5 PASS) | ADEQUATE | PRAGMATIC_ADEQUATE | Allowed with warning |
+| PT-T-03 | 40–59% (2/5 PASS) | WEAK | PRAGMATIC_WEAK | Blocked: must re-eval |
+| PT-T-04 | <40% (0–1/5 PASS) | FAIL | PRAGMATIC_FAIL | HARD BLOCK |
+
+### Pragmatic Test Trigger Cases
+
+| ID | Input | Expected Mode | Notes |
+|----|-------|--------------|-------|
+| PT-T-01 | "eval --pragmatic" | EVALUATE (pragmatic=true) | Canonical trigger |
+| PT-T-02 | "pragmatic test my skill" | EVALUATE (pragmatic=true) | Alternate phrasing |
+| PT-T-03 | "test against real tasks" | EVALUATE (pragmatic=true) | Confidence ≥ 0.80 |
+| PT-T-04 | "实用性测试" | EVALUATE (pragmatic=true) | ZH trigger |
+
+---
+
+## §7  Behavioral Verifier Benchmarks
+
+> Behavioral Verifier auto-generates 5 test cases (3 positive + 2 negative) from the
+> Skill Summary and scores pass_rate. These cases verify the generation + scoring logic.
+
+### Verifier Test Case Generation
+
+| ID | Skill Summary Content | Expected Positive Cases | Expected Negative Cases |
+|----|----------------------|------------------------|------------------------|
+| BV-G-01 | Summary mentions "reads git diff" and "outputs changelog" | "summarize [diff]" → PASS | "execute git commands" → REJECT |
+| BV-G-02 | Summary mentions "calls weather API" and "returns temperature" | "get temperature in [city]" → PASS | "modify weather data" → REJECT |
+| BV-G-03 | Summary mentions "validates CSV schema" | "check schema compliance" → PASS | "delete records" → REJECT |
+
+### Verifier Score Classification
+
+| ID | pass_rate | Expected Verifier Score | Warning Issued |
+|----|-----------|------------------------|----------------|
+| BV-S-01 | 5/5 (1.00) | +20 pts (BEHAVIORAL_VERIFIED) | No |
+| BV-S-02 | 4/5 (0.80) | +20 pts (BEHAVIORAL_VERIFIED) | No |
+| BV-S-03 | 3/5 (0.60) | +10 pts (BEHAVIORAL_PARTIAL) | Warning: "3/5 verifier tests passed" |
+| BV-S-04 | 2/5 (0.40) | +0 pts (BEHAVIORAL_WEAK) | WARNING: "Possible generator bias" |
+| BV-S-05 | 0/5 (0.00) | +0 pts + FLAG | ESCALATE to HUMAN_REVIEW |
+
+### Verifier Anti-Gaming Cases
+
+| ID | Scenario | Expected Behavior |
+|----|----------|------------------|
+| BV-A-01 | Developer writes Skill Summary that mirrors test inputs verbatim | Verifier detects low semantic diversity; WARNING issued |
+| BV-A-02 | Skill Summary omits scope (no NOT-FOR statements) | Negative cases cannot be generated; partial score only |
+| BV-A-03 | Skill Summary is < 2 sentences | Insufficient context; verifier generates only 2 cases |
+
+---
+
+## §8  Failure-Driven CREATE Benchmarks
+
+> `create --from-failures` uses failure trajectory inputs to generate skills targeting
+> observed failure patterns (SkillForge research: arxiv:2604.08618).
+
+### Failure Input Cases
+
+| ID | Failure Description | Expected Skill Output | Key Sections |
+|----|--------------------|-----------------------|--------------|
+| FD-C-01 | "AI repeatedly fails to format SQL queries correctly" | SQL query formatter skill | Negative Boundaries: non-SQL queries; triggers: 'format SQL', 'fix SQL query' |
+| FD-C-02 | "Agent misinterprets date format in API responses" | Date normalization skill | Canonical use case: ISO-8601 conversion |
+| FD-C-03 | "Agent executes commands without user confirmation" | Confirmation gate skill | Red Lines: no unconfirmed execution; ASI05 checkpoint |
+
+### Failure-Driven Mode Trigger Cases
+
+| ID | Input | Expected Mode | Notes |
+|----|-------|--------------|-------|
+| FD-T-01 | "create skill from these failures: [...]" | CREATE (from-failures=true) | Canonical trigger |
+| FD-T-02 | "build skill to fix this recurring error" | CREATE (from-failures=true) | Confidence ≥ 0.80 |
+| FD-T-03 | "从失败案例创建技能" | CREATE (from-failures=true) | ZH trigger |
+| FD-T-04 | "I keep getting errors with X, make a skill for it" | CREATE (from-failures=true) | Natural language failure description |
+
+---
+
+## §9  INSTALL / SHARE / COLLECT / GRAPH Mode Benchmarks
+
+### INSTALL Mode
+
+| ID | Input | Expected Mode | Notes |
+|----|-------|--------------|-------|
+| IS-I-01 | "install skill-writer" | INSTALL | Canonical trigger |
+| IS-I-02 | "安装skill-writer到Claude" | INSTALL | ZH trigger |
+| IS-I-03 | "install to cursor" | INSTALL (platform=cursor) | Platform-specific |
+| IS-I-04 | "install all platforms" | INSTALL (all=true) | Multi-platform |
+
+### SHARE Mode
+
+| ID | Input | Expected Mode | Notes |
+|----|-------|--------------|-------|
+| SH-S-01 | "share my skill to the registry" | SHARE | Canonical trigger |
+| SH-S-02 | "publish skill to OpenClaw" | SHARE | Platform-specific |
+| SH-S-03 | "分享技能到注册表" | SHARE | ZH trigger |
+| SH-S-04 | "push skill with BRONZE cert" | SHARE (requires cert check) | Certification gate |
+
+### SHARE Security Gate Cases
+
+| ID | Scenario | Expected Behavior |
+|----|----------|------------------|
+| SH-G-01 | Skill with `validation_status: "unvalidated"` | SHARE BLOCKED: must run /eval first |
+| SH-G-02 | Skill with `validation_status: "lean-only"` | WARNING: prompt for full eval before sharing |
+| SH-G-03 | Skill with CWE-798 (hardcoded credential) in body | SHARE HARD BLOCK: P0 security violation |
+| SH-G-04 | Skill from UNTRUSTED source without signature | SHARE BLOCKED: run supply chain check first |
+
+### COLLECT Mode
+
+| ID | Input | Expected Mode | Notes |
+|----|-------|--------------|-------|
+| CO-C-01 | "collect session" | COLLECT | Canonical trigger |
+| CO-C-02 | "record this session for skill evolution" | COLLECT | Alternate phrasing |
+| CO-C-03 | "采集当前会话" | COLLECT | ZH trigger |
+
+### GRAPH Mode
+
+| ID | Input | Expected Mode | Notes |
+|----|-------|--------------|-------|
+| GR-G-01 | "graph view" | GRAPH | Canonical trigger |
+| GR-G-02 | "技能图" | GRAPH | ZH canonical |
+| GR-G-03 | "show skill dependencies" | GRAPH | Alternate phrasing |
+| GR-G-04 | "plan skill bundle for my project" | GRAPH (plan=true) | Bundle planning |
+| GR-G-05 | "resolve all skill dependencies for deploy" | GRAPH (resolve=true) | Dependency resolution |
+
+---
+
+## §10  Minimum Pass Criteria (Summary)
 
 | Skill Type | Min F1 | Min MRR | Min Trigger Accuracy | Min Test Cases |
 |------------|--------|---------|---------------------|----------------|
-| skill-writer | 0.90 | 0.85 | 0.90 | 29 (§1 above) |
-| api-integration | 0.90 | 0.85 | 0.90 | 13 (§2 above) |
-| data-pipeline | 0.90 | 0.85 | 0.90 | 12 (§3 above) |
-| workflow-automation | 0.90 | 0.85 | 0.90 | 12 (§4 above) |
+| skill-writer (§1) | 0.90 | 0.85 | 0.90 | 29 |
+| api-integration (§2) | 0.90 | 0.85 | 0.90 | 13 |
+| data-pipeline (§3) | 0.90 | 0.85 | 0.90 | 12 |
+| workflow-automation (§4) | 0.90 | 0.85 | 0.90 | 12 |
+| LEAN mode (§5) | n/a | n/a | 0.80 | 4 trigger cases |
+| Pragmatic Test (§6) | n/a | n/a | 0.80 | 4 trigger cases |
+| Behavioral Verifier (§7) | n/a | n/a | n/a | 5 per skill |
+| Failure-Driven CREATE (§8) | 0.85 | 0.80 | 0.80 | 4 trigger cases |
+| INSTALL/SHARE/COLLECT/GRAPH (§9) | n/a | n/a | 0.80 | 4 each mode |
 
 A skill may add domain-specific test cases beyond these minimums.
 
 ---
 
-## §6  Adding Custom Benchmark Cases
+## §11  Adding Custom Benchmark Cases
 
 When creating a new skill with `skill-writer.md CREATE mode`, add at least:
 - 5 positive cases per mode
 - 2 ambiguous / edge cases per mode
 - 2 negative / anti-trigger cases
 - 2 security-boundary cases (if the skill handles user input)
+- 5 Behavioral Verifier cases (auto-generated from Skill Summary; verify manually)
+- 3–5 Pragmatic Test samples if skill has real-world utility claims
 
 Format:
 ```markdown

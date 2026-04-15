@@ -38,7 +38,7 @@ interface:
 
 use_to_evolve:
   enabled: true
-  injected_by: "skill-writer v3.1.0"
+  injected_by: "skill-writer v3.4.0"
   injected_at: "2026-04-11"
   check_cadence: {lightweight: 10, full_recompute: 50, tier_drift: 100}
   micro_patch_enabled: true
@@ -48,6 +48,8 @@ use_to_evolve:
   pending_patches: 0
   total_micro_patches_applied: 0
   cumulative_invocations: 0
+  generation_method: "auto-generated"   # auto-generated | human-authored | hybrid
+  validation_status: "lean-only"        # unvalidated | lean-only | full-eval | pragmatic-verified
 ---
 
 ## §1  Identity

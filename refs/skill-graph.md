@@ -9,9 +9,12 @@
 >   - GoS bundle retrieval: Personalized PageRank for execution-complete skill bundles
 >   - SkillX (arxiv:2604.04804): tier hierarchy (planning / functional / atomic)
 >   - SkillClaw (arxiv:2604.08377): collective evolution via artifact aggregation
-> **Implementation**: `builder/src/core/graph.js`
+> **Implementation**: `builder/src/core/graph.js` (**v4.0+, not yet implemented**)
+> **[CORE] Minimum Viable Runtime**: See §2a — LLM-executable depends_on resolution from YAML only
+> **[EXTENDED]**: Full bundle retrieval, health checks, PageRank — requires builder/src/core/graph.js
 > **Schema**: `refs/skill-registry.md §10` (registry v2.0)
 > **v3.2.0**: Initial spec — data layer (edges, bundles, bundle retrieval, D8 evaluation)
+> **v3.4.0**: Added §2a Minimum Viable Runtime ([CORE] algorithm); annotated EXTENDED features
 
 ---
 
@@ -99,7 +102,110 @@ These properties MUST hold in a valid graph (checked by validate.js GRAPH-001–
 
 ---
 
-## §3  Bundle Retrieval Protocol
+## §2a  Minimum Viable Runtime (MVR) `[CORE]`
+
+> **Purpose**: The full bundle retrieval algorithm (§3) and graph health checks (§7)
+> require `builder/src/core/graph.js` which is a v4.0+ planned implementation.
+> This section defines what an LLM can do *right now* using only YAML reading — no builder
+> infrastructure required. All features in this section are `[CORE]`.
+>
+> **Key distinction**:
+> - `[CORE]` = AI executes this algorithm by reading skill YAML files in conversation context
+> - `[EXTENDED]` = requires builder runtime, graph database, or network registry
+
+### §2a.1  MVR Algorithm (depends_on chain resolution)
+
+```
+MINIMUM VIABLE GoS — 5-Step Algorithm [CORE]
+
+Step 1 — SEED (trigger matching)
+  Route user request → primary skill via SkillRouter trigger matching.
+  Read primary skill's YAML frontmatter.
+
+Step 2 — EXPAND (DFS on depends_on, max depth 5)
+  For each skill with a `graph: depends_on:` block:
+    Read listed dependency names from YAML.
+    Locate each dependency skill file in the installed skills directory.
+    If found: add to dependency list, recurse (DFS, max depth 5).
+    If not found: mark as MISSING; do NOT abort (warn user instead).
+  
+  Only follow `depends_on:` edges (not composes, similar_to, etc.).
+  required=true deps: list as mandatory; required=false: list as optional.
+
+Step 3 — DEDUPLICATE (similar_to ≥ 0.90)
+  If two skills in the dependency list have `similar_to` with similarity ≥ 0.90:
+    Keep the one with the higher `certified_lean_score` (from YAML).
+    Mark the other as ALTERNATE (not loaded, but noted for user).
+
+Step 4 — TOPOLOGICAL SORT (dependencies first)
+  Order skills so that all dependencies appear before the skills that depend on them.
+  Simple approach: DFS post-order traversal of the dependency graph.
+
+Step 5 — TOKEN BUDGET CHECK (12,000 token limit)
+  Estimate token count: count skills × ~1,000 tokens average per skill.
+  If estimated total > 12,000 tokens:
+    Drop optional (required=false) dependencies from lowest lean_score first.
+    If still over budget: warn user; show trimmed bundle with note.
+```
+
+### §2a.2  Edge Type Availability (CORE vs EXTENDED)
+
+| Edge Type | [CORE] (LLM from YAML) | [EXTENDED] (graph.js) |
+|-----------|------------------------|----------------------|
+| `depends_on` | ✓ Full resolution | ✓ Full + cycle detection |
+| `composes` | ✓ List sub-skills | ✓ Full orchestration graph |
+| `similar_to` | ✓ Dedup (score-based) | ✓ + Personalized PageRank |
+| `uses_resource` | ✓ Note companion files | ✓ Automated file verification |
+| `provides` / `consumes` | ✓ Advisory (data-flow notes) | ✓ Full contract validation |
+
+### §2a.3  MVR Execution Example
+
+```
+Task: "/graph plan — api testing pipeline"
+
+Step 1 SEED: api-tester (matched by trigger "test API endpoints")
+
+Step 2 EXPAND:
+  api-tester YAML has:
+    graph:
+      depends_on:
+        - id: "a1b2c3d4e5f6"
+          name: "schema-validator"
+          required: true
+        - id: "7f8a9b0c1d2e"
+          name: "auth-helper"
+          required: false
+  Read schema-validator.md → has no depends_on → stop DFS
+  Read auth-helper.md → has no depends_on → stop DFS
+
+Step 3 DEDUPLICATE: no similar_to entries → skip
+
+Step 4 TOPOLOGICAL SORT:
+  [schema-validator, auth-helper, api-tester]
+  (dependencies before dependent)
+
+Step 5 TOKEN BUDGET: 3 skills × ~1000 tokens = ~3000 tokens → under 12,000 → OK
+
+MVR Bundle Result:
+  1. schema-validator  [MANDATORY]
+  2. auth-helper       [OPTIONAL]
+  3. api-tester        [PRIMARY]
+```
+
+### §2a.4  MVR Limitations vs Full Runtime
+
+| Feature | MVR [CORE] | Full Runtime [EXTENDED] |
+|---------|-----------|------------------------|
+| Cycle detection | ✗ Not detected (max depth 5 prevents infinite loops) | ✓ |
+| Registry lookup | ✗ Local files only | ✓ Remote registry |
+| Personalized PageRank scoring | ✗ Uses lean_score as proxy | ✓ |
+| GRAPH-001–008 health checks | ✗ Not performed | ✓ |
+| Provides/consumes validation | ✗ Advisory only | ✓ |
+| Visualization (`/graph view`) | ✓ Text-based ASCII | ✓ Rich output |
+
+---
+
+## §3  Bundle Retrieval Protocol `[EXTENDED]`
 
 ### §3.1  Concept
 
@@ -376,7 +482,7 @@ For graphs > 20 skills: show subgraph for specified skill only:
 | `refs/skill-registry.md §10` | Registry schema v2.0 (graph storage) |
 | `refs/session-artifact.md §8` | bundle_context + graph_signals (edge inference source) |
 | `refs/progressive-disclosure.md §2` | Layer 0 Graph Context (bundle-aware loading) |
-| `builder/src/core/graph.js` | Runtime implementation (buildGraph, resolveBundle, etc.) |
-| `builder/src/commands/validate.js` | GRAPH-001–008 static checks |
+| `builder/src/core/graph.js` | Runtime implementation (buildGraph, resolveBundle, etc.) — **v4.0+, not yet implemented** [EXTENDED] |
+| `builder/src/commands/validate.js` | GRAPH-001–008 static checks — **v4.0+** [EXTENDED] |
 | `optimize/strategies.md §4 S10–S12` | Graph-level OPTIMIZE strategies |
 | `eval/rubrics.md §5 D8` | D8 Composability scoring (LEAN + Phase 5) |

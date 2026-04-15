@@ -9,6 +9,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.4.0] - 2026-04-15
+
+### ✨ Added — Honest Skill Labeling, Behavioral Verifier, Pragmatic Test, Supply Chain Trust, GoS MVR
+
+#### Honest Skill Labeling (`refs/skill-registry.md §12`, `eval/rubrics.md §1`, `skill-framework.md §6`)
+- **`generation_method` + `validation_status` YAML fields** in all skills and templates
+  - `generation_method`: `auto-generated | human-authored | hybrid` — provenance tracking
+  - `validation_status`: `unvalidated | lean-only | full-eval | pragmatic-verified` — evaluation milestone
+  - Source quality score now scales with validation_status (cold-start fix: lean-passed → 0.5 routing weight)
+  - SHARE gate: warns on `lean-only`; hard blocks on `unvalidated`
+- **DELIVER message updated** to include validation warning for auto-generated, lean-only skills
+- **All templates upgraded** to v3.4.0 (base.md, api-integration.md, data-pipeline.md, workflow-automation.md)
+  - Added `generation_method: "auto-generated"` and `validation_status: "lean-only"` to all template YAML frontmatter
+  - Added `skill_tier`, `triggers`, Skill Summary, Negative Boundaries, `graph:` block to api-integration, data-pipeline, workflow-automation templates
+  - All platform skill-writer files (claude, openclaw, opencode, cursor, gemini, openai, kimi, hermes) updated to v3.4.0
+
+#### Behavioral Verifier (`eval/rubrics.md §6.4`)
+- **Phase 4 sub-step**: Auto-generates 5 test cases (3 positive + 2 negative) from Skill Summary only
+- Scoring: pass_rate ≥ 0.80 → +20 pts; 0.60–0.79 → +10 pts; <0.60 → 0 pts + WARNING
+- Addresses generator bias: verifier is isolated from optimization history
+- Total score ceiling rises to 1020 pts (1000 + 20 Behavioral Verifier bonus)
+
+#### Pragmatic Test Phase (`eval/rubrics.md §6.5`, `skill-framework.md §9`)
+- `/eval --pragmatic`: optional phase testing 3–5 real user tasks; produces `pragmatic_success_rate`
+- Tier assignment: PRAGMATIC_GOOD (≥80%), ADEQUATE (60–79%), WEAK (40–59%), FAIL (<40%)
+- Blocks SHARE if pragmatic_success_rate < 60%
+- Independent of theoretical score — additive quality signal
+
+#### Failure-Driven CREATE (`skill-framework.md §6`, `eval/benchmarks.md §8`)
+- `/create --from-failures`: CREATE mode variant using failure trajectory inputs (SkillForge: arxiv:2604.08618)
+- Generates skills with Negative Boundaries pre-populated from observed failure patterns
+- Auto-sets `generation_method: "auto-generated"` and validation_status warning in DELIVER
+
+#### Supply Chain Trust Verification (`refs/security-patterns.md §6`)
+- **Trust tier system**: TRUSTED / VERIFIED / UNVERIFIED / LOW_TRUST / UNTRUSTED
+- **SHA-256 signature verification** on INSTALL: FETCH→HASH→COMPARE→AUTHOR→SCAN→CONFIRM
+- **Pull-time security scan**: P0-only for TRUSTED GOLD+; full scan for all others
+- Motivated by ToxicSkills/ClawHavoc research: 26.1% of public skills have OWASP vulnerabilities
+
+#### GoS Minimum Viable Runtime — MVR (`refs/skill-graph.md §2a`)
+- **[CORE] 5-step algorithm** for LLM-executable dependency resolution from YAML only (no builder required)
+  - SEED → EXPAND (DFS, max depth 5) → DEDUPLICATE → TOPOLOGICAL SORT → TOKEN BUDGET CHECK
+- Clearly annotated: `builder/src/core/graph.js` is v4.0+ (not yet implemented); all full-graph features are [EXTENDED]
+- Edge type availability table (CORE vs EXTENDED)
+
+#### New Optimization Strategies (`optimize/strategies.md §4, §8`)
+- **S13 — Pragmatic Failure Recovery**: targets real-world utility gaps; failure mode classification; pragmatic_success_rate targeting
+- **S14 — Score History Analysis**: reads `.optimize-history.jsonl`; computes per-strategy ROI; triggers strategy switches; detects score exhaustion
+
+#### New Anti-Patterns (`optimize/anti-patterns.md §G, §H`)
+- **Category G — Auto-Generated Skill Anti-Patterns**: G1 validation status drift, G2 generator bias, G3 summary overfitting, G4 stale validation_status, G5 score confusion (LEAN vs EVALUATE)
+- **Category H — Supply Chain Anti-Patterns**: H1 untrusted pull, H2 skill injection via external body, H3 unpinned dependency, H4 similarity hijack
+
+#### Benchmarks expanded (`eval/benchmarks.md`)
+- New §5 LEAN Mode Benchmarks (pass/fail cases + trigger cases)
+- New §6 Pragmatic Test Benchmarks (execution cases, tier classification, triggers)
+- New §7 Behavioral Verifier Benchmarks (case generation, score tiers, anti-gaming)
+- New §8 Failure-Driven CREATE Benchmarks
+- New §9 INSTALL/SHARE/COLLECT/GRAPH Mode Benchmarks (includes SHARE security gate cases)
+
+#### Session Artifact updates (`refs/session-artifact.md`)
+- `schema_version` bumped from `"1.0"` → `"1.1"`
+- New `skill_provenance` object: `generation_method`, `validation_status`, `pragmatic_success_rate`, `behavioral_verifier_pass_rate`, `certified_lean_score`, `last_evaluated_at`
+- **AGGREGATE Rule 5 — Provenance-Outcome Correlation**: flags auto-generated skills with low success rates for pragmatic re-evaluation
+
+#### Score History Persistence (`refs/convergence.md §8`)
+- `.optimize-history.jsonl` format documented with per-round fields
+- Git commit integration (history file committed alongside skill at round 10)
+- LLM reasoning fallback when file system unavailable
+
+### 🔧 Changed
+
+- **All platform skill-writer files** (claude, openclaw, opencode, cursor, gemini, openai, kimi, hermes): version 3.3.0 → 3.4.0; added `generation_method: "human-authored"` + `validation_status: "full-eval"`; platform count description updated 7 → 8 platforms
+- **All example skills** (00-starter, api-tester, code-reviewer, doc-generator): `injected_by` updated to v3.4.0; added `generation_method` + `validation_status` fields; v2.0.0 footer references updated to v3.4.0
+- **`optimize/strategies.md`** header: added v3.4.0 changelog entry; selection matrix extended with S13/S14 triggers
+- **`refs/skill-graph.md`** header: `builder/src/core/graph.js` annotated as v4.0+ / not yet implemented; [CORE] vs [EXTENDED] feature boundary documented
+- **`refs/session-artifact.md`** last updated timestamp updated; SkillClaw interoperability table extended
+
+---
+
 ## [3.3.0] - 2026-04-14
 
 ### ✨ Added — Three-Tier Hook Routing + SkillRouter Weighted Ranking + Trigger Discovery

@@ -1,10 +1,11 @@
 # Optimization Strategies
 
-> **Purpose**: 8-dimension strategy catalog for the 10-step OPTIMIZE loop (v3.2.0).
+> **Purpose**: 8-dimension strategy catalog for the 10-step OPTIMIZE loop.
 > **Load**: When §9 (OPTIMIZE Mode) of `claude/skill-writer.md` is accessed.
 > **Main doc**: `claude/skill-writer.md §9`
 > **SSOT**: `builder/src/config.js SCORING.dimensions` — canonical dimension definitions
 > **v3.2.0**: Added D8 Composability dimension + S10/S11/S12 graph-level strategies
+> **v3.4.0**: Added S13 (Pragmatic Failure Recovery) + S14 (Score History Analysis); §8 meta-strategies
 
 ---
 
@@ -456,6 +457,103 @@ passes LEAN ≥ max(original scores).
 
 ---
 
+### S13 — Pragmatic Failure Recovery (Real-World Utility Improvement)
+
+**Target dimension**: D2 (Domain Knowledge); secondary: D3 (Workflow), D5 (Examples)
+**When to use**: `/eval --pragmatic` returns WEAK (<60%) or FAIL (<40%) tier;
+or Behavioral Verifier pass_rate < 0.60; or session artifact `outcome = failure` pattern.
+**Estimated delta**: +30 to +80 pts across D2/D3/D5 combined
+**Research basis**: SkillForge failure trajectory analysis (arxiv:2604.08618); "Skills in the Wild"
+utility gap finding (39/49 skills with zero real-world benefit despite high eval scores).
+
+**Steps**:
+1. **Collect failure evidence**:
+   - List every FAIL/PARTIAL sample from `/eval --pragmatic` output
+   - List session artifacts where `outcome = failure` or `feedback_signal = correction`
+   - List Behavioral Verifier test cases that did not pass
+2. **Classify failures**:
+   | Failure Type | Root Cause | Target Fix |
+   |-------------|-----------|------------|
+   | Wrong mode triggered | Trigger overlap with unrelated request | Add Negative Boundaries, trim trigger breadth |
+   | Correct mode, wrong output format | Output schema mismatch | Fix §Output Format; add examples of wrong vs correct |
+   | Correct mode, incomplete output | Missing workflow steps | Add/expand EXECUTE phase steps |
+   | Correct mode, error not handled | Missing error path | Add error case to §Error Handling |
+   | Skill triggered but task out of scope | Scope too broad | Tighten Skill Summary; add anti-cases to Negative Boundaries |
+3. **Apply targeted fixes**:
+   - For trigger failures: add negative trigger phrases + tighten Skill Summary scope
+   - For output failures: add 2–3 new concrete examples showing failure → correct output
+   - For incomplete output: expand the relevant workflow phase with missing steps
+   - For error handling gaps: add the missing error case + recovery path
+4. **Re-run Pragmatic Test** after each fix to measure improvement:
+   - Target: move from WEAK → ADEQUATE, or ADEQUATE → PRAGMATIC_GOOD
+   - Accept improvement in pass_rate ≥ +0.20 per optimization round
+5. **Update validation_status** in YAML if pragmatic_success_rate ≥ 0.80:
+   - Change `validation_status: "full-eval"` → `"pragmatic-verified"`
+
+**Anti-patterns to avoid**:
+- Do NOT add more examples without identifying root cause — examples are evidence of understanding, not the fix
+- Do NOT broaden scope to cover failed tasks — narrow to where the skill is reliable
+- Do NOT optimize for test cases directly — fix the underlying design flaw
+
+**Exit criteria**: pragmatic_success_rate ≥ 0.60 (ADEQUATE tier); Behavioral Verifier pass_rate ≥ 0.60.
+
+---
+
+### S14 — Score History Analysis (Convergence-Informed Strategy Switching)
+
+**Target dimension**: All dimensions (meta-strategy)
+**When to use**: OPTIMIZE loop has run ≥ 5 rounds; `.optimize-history.jsonl` file exists;
+or convergence detection signals STABLE/PLATEAU.
+**Estimated delta**: +5 to +40 pts (by preventing wasted rounds on exhausted strategies)
+**Research basis**: Convergence detection spec (`refs/convergence.md §2–§5`); score history
+persistence (`refs/convergence.md §8`).
+
+**Steps**:
+1. **Read `.optimize-history.jsonl`** (if file system available) OR reconstruct from OPTIMIZE loop transcript:
+   ```json
+   [round1_entry, round2_entry, ..., roundN_entry]
+   // Each: {"round": N, "score": X, "delta": Y, "strategy_used": "S3", "dimension_targeted": "D2"}
+   ```
+2. **Compute dimension ROI** (return on investment per strategy):
+   ```
+   For each strategy S used across all rounds:
+     total_delta_from_S = sum(delta) for rounds where strategy_used = S
+     rounds_used_S = count of rounds where strategy_used = S
+     ROI(S) = total_delta_from_S / rounds_used_S
+   ```
+3. **Classify strategies**:
+   | ROI | Classification | Action |
+   |-----|---------------|--------|
+   | ROI > +5 pts/round | HIGH RETURN | Prioritize in next 3 rounds |
+   | ROI 0 to +5 | MARGINAL | Use only if no high-return options |
+   | ROI < 0 | DIMINISHING | Do NOT use again unless dimension reanalysis needed |
+4. **Switch strategy** if current strategy is DIMINISHING:
+   - Identify next lowest-scoring dimension
+   - Select highest-ROI strategy for that dimension from history
+   - If no history data: use §5 selection matrix
+5. **Detect strategy exhaustion**:
+   - If all strategies across all dimensions show ROI < +2 for the last 5 rounds:
+   → Signal convergence; proceed to Step 10 VERIFY
+   - This is the natural trigger for `plateau` convergence signal (refs/convergence.md §3)
+6. **Log S14 decision** in history file:
+   ```json
+   {"round": N, "decision": "strategy_switch", "from": "S3", "to": "S5",
+    "reason": "S3 ROI=-2 over last 3 rounds", "strategy_used": "S14"}
+   ```
+
+**Score history format** (see refs/convergence.md §8 for full spec):
+```
+./<skill-name>.optimize-history.jsonl
+```
+
+**When file system is unavailable** (no persistent file): Apply S14 by reasoning over
+the score history visible in the current conversation context. Less precise but functional.
+
+**Exit criteria**: S14 is complete when a strategy switch has been made or convergence
+declared. It is a decision-making step, not a content change step — no LEAN re-score needed.
+
+---
+
 ### S9 — Targeted Metric Boost (Within 0.03 of Threshold)
 
 **When to use**: A single metric barely fails (within 0.03 of threshold). Surgical fix only.
@@ -493,6 +591,8 @@ Lowest-scoring dimension → apply strategy
   GRAPH-005 cycle      → S11 (coupling reduction, priority)
   GRAPH-004 merge      → S12 (similarity consolidation)
   Skill > 400 lines    → S10 (extraction, consider proactively)
+  Pragmatic Test WEAK/FAIL → S13 (pragmatic failure recovery)
+  Score plateau ≥ 5 rounds → S14 (score history analysis → strategy switch)
 ```
 
 **Cycle budget**:
@@ -612,3 +712,54 @@ S10–S12 can be invoked in any loop round but are most effective at specific st
 | Post-convergence | Run S12 (merge) after VERIFY to clean up registry |
 
 Graph strategies do NOT reset the convergence counter — they are counted as normal rounds.
+
+---
+
+## §8  Utility-Targeted Strategies (S13–S14) (v3.4.0)
+
+> **Why S13/S14?** S1–S12 optimize for theoretical evaluation scores (LEAN/EVALUATE rubrics).
+> Research shows a significant gap between theoretical scores and real-world utility:
+> - "Skills in the Wild" (2026): 39/49 auto-generated skills had zero real-world benefit
+> - EvoSkills (arxiv:2604.01687): generator bias inflates self-scored skill quality
+>
+> S13 and S14 are **meta-strategies** that operate at a different level:
+> - **S13**: Optimizes for pragmatic utility (real task success rate)
+> - **S14**: Optimizes the optimization loop itself (score history analysis)
+>
+> Both should be considered after 5+ OPTIMIZE rounds, or when score plateaus despite
+> high theoretical scores.
+
+### When to use S13 vs S14
+
+| Signal | Strategy | Priority |
+|--------|----------|----------|
+| `/eval --pragmatic` returns WEAK or FAIL | S13 | Immediate |
+| Behavioral Verifier pass_rate < 0.60 | S13 | Immediate |
+| Score delta < 2 pts for last 5 rounds | S14 first, then S13 | High |
+| All strategies show ROI < 0 | S14 → convergence declaration | High |
+| STABLE trend signal (refs/convergence.md §4) | S14 | Medium |
+| Current strategy is same as last 3 rounds | S14 (switch) | Medium |
+
+### S13/S14 in the 10-step loop
+
+S13 and S14 integrate into the standard loop without changes to the round counter:
+
+```
+Normal round N:
+  Step 2 ANALYZE: 
+    - Check if pragmatic_success_rate < 0.60 → activate S13 this round
+    - Check if score plateau detected → activate S14 this round
+  Step 4 PLAN:
+    - S13: plan which failure mode to address (trigger/output/scope)
+    - S14: plan which strategy to switch to based on ROI analysis
+  Step 5 IMPLEMENT:
+    - S13: apply ONE targeted fix to the failure mode
+    - S14: switch strategy; implement with new strategy instead
+  Step 6 RE-SCORE:
+    - After S13: re-run pragmatic test (informal, 1-2 samples OK)
+    - After S14: standard re-score; verify new strategy performs better
+```
+
+S13 and S14 CAN be combined: S14 identifies the best strategy to fix pragmatic failures
+(via ROI analysis), then S13 applies that strategy to the specific failure modes found in
+the pragmatic test output.
