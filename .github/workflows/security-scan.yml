@@ -1,6 +1,10 @@
 name: Skill Writer - Security Scan
 
 on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main, develop]
   schedule:
     # Run daily at 2 AM UTC
     - cron: '0 2 * * *'
@@ -55,7 +59,7 @@ jobs:
         uses: trufflesecurity/trufflehog@v3
         with:
           path: ./
-          base: ${{ github.event_name == 'push' && github.event.before || 'HEAD~1' }}
+          base: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || (github.event_name == 'push' && github.event.before || 'HEAD~1') }}
           head: HEAD
           extra_args: --only-verified
 

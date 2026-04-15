@@ -50,30 +50,57 @@ This project adheres to a code of conduct. By participating, you are expected to
 ```
 skill-writer/
 ├── claude/            # Claude platform
-│   ├── skill-writer.md    ← SKILL.md v3.3.0 compliant skill file
+│   ├── skill-writer.md    ← v3.4.0 skill file
 │   ├── CLAUDE.md          ← Routing rules (merged into ~/.claude/CLAUDE.md)
 │   └── install.sh         ← Installs to ~/.claude/
-│
 ├── openclaw/          # OpenClaw platform
 │   ├── skill-writer.md    ← Same skill + metadata.openclaw YAML block
 │   ├── AGENTS.md          ← Routing rules
 │   └── install.sh         ← Installs to ~/.openclaw/
-│
 ├── opencode/          # OpenCode platform
 │   ├── skill-writer.md    ← Same skill + Triggers footer
 │   ├── AGENTS.md          ← Routing rules
 │   └── install.sh         ← Installs to ~/.config/opencode/
+├── cursor/            # Cursor IDE platform
+│   ├── skill-writer.mdc   ← MDC rule file (alwaysApply: true)
+│   ├── install.sh         ← Installs to .cursor/rules/ or ~/.cursor/rules/
+│   └── install.ps1        ← Windows PowerShell installer
+├── gemini/            # Gemini platform
+│   ├── skill-writer.md
+│   └── install.sh         ← Installs to ~/.gemini/
+├── openai/            # OpenAI Agents SDK
+│   ├── skill-writer.md
+│   └── install.sh         ← Installs to project dir
+├── kimi/              # Kimi / Moonshot AI
+│   ├── skill-writer.md
+│   └── install.sh         ← Installs to ~/.config/kimi/
+├── hermes/            # Hermes platform
+│   ├── skill-writer.md
+│   └── install.sh         ← Installs to ~/.hermes/
 │
+├── scripts/           # Dev helper scripts (called by Makefile and CI)
+│   ├── lint.sh            ← shellcheck all install scripts
+│   ├── validate.sh        ← dry-run all installers
+│   └── check-version.py   ← verify version consistency across all platform files
 ├── refs/              # Companion reference files (all platforms)
 ├── templates/         # 4 skill creation templates
 ├── eval/              # Evaluation rubrics and benchmarks
 ├── optimize/          # Optimization strategies and anti-patterns
 ├── examples/          # Certified example skills
+├── VERSION            # Single source of truth for the current version
+├── Makefile           # Common dev targets: lint, validate, check-version, ci
 ├── skill-framework.md # Complete specification (source of truth)
 └── install.sh         # Top-level dispatcher → delegates to platform scripts
 ```
 
-**No build pipeline** — all platform files are direct Markdown, hand-maintained. Changes to a platform's skill file are made by editing `{platform}/skill-writer.md` directly.
+**No build pipeline** — all platform files are direct Markdown, hand-maintained.
+Changes to a platform's skill file are made by editing `{platform}/skill-writer.md` directly.
+
+To keep the 8 platform files in sync when making cross-platform changes:
+1. Edit `skill-framework.md` first (master spec)
+2. Mirror the changes to each platform's `skill-writer.md`
+3. Run `make check-version` to confirm all files report the same version number
+4. Run `make ci` to validate everything before pushing
 
 ## Adding New Features
 
@@ -83,10 +110,10 @@ Most features live in `skill-framework.md` (the master specification) and are mi
 
 Workflow:
 1. Edit `skill-framework.md` first (source of truth)
-2. Copy changes to `claude/skill-writer.md`, `openclaw/skill-writer.md`, `opencode/skill-writer.md`
+2. Mirror changes to all affected platform `skill-writer.md` files
 3. For platform-specific content (e.g., `metadata.openclaw`), edit only that platform's file
 4. Update companion files in `refs/`, `eval/`, or `optimize/` as needed
-5. Test with `./install.sh --dry-run`
+5. Run `make ci` to validate everything locally before pushing
 
 ### Adding a New Template
 
@@ -151,7 +178,10 @@ mkdir newplatform/
 ### Manual Testing
 
 ```bash
-# Preview install (no changes made)
+# Run full local CI (lint + dry-run all platforms + version check)
+make ci
+
+# Preview install for a specific platform (no changes made)
 ./install.sh --platform claude --dry-run
 
 # Install and verify
@@ -193,10 +223,10 @@ After editing any skill file, verify quality:
 ### Pull Request Process
 
 1. **Before Submitting:**
-   - Run `./install.sh --dry-run` for all 3 platforms
+   - Run `make ci` (lint + dry-run validation + version consistency)
    - Test routing with your AI assistant
    - Update documentation in the platform files you changed
-   - Add a changelog entry
+   - Bump `VERSION` and add a `CHANGELOG.md` entry if the change is user-visible
 
 2. **PR Description Should Include:**
    - What changed and why

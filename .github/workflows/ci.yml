@@ -1,0 +1,132 @@
+name: Skill Writer - CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  lint:
+    name: Lint install scripts (shellcheck)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Run shellcheck
+        run: bash scripts/lint.sh
+
+  validate:
+    name: Dry-run all platform installers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate all installers (dry-run)
+        run: bash scripts/validate.sh
+
+      - name: Check install scripts are executable
+        run: |
+          failed=0
+          for script in install.sh claude/install.sh openclaw/install.sh opencode/install.sh \
+                        cursor/install.sh gemini/install.sh openai/install.sh \
+                        kimi/install.sh hermes/install.sh; do
+            if [[ -f "$script" ]]; then
+              if [[ ! -x "$script" ]]; then
+                echo "  ✗ $script is not executable"
+                failed=$((failed+1))
+              else
+                echo "  ✓ $script"
+              fi
+            else
+              echo "  ⚠ $script missing (skipped)"
+            fi
+          done
+          [[ $failed -eq 0 ]] || exit 1
+
+  version:
+    name: Version consistency check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check all platform files report the same version
+        run: |
+          expected="$(cat VERSION)"
+          echo "Expected version: $expected"
+          python3 scripts/check-version.py "$expected"
+
+  skill-files:
+    name: Validate skill file structure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate YAML frontmatter in all platform skill files
+        run: |
+          python3 - <<'EOF'
+          import os, sys, re
+
+          platforms = ['claude', 'openclaw', 'opencode', 'cursor', 'gemini', 'openai', 'kimi', 'hermes']
+          required_fields = ['name', 'version', 'description', 'skill_tier', 'triggers', 'use_to_evolve']
+          errors = []
+          warnings = []
+
+          for platform in platforms:
+            ext = 'mdc' if platform == 'cursor' else 'md'
+            skill_file = f'{platform}/skill-writer.{ext}'
+            if not os.path.exists(skill_file):
+              warnings.append(f'{skill_file}: missing (platform not yet added)')
+              continue
+
+            content = open(skill_file).read()
+            matches = list(re.finditer(r'^---\n', content, re.MULTILINE))
+            if len(matches) < 2:
+              errors.append(f'{skill_file}: no YAML frontmatter found')
+              continue
+
+            fm_start = -1
+            fm_end = -1
+            for i, m in enumerate(matches[:-1]):
+              segment = content[m.end():matches[i+1].start()]
+              if 'name: skill-writer' in segment:
+                fm_start = m.end()
+                fm_end = matches[i+1].start()
+                break
+
+            if fm_start == -1:
+              errors.append(f'{skill_file}: no frontmatter with "name: skill-writer" found')
+              continue
+
+            frontmatter = content[fm_start:fm_end]
+
+            for field in required_fields:
+              if not re.search(rf'^{re.escape(field)}[:\s]', frontmatter, re.MULTILINE):
+                errors.append(f'{skill_file}: missing required field "{field}"')
+
+            if '## Skill Summary' not in content:
+              errors.append(f'{skill_file}: missing "## Skill Summary" section')
+
+            if 'Negative Boundaries' not in content:
+              errors.append(f'{skill_file}: missing "Negative Boundaries" section')
+
+            print(f'  ✓ {skill_file}')
+
+          for w in warnings:
+            print(f'  ⚠ {w}')
+
+          if errors:
+            for e in errors:
+              print(f'  ✗ {e}', file=sys.stderr)
+            sys.exit(1)
+          EOF
+
+      - name: Check skill-framework.md has frontmatter
+        run: |
+          [[ -f skill-framework.md ]] || { echo "✗ skill-framework.md missing"; exit 1; }
+          head -5 skill-framework.md | grep -q '^---' \
+            || { echo "✗ skill-framework.md: no YAML frontmatter"; exit 1; }
+          echo "  ✓ skill-framework.md present with frontmatter"

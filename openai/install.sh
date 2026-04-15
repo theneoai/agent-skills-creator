@@ -13,7 +13,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 DRY_RUN=false
-TARGET_DIR="${1:-$(pwd)}"
+TARGET_DIR=""
 
 info()    { echo "  $*"; }
 success() { echo "  ✓ $*"; }
@@ -22,11 +22,17 @@ err()     { echo "  ✗ $*" >&2; }
 
 for arg in "$@"; do
   case "$arg" in
-    --dry-run) DRY_RUN=true; TARGET_DIR="$(pwd)" ;;
+    --dry-run) DRY_RUN=true ;;
+    --help|-h)
+      awk '/^[^#]/{exit} /^# /{sub(/^# /,""); print}' "$0"
+      exit 0 ;;
     --*) ;;
-    *) TARGET_DIR="$arg" ;;
+    *)  TARGET_DIR="$arg" ;;
   esac
 done
+
+# Default TARGET_DIR after all args parsed (avoids --dry-run being mistaken as a path)
+TARGET_DIR="${TARGET_DIR:-$(pwd)}"
 
 if $DRY_RUN; then
   info "[DRY RUN] No files will be written."

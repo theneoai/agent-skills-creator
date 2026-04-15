@@ -90,9 +90,3 @@ builder/platforms/
 # Incremental build cache (local machine state — not committed)
 .build-cache.json
 
-# Test installations
-~/.config/opencode/skills/skill-writer.md
-~/.openclaw/skills/skill-writer.md
-~/.claude/skills/skill-writer.md
-~/.cursor/skills/skill-writer.md
-~/.gemini/skills/skill-writer.md

@@ -181,6 +181,12 @@ jobs:
           head -5 skill-framework.md | grep -q '^---' || { echo "✗ skill-framework.md: no YAML frontmatter"; exit 1; }
           echo "✓ skill-framework.md present with frontmatter"
 
+      - name: Check version consistency across all platform files
+        run: |
+          expected="$(cat VERSION)"
+          echo "Expected version from VERSION file: $expected"
+          python3 scripts/check-version.py "$expected"
+
   # ── Create GitHub Release ───────────────────────────────────────────────────
   release:
     name: Create GitHub Release
