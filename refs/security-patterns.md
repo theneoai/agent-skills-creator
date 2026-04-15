@@ -538,7 +538,7 @@ Every scan appends to `.skill-audit/security.jsonl`:
   "timestamp": "<ISO-8601>",
   "skill_name": "<name>",
   "skill_version": "<semver>",
-  "scanner_version": "skill-writer v3.3.0",
+  "scanner_version": "v3.4.0",
   "mode": "<scan_mode>",
   "source": "self-authored|registry-pull|url-fetch",
   "trust_level": "TRUSTED|VERIFIED|UNVERIFIED|LOW_TRUST|UNTRUSTED",

@@ -24,6 +24,7 @@ DRY_RUN=false
 info()    { echo "  $*"; }
 success() { echo "  ✓ $*"; }
 warn()    { echo "  ⚠ $*" >&2; }
+err()     { echo "  ✗ $*" >&2; }
 
 for arg in "$@"; do
   case "$arg" in
@@ -33,6 +34,17 @@ done
 
 if $DRY_RUN; then
   info "[DRY RUN] No files will be written."
+fi
+
+# ── Dependency check ──────────────────────────────────────────────────────────
+if ! $DRY_RUN; then
+  if ! command -v python3 &>/dev/null; then
+    err "python3 is required for routing-file merge (CLAUDE.md)."
+    err "  macOS:  brew install python3"
+    err "  Ubuntu: sudo apt install python3"
+    err "  Other:  https://www.python.org/downloads/"
+    exit 1
+  fi
 fi
 
 CLAUDE_HOME="${HOME}/.claude"
@@ -86,6 +98,7 @@ BLOCK_END="<!-- skill-writer:end -->"
 if [[ -f "$CLAUDE_MD" ]] && grep -q "$BLOCK_START" "$CLAUDE_MD"; then
   # Replace existing block (idempotent update)
   if ! $DRY_RUN; then
+    cp "$CLAUDE_MD" "${CLAUDE_MD}.bak.$(date +%Y%m%d_%H%M%S)" 2>/dev/null || true
     python3 -c "
 import re, sys
 with open('$CLAUDE_MD', 'r') as f: content = f.read()
@@ -93,7 +106,7 @@ with open('$CLAUDE_MD_SRC', 'r') as f: block = f.read().strip()
 pattern = r'<!-- skill-writer:start -->.*?<!-- skill-writer:end -->'
 new = re.sub(pattern, block, content, flags=re.DOTALL)
 with open('$CLAUDE_MD', 'w') as f: f.write(new)
-"
+" || { err "Routing file merge failed. Backup at ${CLAUDE_MD}.bak.*"; exit 1; }
   fi
   success "CLAUDE.md → updated skill-writer block"
 else

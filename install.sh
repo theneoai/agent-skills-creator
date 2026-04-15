@@ -48,7 +48,7 @@ while [[ $# -gt 0 ]]; do
       EXTRA_ARGS+=(--global)
       shift ;;
     -h|--help)
-      grep '^#' "$0" | head -20 | sed 's/^# \?//'
+      awk '/^[^#]/{exit} /^# /{sub(/^# /,""); print}' "$0"
       exit 0 ;;
     *)
       # Pass unknown args to platform scripts (e.g. TARGET_DIR for openai)

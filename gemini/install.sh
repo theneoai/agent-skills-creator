@@ -22,6 +22,7 @@ DRY_RUN=false
 info()    { echo "  $*"; }
 success() { echo "  ✓ $*"; }
 warn()    { echo "  ⚠ $*" >&2; }
+err()     { echo "  ✗ $*" >&2; }
 
 for arg in "$@"; do
   case "$arg" in
@@ -31,6 +32,16 @@ done
 
 if $DRY_RUN; then
   info "[DRY RUN] No files will be written."
+fi
+
+# ── Dependency check ──────────────────────────────────────────────────────────
+if ! $DRY_RUN; then
+  if ! command -v python3 &>/dev/null; then
+    err "python3 is required for routing-file merge (GEMINI.md)."
+    err "  macOS:  brew install python3"
+    err "  Ubuntu: sudo apt install python3"
+    exit 1
+  fi
 fi
 
 GEMINI_HOME="${HOME}/.gemini"
@@ -82,6 +93,7 @@ BLOCK_START="<!-- skill-writer:start -->"
 
 if [[ -f "$GEMINI_MD" ]] && grep -q "$BLOCK_START" "$GEMINI_MD"; then
   if ! $DRY_RUN; then
+    cp "$GEMINI_MD" "${GEMINI_MD}.bak.$(date +%Y%m%d_%H%M%S)" 2>/dev/null || true
     python3 -c "
 import re
 with open('$GEMINI_MD', 'r') as f: content = f.read()
@@ -89,7 +101,7 @@ with open('$GEMINI_MD_SRC', 'r') as f: block = f.read().strip()
 pattern = r'<!-- skill-writer:start -->.*?<!-- skill-writer:end -->'
 new = re.sub(pattern, block, content, flags=re.DOTALL)
 with open('$GEMINI_MD', 'w') as f: f.write(new)
-"
+" || { err "Routing file merge failed. Backup at ${GEMINI_MD}.bak.*"; exit 1; }
   fi
   success "GEMINI.md → updated skill-writer block"
 else

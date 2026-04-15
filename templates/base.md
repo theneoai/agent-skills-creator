@@ -59,19 +59,14 @@ created: "{{DATE}}"
 updated: "{{DATE}}"
 type: {{SKILL_TYPE}}          # e.g. assistant, tool-wrapper, analyzer
 
-# Skill tier (SkillX three-tier hierarchy — arxiv:2604.04804)
+# Skill tier (three-tier hierarchy)
 skill_tier: {{TIER}}          # planning | functional | atomic
-# planning  = high-level task orchestration (coordinates other skills)
-# functional = reusable, tool-based subroutine with clear I/O
-# atomic     = single execution-oriented operation with hard constraints
 
 tags:
   - {{TAG_1}}
   - {{TAG_2}}
 
 # Trigger phrases (3–8 canonical user phrasings that invoke this skill)
-# Research: SkillRouter (arxiv:2603.22455) — trigger phrase coverage is the decisive
-# routing signal; removing body text degrades routing accuracy 29–44pp.
 triggers:
   en:
     - "{{TRIGGER_PHRASE_EN_1}}"
@@ -101,13 +96,7 @@ use_to_evolve:
   generation_method: "auto-generated"   # auto-generated | human-authored | hybrid
   validation_status: "lean-only"        # unvalidated | lean-only | full-eval | pragmatic-verified
 
-# Graph of Skills — optional (v3.2.0, research: SkillNet arxiv:2603.04448)
-# Declare typed relationships to other skills. All lists are optional — omit any
-# that don't apply. Presence of this block unlocks D8 Composability scoring (+20 LEAN pts).
-# skill_tier determines which fields are most important:
-#   planning  → fill composes (which sub-skills this orchestrates)
-#   functional → fill depends_on and provides/consumes
-#   atomic    → fill provides/consumes only (atomic skills rarely have dependencies)
+# Graph of Skills — optional (v3.2.0). Unlocks D8 Composability scoring (+20 LEAN pts).
 # graph:
 #   depends_on:              # Skills that must be available before this one executes
 #     - id: "{{GRAPH_DEP_ID}}"
@@ -128,14 +117,7 @@ use_to_evolve:
 
 ## Skill Summary
 
-<!-- REQUIRED — ≤5 sentences. Dense encoding of: WHAT / WHEN / WHO / NOT-FOR.
-     Research: SkillRouter (arxiv:2603.22455) — skill body is the decisive routing signal
-     (91.7% cross-encoder attention on body). This paragraph determines whether your skill
-     gets selected from a large skill pool. Write it last, after you know the full skill.
-
-     Format: [What it does]. [When to use it — canonical scenarios]. [Who it's for].
-     [What it does NOT do — teaser for the Negative Boundaries section below].
--->
+<!-- Required: ≤5 sentences. What / When / Who / Not-for. -->
 
 {{SKILL_NAME}} {{WHAT_IT_DOES}}. Use it when {{CANONICAL_USE_CASE_1}} or {{CANONICAL_USE_CASE_2}}. Designed for {{TARGET_USERS}}. This skill does NOT handle {{OUT_OF_SCOPE_TEASER}} — see Negative Boundaries.
 
@@ -160,12 +142,7 @@ use_to_evolve:
 
 ## §2  Negative Boundaries
 
-<!-- REQUIRED — Without negative boundaries, semantically similar requests mis-trigger
-     this skill. Research: SKILL.md Pattern (2026); SkillProbe: negation reduces false
-     trigger rate significantly. Provide 3–6 specific anti-cases.
-
-     Format: "Do NOT use for <scenario> (users asking <example_phrasing> should use <alternative_skill>)"
--->
+<!-- Required: 3–6 anti-cases. Format: "Do NOT use for <scenario> → use <alternative> instead." -->
 
 **Do NOT use this skill for**:
 
@@ -257,7 +234,7 @@ These permissions are NOT delegated further.
 
 ---
 
-## §8  Usage Examples
+## §8  Usage Examples (minimum 2; add §8c for multi-mode)
 
 ### {{EXAMPLE_1_TITLE}}
 
@@ -268,7 +245,7 @@ Mode: {{MODE_1}} | Confidence: 0.90 | Language: {{LANG}}
 Output: {{EXAMPLE_1_OUTPUT}}
 ```
 
-### {{EXAMPLE_2_TITLE}}   <!-- OPTIONAL -->
+### {{EXAMPLE_2_TITLE}}
 
 **Input**: "{{EXAMPLE_2_INPUT}}"
 
@@ -300,28 +277,31 @@ tier-drift detection every 100.
 
 ---
 
-## Checklist before delivery
+## Delivery Checklist (Required)
 
 - [ ] All `{{PLACEHOLDER}}` tokens replaced
-- [ ] **Skill Summary** section present (≤5 sentences, dense domain encoding) — **REQUIRED**
-- [ ] **Negative Boundaries** section present (≥ 3 anti-cases with example phrasings) — **REQUIRED**
+- [ ] **Skill Summary** section present (≤5 sentences: What / When / Who / Not-for)
+- [ ] **Negative Boundaries** section present (≥ 3 anti-cases with example phrasings)
 - [ ] `skill_tier` declared in YAML (planning / functional / atomic)
 - [ ] `triggers` list in YAML (3–8 EN phrases + 2–5 ZH phrases)
 - [ ] At least 2 usage examples present (EN + ZH triggers shown)
 - [ ] Quality gates section complete with numeric thresholds (F1 ≥ 0.90, MRR ≥ 0.85)
 - [ ] Security baseline section present: CWE fields + OWASP ASI01/ASI02/ASI05 checks
 - [ ] Red Lines section present with ≥ 2 specific prohibitions
-- [ ] `use_to_evolve:` block present in YAML frontmatter with all 13 fields (including generation_method + validation_status)
+- [ ] `use_to_evolve:` block present in YAML frontmatter with all 13 fields
 - [ ] `generation_method` set: "auto-generated" | "human-authored" | "hybrid"
-- [ ] `validation_status` updated after each eval: "lean-only" → "full-eval" → "pragmatic-verified"
+- [ ] `validation_status` set: "lean-only" | "full-eval" | "pragmatic-verified"
 - [ ] `## §UTE Use-to-Evolve` section present at end of skill
 - [ ] LEAN eval score ≥ 350 (lean_score/500)
 - [ ] Full EVALUATE score ≥ 700 (BRONZE) confirmed
 - [ ] No P0 CWE violations (see `claude/refs/security-patterns.md`)
 - [ ] ASI01 CLEAR (no untrusted content injected as instructions)
+
+## Delivery Checklist (Optional Enhancements)
+
 - [ ] If confidence < 0.70 on delivery: add `TEMP_CERT: true` to YAML frontmatter
       and schedule 72 h re-evaluation window
-- [ ] **[OPTIONAL v3.2.0]** If skill has dependencies on other skills: uncomment and fill `graph:` block
+- [ ] If skill has dependencies on other skills: uncomment and fill `graph:` block
       → enables D8 Composability scoring (+20 LEAN bonus pts)
       → enables dependency resolution in `/install` mode
       → enables bundle retrieval via GRAPH mode (`/graph plan`)

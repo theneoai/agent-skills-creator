@@ -1,6 +1,6 @@
 ---
 description: skill-writer meta-skill — CREATE, LEAN, EVALUATE, OPTIMIZE, INSTALL, COLLECT, SHARE, GRAPH modes for AI skill lifecycle management
-globs:
+globs: ["**/*.md", "**/*.mdc"]
 alwaysApply: true
 ---
 
@@ -9,14 +9,14 @@ name: skill-writer
 version: "3.4.0"
 description: "Meta-skill framework: CREATE from templates, LEAN/EVALUATE/OPTIMIZE lifecycle, GRAPH mode for GoS bundle retrieval, COLLECT for collective skill evolution, Edit Audit Guard, Skill Registry v2.0 + SkillRouter weighted ranking, three-tier Hook routing layer (AGENTS.md + UserPromptSubmit Hook + triggers), Trigger Discovery pipeline, UTE 2.0 two-tier self-improvement, and deploy to 8 platforms including MCP."
 description_i18n:
-  en: "Full lifecycle meta-skill framework: CREATE from templates (3-tier hierarchy, negative boundaries, Skill Summary, optional graph: block), LEAN fast-eval + D8 Composability bonus, EVALUATE 4-phase 1000pt pipeline + OWASP Agentic Top 10, OPTIMIZE 8-dim loop + S10/S11/S12 graph strategies + co-evolutionary VERIFY, GRAPH mode (GoS bundle retrieval, health checks, dependency resolution), COLLECT with bundle context for collective evolution (SkillClaw + SkillRL-compatible), skill registry v2.0 + SHARE, SkillRouter weighted ranking + quality threshold gate, three-tier Hook routing (AGENTS.md + UserPromptSubmit Hook + trigger phrases), Trigger Discovery pipeline (AGGREGATE Rule 4), UTE 2.0 L1/L2, deploy to 8 platforms."
-  zh: "全生命周期元技能框架：支持可选graph:块的三层层级结构+负向边界+检索优化摘要的CREATE、带D8可组合性奖励的LEAN快速评测、OWASP Agentic Top 10安全检测的4阶段EVALUATE、含S10/S11/S12图策略+协同进化VERIFY的OPTIMIZE、GoS包检索+健康检查+依赖解析的GRAPH模式、含包上下文的SkillRL+SkillClaw兼容COLLECT、技能注册表v2.0+共享、SkillRouter加权排序+质量阈值门控、三层Hook路由（AGENTS.md+UserPromptSubmit Hook+触发词短语）、触发词发现流水线（AGGREGATE规则4）、UTE 2.0双层自进化、部署至8平台。"
+  en: "Full lifecycle meta-skill framework: CREATE from templates (3-tier hierarchy, negative boundaries, Skill Summary, optional graph: block), LEAN fast-eval (500pt triage), EVALUATE 4-phase 1000pt pipeline + OWASP Agentic Top 10, OPTIMIZE 8-dim loop + S10/S11/S12 graph strategies + co-evolutionary VERIFY, GRAPH mode (GoS bundle retrieval, health checks, dependency resolution), COLLECT with bundle context for collective evolution (SkillClaw + SkillRL-compatible), skill registry v2.0 + SHARE, SkillRouter weighted ranking + quality threshold gate, three-tier Hook routing (AGENTS.md + UserPromptSubmit Hook + trigger phrases), Trigger Discovery pipeline (AGGREGATE Rule 4), UTE 2.0 L1/L2, deploy to 8 platforms."
+  zh: "全生命周期元技能框架：支持可选graph:块的三层层级结构+负向边界+检索优化摘要的CREATE、LEAN快速评测（500分分诊）、OWASP Agentic Top 10安全检测的4阶段EVALUATE、含S10/S11/S12图策略+协同进化VERIFY的OPTIMIZE、GoS包检索+健康检查+依赖解析的GRAPH模式、含包上下文的SkillRL+SkillClaw兼容COLLECT、技能注册表v2.0+共享、SkillRouter加权排序+质量阈值门控、三层Hook路由（AGENTS.md+UserPromptSubmit Hook+触发词短语）、触发词发现流水线（AGGREGATE规则4）、UTE 2.0双层自进化、部署至8平台。"
 
 license: MIT
 author:
   name: theneoai
 created: "2026-03-31"
-updated: "2026-04-14"
+updated: "2026-04-15"
 type: meta-framework
 skill_tier: planning
 
@@ -127,14 +127,14 @@ questions, direct API calls, or non-skill automation tasks — see Negative Boun
 | Deploy to platforms | `/install [platform]` | `/安装 [平台]` | <30s |
 | Record session data | `/collect` | `/采集` | ~10s |
 
-> **双语支持 / Bilingual**: All 6 modes work in English and Chinese. The router auto-detects
+> **双语支持 / Bilingual**: All 8 modes work in English and Chinese. The router auto-detects
 > your language — use `/eval` or `评测`, `create a skill` or `创建新技能`, interchangeably.
 > Cursor exception: use keyword phrases, not `/commands` (IDE intercepts `/` key).
-> See §2 Mode Router for the full keyword list in both languages.
+> See §3 Mode Router for the full keyword list in both languages.
 
 ### Workflow A — "I want to create a new skill"
 1. Type `/create` followed by a one-sentence description of what the skill should do
-2. Answer the 8 elicitation questions (§7) one at a time
+2. Answer the 8 elicitation questions (§8) one at a time
 3. Receive the completed skill file with a LEAN score attached
 4. LEAN ≥ 350 → ready to use immediately (LEAN_CERT)
 5. Before pushing to skill registry → run `/eval` for an authoritative score
@@ -174,53 +174,8 @@ questions, direct API calls, or non-skill automation tasks — see Negative Boun
 │               Requires file system access, hooks, or external store. │
 │               框架不依赖此类功能——它们增加持久化能力，但非必要。      │
 │                                                                     │
-│  不确定有没有后端？→ 假设只有 [CORE]，全部 6 个模式仍可正常使用。    │
-│  Unsure? → Assume [CORE] only. All 6 modes work fully.             │
-└─────────────────────────────────────────────────────────────────────┘
-
-```
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│  评分快查 / Scoring Quick Reference                                  │
-│                                                                     │
-│  LEAN    500 pt  速度 <5s   方差 ±20 pt  适用: 迭代中快速检查        │
-│  EVALUATE 1000 pt 速度 ~60s  方差 ±50 pt  适用: 认证/发布/等级声明   │
-│                                                                     │
-│  换算估算 / Rough proxy: LEAN × 2 ≈ EVALUATE (±60 pt 误差)          │
-│  ⚠ 这只是粗略估算 — EVALUATE 有独立的 4 阶段计分逻辑                 │
-│  ⚠ Proxy only — EVALUATE uses independent 4-phase scoring;          │
-│    actual score may differ by more than ±60 pt from the proxy.      │
-│    Near a tier boundary? Always run /eval before claiming a tier.   │
-│  认证等级: PLATINUM≥950 | GOLD≥900 | SILVER≥800 | BRONZE≥700 | FAIL │
-│                                                                     │
-│  何时用 LEAN: CREATE后 / OPTIMIZE每轮 / 快速迭代                    │
-│  何时用 EVALUATE: 发布/共享技能前 / 声明认证等级前 / LEAN分近边界    │
-│    (Registry = 技能共享库，见 §16 INSTALL；±30pt 内建议用 EVALUATE) │
-└─────────────────────────────────────────────────────────────────────┘
-
-```
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│  技能文件强制结构 / Required Skill File Structure (v3.1.0)           │
-│                                                                     │
-│  §1  Identity            (必须 Required)                            │
-│      Name / Role / Purpose / Red Lines (严禁)                       │
-│                                                                     │
-│  §2  Skill Summary       (必须 Required — v3.1.0)                   │
-│      ≤5句稠密段落: what/when/who/not-for                            │
-│      ≤5-sentence dense paragraph encoding what/when/who/not-for     │
-│                                                                     │
-│  §3  Negative Boundaries (必须 Required — v3.1.0)                   │
-│      Do NOT use for ... / 不应触发的短语                            │
-│      (可与 §2 合并为一节 / may be merged with §2)                   │
-│                                                                     │
-│  §4–§N  功能节 / Functional sections (最少3节 / min 3)              │
-│      Workflow / Error Handling / Examples / Security / etc.         │
-│                                                                     │
-│  §UTE  Use-to-Evolve     (自动注入 / auto-injected by CREATE)        │
-│      不要手动编辑 / do not edit manually                            │
+│  不确定有没有后端？→ 假设只有 [CORE]，全部 8 个模式均可正常使用（AGGREGATE 需要 [EXTENDED]）。    │
+│  Unsure? → Assume [CORE] only. All 8 modes work; AGGREGATE requires [EXTENDED].             │
 └─────────────────────────────────────────────────────────────────────┘
 
 ```
@@ -305,6 +260,24 @@ See `refs/self-review.md §1` for full spec.
 ---
 
 ## §3  Mode Router
+
+**How it works**: Paste any natural-language request — the AI auto-detects the mode from keywords.
+You never need to type slash commands.
+
+| If your request mentions... | Mode triggered | Time |
+|-----------------------------|---------------|------|
+| create / build / new / 新建 + skill | CREATE | ~5 min (9 phases) |
+| lean / quick check / 快评 | LEAN | <5 s |
+| evaluate / score / 评测 | EVALUATE | ~60 s |
+| optimize / improve / 优化 | OPTIMIZE | ~2 min/round |
+| install skill-writer / 安装 | INSTALL | ~30 s |
+| share / publish / 发布 | SHARE | ~30 s |
+| collect session / 采集 | COLLECT | ~2 min |
+| graph view / dependencies / 技能图 | GRAPH | ~30 s |
+
+> **Ambiguous input?** The router shows a 3-option menu. You pick.
+> **ZH input?** All modes work in Chinese — keywords above accept Chinese equivalents.
+
 
 > **Cursor users — read this first**: Cursor's IDE command palette intercepts `/` key presses.
 > Do NOT type `/create`, `/lean`, `/eval`, etc. — they will open the IDE command palette,
@@ -420,7 +393,7 @@ Not sure which mode to use. Please choose:
                Time: 2–5 min
 
   2. /lean    — Quick quality check on an existing skill (5 seconds)
-               Runs 17 structural checks. Tells you if the skill is well-formed.
+               Runs 16 structural checks. Tells you if the skill is well-formed.
                Best for: After writing a draft, before running full eval
                Time: ~5s
 
@@ -629,25 +602,88 @@ Submit skill file via PR with this EVALUATE report attached as context.
 
 ## §6  CREATE Mode
 
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  技能文件强制结构 / Required Skill File Structure (v3.1.0)           │
+│                                                                     │
+│  §1  Identity            (必须 Required)                            │
+│      Name / Role / Purpose / Red Lines (严禁)                       │
+│                                                                     │
+│  §2  Skill Summary       (必须 Required — v3.1.0)                   │
+│      ≤5句稠密段落: what/when/who/not-for                            │
+│      ≤5-sentence dense paragraph encoding what/when/who/not-for     │
+│                                                                     │
+│  §3  Negative Boundaries (必须 Required — v3.1.0)                   │
+│      Do NOT use for ... / 不应触发的短语                            │
+│      (可与 §2 合并为一节 / may be merged with §2)                   │
+│                                                                     │
+│  §4–§N  功能节 / Functional sections (最少3节 / min 3)              │
+│      Workflow / Error Handling / Examples / Security / etc.         │
+│                                                                     │
+│  §UTE  Use-to-Evolve     (自动注入 / auto-injected by CREATE)        │
+│      不要手动编辑 / do not edit manually                            │
+└─────────────────────────────────────────────────────────────────────┘
+
+```
+
+
 ### Phase Sequence
 
 | # | Phase | Gate |
 |---|-------|------|
-| 1 | **ELICIT** — Inversion pattern, one question at a time (§7) | All Qs answered |
+| 1 | **ELICIT** — Inversion pattern, one question at a time (§8) | All Qs answered |
 | 2 | **SELECT TEMPLATE** — match skill type → `templates/<type>.md` | Template chosen |
 | 3 | **PLAN** — multi-pass self-review (`refs/self-review.md §2`) | Plan reviewed |
 | 4 | **GENERATE** — fill template; write Skill Summary (¶1), Negative Boundaries section. If Q7 or Q8 was skipped, pause and show auto-filled content for user confirmation before proceeding. | Draft complete, no placeholders |
 | 5 | **SECURITY SCAN** — CWE + OWASP Agentic Top 10 (`refs/security-patterns.md`) | No P0 violations; ASI01 CLEAR |
-| 6 | **LEAN EVAL** — fast heuristic check (§6) | Score ≥ 350; negative boundaries present |
-| 7 | **FULL EVALUATE** — 4-phase pipeline if LEAN uncertain (§8) | Score ≥ 700 BRONZE |
+| 6 | **LEAN EVAL** — fast heuristic check (§7) | Score ≥ 350; negative boundaries present |
+| 7 | **FULL EVALUATE** — 4-phase pipeline if LEAN uncertain (§9) | Score ≥ 700 BRONZE |
 | 8 | **INJECT UTE** — append `§UTE` section from snippet, fill placeholders (§15) | UTE section present |
-| 9 | **DELIVER** — annotate, certify, write audit entry | CERTIFIED / TEMP_CERT |
+| 9 | **DELIVER** — annotate, certify, inject honest labels, write audit entry | CERTIFIED / TEMP_CERT |
+
+### Honest Skill Labeling (Phase 9 — mandatory, v3.4.0)
+
+Every generated skill MUST include these two fields in its YAML frontmatter at DELIVER time:
+
+```yaml
+generation_method: "auto-generated"   # set at CREATE; user updates to "human-authored" or "hybrid" after manual edit
+validation_status: "lean-only"         # updated by EVALUATE ("full-eval") and Pragmatic Test ("pragmatic-verified")
+```
+
+**Routing impact**: `auto-generated + lean-only` → `source_quality_score = 0.2`; `lean-passed (≥350)` → 0.5.
+**SHARE gate**: `auto-generated + lean-only` blocks registry push until user confirms or runs `/eval`.
+Full spec: `refs/skill-registry.md §12`.
+
+### Failure-Driven CREATE (`--from-failures` flag)
+
+When user types `/create --from-failures`, replace the standard ELICIT phase with:
+
+```
+FAILURE ELICITATION (replaces Q1–Q8):
+  1. Ask: "Paste 1–3 recent conversation snippets where the AI produced wrong or incomplete
+           results for the task you want to automate. Press ENTER twice when done."
+  2. EXTRACT from each snippet:
+       - What was the user's intent?
+       - What step failed (routing? execution? output format? error handling?)
+       - What recovery action was needed?
+  3. SYNTHESIZE failure patterns:
+       - Recurring failure modes → pre-fill Workflow Error Handling section
+       - Missed intents → pre-fill Negative Boundaries "Do NOT miss these cases"
+       - Recurring task steps → pre-fill Workflow phases
+  4. CONFIRM: Show the synthesized failure map and ask user to confirm or edit
+  5. Resume standard Phase 2 (SELECT TEMPLATE) with the enriched context
+```
+
+> **Research basis**: SkillForge (arxiv:2604.08618) — domain-contextualized skill creation
+> grounded in failure trajectories (Workflow Mining from historical interactions) produces
+> skills significantly better aligned with real-world requirements than template-only generation.
 
 > **Phase 9 (DELIVER) — mandatory activation guidance** `[CORE]`:
 > Every DELIVER output MUST include these lines, verbatim, after the skill file:
 > ```
 > ─── Skill ready ───────────────────────────────────────────────────────
 > Your skill "{skill_name}" has been created (LEAN: {N}/500 · est. {N*2} EVALUATE).
+> Labels: generation_method=auto-generated · validation_status=lean-only
 >
 > To activate it:
 >   1. Copy the skill file above to your platform's skills folder:
@@ -663,6 +699,12 @@ Submit skill file via PR with this EVALUATE report attached as context.
 >   ≥ 350 (BRONZE+) = ready to use | < 350 = run /opt first
 >   Tier guide: PLATINUM(≥950)=publish-ready · GOLD(≥900)=professional · SILVER(≥800)=team-ready · BRONZE(≥700)=personal use
 >
+> ⚠ This skill is auto-generated (validation_status: lean-only).
+>   Research shows self-generated skills have variable real-world utility.
+>   Before sharing or deploying to production:
+>     /eval           → run full 1000-pt evaluation (updates validation_status to "full-eval")
+>     /eval --pragmatic → test against 3–5 real tasks (adds pragmatic_success_rate)
+>
 > About the two key sections in your skill file:
 >   Skill Summary (§2): tells the AI WHEN to use this skill. Keep it specific — it's
 >     the routing signal. If it's vague, the skill may trigger too rarely or too often.
@@ -670,7 +712,7 @@ Submit skill file via PR with this EVALUATE report attached as context.
 >     similar-sounding requests will mis-trigger this skill. Edit these if you notice
 >     false triggers.
 >
-> Next steps (optional): /lean · /eval · /opt · /share
+> Next steps (optional): /lean · /eval · /eval --pragmatic · /opt · /share
 > ───────────────────────────────────────────────────────────────────────
 > ```
 
@@ -739,6 +781,28 @@ Template files: `templates/<type>.md`
 
 ## §7  LEAN Mode (Fast Path ~1s)
 
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  评分快查 / Scoring Quick Reference                                  │
+│                                                                     │
+│  LEAN    500 pt  速度 <5s   方差 ±20 pt  适用: 迭代中快速检查        │
+│  EVALUATE 1000 pt 速度 ~60s  方差 ±50 pt  适用: 认证/发布/等级声明   │
+│                                                                     │
+│  换算估算 / Rough proxy: LEAN × 2 ≈ EVALUATE (±60 pt 误差)          │
+│  ⚠ 这只是粗略估算 — EVALUATE 有独立的 4 阶段计分逻辑                 │
+│  ⚠ Proxy only — EVALUATE uses independent 4-phase scoring;          │
+│    actual score may differ by more than ±60 pt from the proxy.      │
+│    Near a tier boundary? Always run /eval before claiming a tier.   │
+│  认证等级: PLATINUM≥950 | GOLD≥900 | SILVER≥800 | BRONZE≥700 | FAIL │
+│                                                                     │
+│  何时用 LEAN: CREATE后 / OPTIMIZE每轮 / 快速迭代                    │
+│  何时用 EVALUATE: 发布/共享技能前 / 声明认证等级前 / LEAN分近边界    │
+│    (Registry = 技能共享库，见 §16 INSTALL；±30pt 内建议用 EVALUATE) │
+└─────────────────────────────────────────────────────────────────────┘
+
+```
+
+
 **Purpose**: Rapid triage without LLM calls. Use for quick checks or high-volume screening.
 
 ### When to Use LEAN vs EVALUATE
@@ -755,30 +819,12 @@ Template files: `templates/<type>.md`
 
 ### Score Variance Reference
 
-LEAN and EVALUATE scores are **estimates**, not exact measurements. Treat scores as ranges:
-
-| Score Type | Typical Variance | Decision Guidance |
-|-----------|-----------------|-------------------|
-| LEAN `[STATIC]` checks | ±0 pts | Fully reliable — safe for binary pass/fail |
-| LEAN `[HEURISTIC]` checks | ±5–15 pts per dimension | Treat as estimate; ±20 total is noise |
-| EVALUATE Phase 2 (Text Quality) | ±15–30 pts total | Don't obsess over ±20 pt swings |
-| EVALUATE Phase 3 (Runtime) | ±20–40 pts | Highest variance — interpreter-dependent |
-| EVALUATE Total | ±30–60 pts | A 750 score means "somewhere 690–810" |
-
-**Practical rules**:
-- Two LEAN scores within ±20 pts → treat as identical
-- Score within ±30 pts of a tier boundary → run full EVALUATE, ideally twice
-- Never claim a specific tier from a single LEAN score if within 30 pts of boundary
-- OPTIMIZE rollback threshold is **20 pts** (not 5 pts) to account for variance floor
+**Score Reliability**: LEAN produces ±20 pt variance across runs (LLM heuristic scoring).
+- Scores within ±20 pts = equivalent; don't over-optimize for small deltas
+- Score ≥350 confirmed across 2 runs = confident BRONZE+ signal
+- Single run within 20 pts of a tier boundary → run full EVALUATE to confirm
 
 ### Check Reliability Tiers
-
-> **Quick glossary** (shown inline when LEAN score is delivered):
-> - `[STATIC]` = **deterministic** — regex/structural checks, ±0 variance, always the same result.
->   Trust these scores 100%. Example: "YAML frontmatter present" — either it is or it isn't.
-> - `[HEURISTIC]` = **LLM-judged** — quality assessments, ±5–15 pts per dimension.
->   If two LEAN runs differ by ≤20 pts, treat them as equivalent — that's just noise.
->   Use EVALUATE for an authoritative score when you need to certify a tier.
 
 Each LEAN check is labeled by its execution method:
 
@@ -786,10 +832,6 @@ Each LEAN check is labeled by its execution method:
   Score variance: ±0 pts. These checks are fully trustworthy.
 - **`[HEURISTIC]`** — Requires LLM judgment to assess adequacy or quality.
   Score variance: ±5–15 pts per dimension. Treat as an estimate, not a precise score.
-
-> **Practical implication**: If two LEAN runs produce scores within ±20 pts, consider them
-> equivalent. Differences beyond ±30 pts indicate a genuinely borderline skill — escalate to
-> full EVALUATE for authoritative scoring.
 
 ### Scoring (500-point heuristic → maps to 1000-point scale)
 
@@ -855,7 +897,7 @@ lean_score ≥ 350 AND no_placeholders AND security_section_present
          300–349    →  UNCERTAIN — running full /eval now
           < 300     →  FAIL — routing to /opt
 
-       ℹ LEAN variance: ±20 pts is normal across re-runs. Use /eval for a stable certified score."
+       ℹ LEAN variance: ±20 pts is normal across re-runs — see Score Reliability above."
     → Schedule full EVALUATE within 24 h (recommended, not blocking)
 
 lean_score 300–349 (UNCERTAIN)
@@ -917,60 +959,28 @@ lean_score < 300 (FAIL)
 **Rule**: Phase 3 (PLAN) MUST NOT begin until all answers are received.
 Ask **one question at a time**. Wait for answer before next question.
 
-### CREATE questions (ask all, one at a time):
-1. "这个skill要解决什么核心问题？ / What core problem does this skill solve?"
-2. "主要用户是谁，技术水平如何？ / Who are the target users and their technical level?"
-3. "输入是什么形式？ / What form does the input take?"
-4. "期望的输出是什么？ / What is the expected output?"
-5. "有哪些安全或技术约束？ / What security or technical constraints apply?"
-6. "验收标准是什么？ / What are the acceptance criteria?"
-7. "这个skill在哪些场景下**不**应该触发？ / In which scenarios should this skill NOT trigger? (List 2–5 anti-cases)"
-   > 💡 **What are negative boundaries?** Rules that prevent false triggering. Example: a "code reviewer" skill should NOT trigger when someone asks "explain this architecture diagram" — that's for a different skill.
-   > 💡 **English examples**: "Do NOT use for production database writes" / "Do NOT process files > 1 GB" / "Do NOT use when real-time data is required" / "Do NOT trigger for 'explain this code' — use code-explainer instead"
-   > 💡 **Chinese examples (中文示例)**: "不用于生产数据库操作" / "不适用于超过1000条记录的批量处理" / "不用于需要实时数据的场景"
-   > 💡 **卡住了？** 输入 `skip` — 将自动填充通用边界: "Avoid irreversible actions without explicit confirmation"
-   > [Answer validation: SKIP accepted → auto-fill default boundary + WARNING note]
-   > ⚠️ **跳过后自动填充的内容 / Auto-filled content on skip**:
-   >   `**Do NOT use this skill for**: Irreversible actions without explicit confirmation.`
-   >   `**触发词排除 / Exclude trigger phrases**: None specified (review before publishing).`
-   >   注意: 这只是占位符，发布技能前务必替换为实际边界描述。
+### CREATE questions — ask one at a time, wait for answer before next
 
-8. "用户会用什么词或短语来触发这个skill？ / What phrases or keywords would a user say to trigger this skill? (List 3–8 examples)"
-   > 💡 **示例 / Examples**: "检查我的代码" / "review this PR" / "code review" / "审查代码" / "scan for issues"
-   > 💡 **卡住了？** 输入 `skip` — 将从技能名称和描述中自动推断触发词
-   > [Answer validation: SKIP accepted → auto-generate triggers from skill name + description]
-   > ⚠️ **跳过后自动填充的内容 / Auto-filled content on skip**:
-   >   Triggers derived from skill name + description keywords (EN + ZH equivalents).
-   >   注意: 自动推断的触发词覆盖率约60%，建议添加用户实际使用的自然短语。
+| Q | Question | → Shapes |
+|---|----------|---------|
+| 1 | What's the one-sentence purpose? | Skill Summary + triggers |
+| 2 | Who uses it? (persona) | Examples + language choice |
+| 3 | What skill tier? (planning/functional/atomic) | EVALUATE Phase 2 weights |
+| 4 | What are the 3–5 main workflow steps? | Workflow section |
+| 5 | What should it NEVER do? (negative boundaries) | §N Negative Boundaries |
+| 6 | Trigger phrases the user would say? | YAML triggers block |
+| 7 | Any reference files / tools it needs? | Dependencies section |
+| 8 | Example input → expected output? | §Usage Examples |
 
-> **Questions 7 & 8 are new (v3.1.0)**. Research basis:
-> - Q7 (Negative Boundaries): SKILL.md Pattern — without explicit negation, semantically
->   adjacent requests mis-trigger the skill. Required before GENERATE phase.
-> - Q8 (Trigger Phrases): SkillRouter (arxiv:2603.22455) — trigger phrase coverage in the
->   skill body is the decisive routing signal (29–44pp accuracy difference).
+**Skip handling** (Q5 and Q6 are mandatory; others have defaults):
+- Q5 vague/skip → auto-fill: "Avoid irreversible actions without explicit confirmation." + WARNING
+- Q6 vague/skip → auto-generate triggers from skill name + description keywords (EN + ZH). Note: ~60% coverage — add natural phrases before publishing.
+- Vague-answer probe (Q1–Q4, Q7–Q8): if answer ≤3 words or domain-only (e.g. "git stuff"), ask ONE follow-up probe (a/b/c options). Accept after one probe regardless.
 
-> **Answer validation**: Minimal — user must provide at least one example for Q7 and Q8.
-> If user types `skip` for Q7 or Q8: auto-fill defaults, flag with WARNING in output,
-> add a reminder: "Review Negative Boundaries before publishing this skill."
-
-> **Vague-answer probe rule** (apply to Q1–Q6):
-> If a user's answer is ≤3 words OR contains only a domain name with no specifics
-> (e.g., "git stuff", "some data", "I want a skill"), do NOT proceed to the next question.
-> Instead, ask ONE targeted follow-up probe:
-> ```
-> Q3 vague answer: "the input is git stuff"
-> → Probe: "Got it — can you be a bit more specific about the format?
->   (a) Git command output (text from git diff / git log)?
->   (b) Git repository files (code files, commit objects)?
->   (c) Git API responses (JSON from GitHub API)?
->   Just pick a, b, or c — or describe in your own words."
-> ```
-> Probe rule: one probe per question maximum. If still vague after probe, accept and continue.
-
-> **Template-specific follow-up** (ask after Q6 if applicable):
-> - `api-integration`: "Which HTTP methods / authentication mechanism?"
-> - `data-pipeline`: "What is the data schema / transformation rules?"
-> - `workflow-automation`: "What is the maximum acceptable latency / retry policy?"
+**Template-specific follow-up** (ask after Q4 if applicable):
+- `api-integration`: "Which HTTP methods / authentication mechanism?"
+- `data-pipeline`: "What is the data schema / transformation rules?"
+- `workflow-automation`: "What is the maximum acceptable latency / retry policy?"
 
 ### EVALUATE questions (ask all):
 1. "请提供skill文件路径或内容。 / Provide the skill file path or content."
@@ -985,16 +995,25 @@ Ask **one question at a time**. Wait for answer before next question.
 
 ## §9  EVALUATE Mode — 4-Phase Pipeline
 
-**Total: 1000 points** | Full rubrics: `eval/rubrics.md`
+**Total: 1000 points** (+ up to 20 bonus from Behavioral Verifier) | Full rubrics: `eval/rubrics.md`
 
 ### Phase Overview
 
 | Phase | Name | Max Points | Method |
 |-------|------|-----------|--------|
-| 1 | Parse & Validate | 100 | Heuristic (schema, sections, no placeholders) |
+| 1 | Parse & Validate | 100 | Heuristic (schema, sections, no placeholders, `generation_method` advisory) |
 | 2 | Text Quality | 300 | Static analysis across 7 sub-dimensions (see table below) |
 | 3 | Runtime Testing | 400 | Trigger pattern tests, mode definitions, error handling |
-| 4 | Certification | 200 | Variance gate + security scan + quality gates |
+| 4 | Certification | 200 | Variance gate + security scan + quality gates + Behavioral Verifier (+20 bonus) |
+| Pragmatic Test | Optional | N/A | User-provided real task samples → `pragmatic_success_rate` |
+
+**Behavioral Verifier** (Phase 4 sub-step, v3.4.0): Auto-generates 3 positive + 2 negative test cases
+from the skill's own Skill Summary, executes them, and reports a `behavioral_pass_rate`. Adds up to
+20 bonus pts to Phase 4. Addresses generator bias per EvoSkills (arxiv:2604.01687).
+
+**Pragmatic Test** (`/eval --pragmatic`): Executes the skill against 3–5 user-provided real task
+samples and produces a `pragmatic_success_rate` independent of the theoretical score. Blocks SHARE
+push if `pragmatic_success_rate < 60%`. Full spec: `eval/rubrics.md §6.5`.
 
 ### Phase 2 Sub-Dimensions (300 points total)
 
@@ -1040,18 +1059,24 @@ High variance = artifact looks good on paper but fails runtime (or vice versa).
 ### Evaluation Workflow
 
 ```
-1. LEAN pre-check (§6) → if UNCERTAIN or FAIL → full pipeline
+1. LEAN pre-check (§7) → if UNCERTAIN or FAIL → full pipeline
 2. READ skill_tier from YAML frontmatter (planning | functional | atomic)
-   → If present: apply tier-adjusted Phase 2 weights (eval/rubrics.md §8)
+   READ generation_method + validation_status (advisory — emit INFO if absent)
+   → If skill_tier present: apply tier-adjusted Phase 2 weights (eval/rubrics.md §8)
    → If absent or 'functional': use default Phase 2 weights (rubrics.md §4)
 3. Phase 1: Parse — YAML, required sections, trigger presence, no placeholders
 4. Phase 2: Text — 7 sub-dimensions with tier-adjusted weights
 5. Phase 3: Runtime — benchmark test cases (eval/benchmarks.md)
 6. Phase 4: Certification — compute variance, run security scan, check tier-adjusted gates
-7. REPORT — per-phase scores + tier + issues list (include skill_tier in report header)
-8. ROUTE:
-     CERTIFIED → deliver
-     FAIL       → auto-route to OPTIMIZE (§9)
+   Phase 4 Behavioral Verifier — auto-generate 5 test cases, execute, report pass_rate (+20 bonus)
+7. Pragmatic Test (if --pragmatic flag OR auto-triggered when validation_status == "lean-only" pre-SHARE):
+   → User provides 3–5 real task samples → execute → report pragmatic_success_rate
+   → Update validation_status to "pragmatic-verified" if pass_rate ≥ 60%
+8. UPDATE labels: set validation_status = "full-eval" (or "pragmatic-verified" if pragmatic passed)
+9. REPORT — per-phase scores + tier + behavioral verifier + pragmatic result + issues list
+10. ROUTE:
+      CERTIFIED → deliver; update validation_status in skill YAML
+      FAIL       → auto-route to OPTIMIZE (§9)
 ```
 
 ### Multi-Pass Scoring
@@ -1079,7 +1104,7 @@ Full protocol: `refs/self-review.md §2`
 ### 7 Dimensions (unified with LEAN and EVALUATE)
 
 These dimensions are identical to the LEAN scoring dimensions and the EVALUATE
-sub-dimension schema. See `builder/src/config.js SCORING.dimensions` for the canonical spec.
+sub-dimension schema. See `eval/rubrics.md` (builder/src/config.js is a v4.0+ target) for the canonical spec.
 
 | ID | Dimension | Weight | Strategy | What It Covers |
 |----|-----------|--------|----------|----------------|
@@ -1273,6 +1298,32 @@ Convergence spec: `refs/convergence.md`
 
 ---
 
+### Score Persistence (`.optimize-history.jsonl`)
+
+After each OPTIMIZE session, append one record to `.skill-audit/optimize-history.jsonl`:
+
+```json
+{
+  "timestamp": "<ISO-8601>",
+  "skill_name": "<name>",
+  "rounds_completed": 0,
+  "start_lean": 0,
+  "end_lean": 0,
+  "delta": 0,
+  "session_best": 0,
+  "verify_score": 0,
+  "strategy": "A|B|C|D",
+  "rollbacks": 0,
+  "outcome": "IMPROVED|PLATEAU|VOLATILITY|ROLLBACK"
+}
+```
+
+> `[CORE]` — Output this record as part of your response.
+> `[EXTENDED]` — Auto-write to `.skill-audit/optimize-history.jsonl` with file system access.
+
+
+---
+
 ## §11  Self-Evolution (3-Trigger System)
 
 | Trigger | Condition | Action |
@@ -1334,59 +1385,21 @@ Detection heuristics for each ASI: `refs/security-patterns.md §5`
 
 ---
 
-## §13  Self-Review Protocol (Summary)
+## §13  Self-Review Protocol
 
-| Pass | Focus |
-|------|-------|
-| Pass 1 — Generate | Produce initial draft / score / fix proposal |
-| Pass 2 — Review | Security audit (CWE) + quality audit; severity-tagged issues (ERROR/WARNING/INFO) |
-| Pass 3 — Reconcile | Address all ERRORs, improve on WARNINGs, produce final artifact |
-
-Timeouts: 60 s per phase, 180 s total.
-Outcomes: CLEAR → proceed; REVISED → proceed with note;
-UNRESOLVED → HUMAN_REVIEW.
-
-Full spec: `refs/self-review.md`
+Before DELIVER, run the pre-delivery checklist from `refs/self-review.md §1`.
+Key gates: no placeholders, negative boundaries present, LEAN ≥ 350, security scan CLEAR.
 
 ---
 
 ## §14  Audit Trail `[EXTENDED — requires external persistence]`
 
-> **Enforcement Level**: `[CORE]` — Produce the audit JSON as part of your response in all sessions.
-> `[EXTENDED]` — Writing to `.skill-audit/framework.jsonl` requires an external file system or backend.
-> In stateless LLM sessions, treat this as an **output specification** — produce the JSON
-> object as part of your response so the user or an integration layer can persist it.
+> `[CORE]` — Produce the audit JSON object in your response so users can persist it.
+> `[EXTENDED]` — Auto-write to `.skill-audit/framework.jsonl` requires file system access.
 
-Every operation appends to `.skill-audit/framework.jsonl` (365-day retention):
-
-```json
-{
-  "timestamp": "<ISO-8601>",
-  "duration_ms": 0,
-  "mode": "CREATE|LEAN|EVALUATE|OPTIMIZE",
-  "skill_name": "<name>",
-  "skill_version": "<semver>",
-  "template_used": "<type|null>",
-  "confidence": 0.00,
-  "confidence_override": false,
-  "lean_score": 0,
-  "phase1": 0, "phase2": 0, "phase3": 0, "phase4": 0,
-  "total_score": 0,
-  "variance": 0.0,
-  "tier": "PLATINUM|GOLD|SILVER|BRONZE|FAIL",
-  "f1": 0.00,
-  "mrr": 0.00,
-  "trigger_accuracy": 0.00,
-  "security_p0_clear": true,
-  "security_p1_warnings": 0,
-  "review_consensus": "CLEAR|REVISED|UNRESOLVED",
-  "evolution_trigger": "<threshold|time|usage|null>",
-  "error_recovery_invoked": false,
-  "error_recovery_actions": [],
-  "outcome": "CERTIFIED|TEMP_CERT|LEAN_CERT|HUMAN_REVIEW|ABORT",
-  "optimize_cycles": 0
-}
-```
+Every operation produces an audit record with: `timestamp`, `mode`, `skill_name`,
+`lean_score`, `total_score`, `tier`, `outcome`, and security/review fields.
+Full schema: `refs/edit-audit.md §1`.
 
 ---
 
@@ -1503,7 +1516,7 @@ Snippet: `templates/use-to-evolve-snippet.md`
 3. FILL PLACEHOLDERS:
      {{SKILL_NAME}}           = skill's `name` YAML field
      {{VERSION}}              = skill's `version` YAML field
-     {{FRAMEWORK_VERSION}}    = "2.2.0"
+     {{FRAMEWORK_VERSION}}    = "3.4.0"
      {{INJECTION_DATE}}       = today ISO-8601
      {{CERTIFIED_LEAN_SCORE}} = LEAN score from Step 6 (or 350 if unknown)
 
@@ -1586,9 +1599,18 @@ read https://github.com/theneoai/skill-writer/releases/latest/download/skill-wri
 ```bash
 git clone https://github.com/theneoai/skill-writer.git && cd skill-writer
 ./install.sh              # auto-detect + install
-./install.sh --all        # all 6 platforms
+./install.sh --all        # all 8 platforms
 ./install.sh --platform claude
 ```
+
+**`--bundle` flag** (deploy a GoS skill bundle instead of the framework itself):
+```
+/install --bundle          → install all skills in the active graph plan resolution
+/install --bundle api-tester  → install skill + its full dependency tree
+```
+> Use `--bundle` after `/graph plan` resolves a task's required skill set.
+> The install proceeds in topological order (deepest deps first).
+> See §20 GRAPH mode for bundle planning workflow.
 
 **Option D — Manual copy**
 Pre-built files are committed in `platforms/`; copy the right one to your platform's skills directory.
@@ -1620,6 +1642,18 @@ URL examples:
    - Fetch content from URL
    - Verify it contains YAML frontmatter with name: skill-writer
    - If verification fails → ABORT with message
+
+2b. SHA-256 VERIFY (external skills) `[CORE]`
+    IF skill came from an external URL (not local clone):
+      - Compute SHA-256 of fetched content
+      - IF skill YAML frontmatter contains use_to_evolve.content_hash:
+          Compare computed SHA-256 with content_hash
+          IF mismatch → ABORT: "Content hash mismatch — skill may have been tampered in transit"
+          Ask user: "Trust and install anyway? (yes/no)"
+          On "no" → ABORT
+      - ELSE:
+          Embed computed SHA-256 into use_to_evolve.content_hash before install
+          Log: ✓ SHA-256 computed and embedded
 
 2a. RESOLVE DEPENDENCIES (v3.2.0 — GoS dependency resolution) `[CORE]`
     IF skill has graph.depends_on entries in its YAML frontmatter:
@@ -1900,245 +1934,22 @@ User: "read https://raw.githubusercontent.com/.../skill-framework.md and install
 
 ## §17b  MCP Integration Guide
 
-> MCP (Model Context Protocol) is fundamentally different from Markdown-based platforms.
-> Read this section if you are integrating skill-writer into an MCP server for a team.
+> MCP (Model Context Protocol) requires structured JSON calls instead of chat keywords.
+> **Full spec**: `docs/mcp-integration.md`
 
-### MCP vs. Markdown platforms
-
-| Aspect | Claude / OpenCode / Cursor | MCP |
-|--------|---------------------------|-----|
-| Skill format | Markdown + YAML frontmatter | JSON manifest |
-| Context | Chat conversation | API call |
-| User feedback | Present in chat | Not directly available |
-| UTE auto-trigger | ✅ (observes chat) | ❌ (no chat context) |
-| COLLECT auto-persist | ✅ with hooks | Requires explicit API call |
-
-### Install
-
+**Quick install**:
 ```bash
-# Via install.sh
 ./install.sh --platform mcp
-# Writes to: ~/.mcp/servers/skill-writer/mcp-manifest.json
-
-# Via Agent Install
-read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-mcp.json and install to mcp
 ```
 
-### After install — team usage
-
-After the MCP manifest is installed, restart your MCP host. Team members can invoke
-skill-writer via MCP calls. All 6 modes are available via MCP. Output is returned as structured JSON.
-
-**Testing installation** — run this first to confirm MCP is working:
+**Quick test** (confirms MCP is working):
 ```json
 {"tool": "skill-writer", "mode": "lean", "input": "a skill that returns json"}
 ```
-Expected response: `{"lean_score": N, "status": "PASS|UNCERTAIN|FAIL", ...}`
-If no response or error → verify `~/.mcp/servers/skill-writer/mcp-manifest.json` exists.
 
-### CREATE mode via MCP (important — read before using)
-
-CREATE uses an 8-question elicitation interview (§7 Inversion). In chat-based platforms
-(Claude, Cursor), questions are asked one at a time interactively. **MCP is stateless**, so
-all 8 answers must be provided in a single call using `elicitation_answers`:
-
-```json
-{
-  "tool": "skill-writer",
-  "mode": "create",
-  "input": "a skill that validates REST API responses",
-  "elicitation_answers": {
-    "q1_problem": "Validate JSON structure and status codes in API responses",
-    "q2_users": "Backend developers testing REST integrations",
-    "q3_input": "HTTP response object (status code, headers, JSON body)",
-    "q4_output": "Validation report: PASS/FAIL with specific field errors",
-    "q5_constraints": "Must handle 2xx/4xx/5xx status families; no external calls",
-    "q6_acceptance": "Catches missing required fields, wrong types, unexpected status codes",
-    "q7_negative_boundaries": "Do NOT use for streaming responses; Do NOT validate auth tokens",
-    "q8_trigger_phrases": "validate api response, check response, api assertion, verify response"
-  }
-}
-```
-
-If `elicitation_answers` is omitted, skill-writer will return a **questionnaire prompt**
-(the 8 questions as text) for the caller to collect and re-submit with answers. This enables
-a two-step MCP flow:
-
-```
-Step 1 — Initiate CREATE, get questions:
-  Request:  {"tool": "skill-writer", "mode": "create", "input": "..."}
-  Response: {"status": "NEEDS_ELICITATION", "session_id": "sw-xxxx",
-             "questions": ["Q1: ...", "Q2: ...", ..., "Q8: ..."]}
-
-Step 2 — Re-submit with answers:
-  Request:  {"tool": "skill-writer", "mode": "create", "input": "...",
-             "session_id": "sw-xxxx",   ← include to resume context
-             "elicitation_answers": {"q1_problem": "...", ...}}
-  Response: {"status": "COMPLETE", "skill_content": "---\nname: ..."}
-```
-
-**`session_id` state management**: The `session_id` returned in Step 1 can be stored
-in your application to associate the pending questionnaire with a user. `session_id` values
-are valid for 24 hours. After 24 hours, start a new CREATE call. If your MCP host has
-no session state, omit `session_id` and always provide `elicitation_answers` in one call (batch mode).
-
-### Team Backend Choice for MCP Deployments
-
-If your team needs automatic tracking (COLLECT auto-persist, AGGREGATE across team members),
-choose a backend based on team size and infrastructure:
-
-| Backend | Best for | Setup complexity | Scale limit | Notes |
-|---------|----------|-----------------|-------------|-------|
-| **File system** (`~/.skill-artifacts/`) | Single developer, single host | None | Unlimited (local) | Write JSON to `~/.skill-artifacts/YYYYMMDD_{skill}.jsonl` |
-| **GitHub Gist** (private) | Small team (2–5 people), no ops | Low | < 1 artifact/day/user; API rate limit 5000 req/hr | POST artifact JSON; share Gist URL for AGGREGATE |
-| **SQLite** | Team on shared server | Low-medium | Up to ~10K artifacts; single-writer only | One DB file; episodic memory schema (see §17) |
-| **PostgreSQL** | Large team, multi-host MCP | Medium | Unlimited with proper indexing | Full query capability; recommended for >20 developers |
-| **Vector DB** (Qdrant/Pinecone) | Semantic search across sessions | High | Depends on plan | Required for §17 L4 episodic memory |
-
-**PostgreSQL schema for teams** (recommended for >20 developers):
-```sql
--- Migration: skill_artifacts table
-CREATE TABLE skill_artifacts (
-    id            SERIAL PRIMARY KEY,
-    skill_name    TEXT NOT NULL,
-    invocation_id TEXT UNIQUE,
-    trigger_phrase TEXT,
-    outcome       TEXT CHECK (outcome IN ('SUCCESS', 'FAILURE', 'PARTIAL')),
-    prm_signal    FLOAT CHECK (prm_signal BETWEEN 0.0 AND 1.0),
-    lesson_type   TEXT CHECK (lesson_type IN ('strategic_pattern','failure_lesson','neutral')),
-    data          JSONB NOT NULL,  -- full Session Artifact JSON
-    created_at    TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX idx_skill_artifacts_skill_name ON skill_artifacts (skill_name);
-CREATE INDEX idx_skill_artifacts_created_at ON skill_artifacts (created_at);
-
--- AGGREGATE query (run via skill-writer API or manually):
-SELECT skill_name, lesson_type, COUNT(*) as evidence_count,
-       AVG(prm_signal) as avg_quality
-FROM skill_artifacts
-WHERE created_at > NOW() - INTERVAL '30 days'
-GROUP BY skill_name, lesson_type
-ORDER BY evidence_count DESC;
-```
-
-**Minimum viable team setup** (GitHub Gist, no ops):
-```
-1. After each skill invocation, call COLLECT via MCP API
-2. POST the artifact JSON to a private GitHub Gist
-3. Store the Gist URL in your team wiki
-4. To run AGGREGATE: fetch 2+ Gist URLs, paste into MCP AGGREGATE call
-```
-
-### UTE and COLLECT via MCP
-
-Because MCP operates without a persistent chat context, the COLLECT trigger must be
-**built into your application layer** — it does not fire automatically. Here is the
-complete integration pattern:
-
-```
-MCP UTE/COLLECT Architecture:
-
-  Your application (Slack bot / CI / API gateway)
-       │
-       │  1. Invoke skill via MCP API
-       ▼
-  MCP server (skill-writer)
-       │  executes the skill
-       │
-       │  2. Immediately after skill response, your app calls COLLECT:
-       ▼
-  {"tool": "skill-writer", "mode": "collect",
-   "session_context": {
-     "skill_name": "weather-query",
-     "invocation_id": "uuid",
-     "trigger_phrase": "what's the weather in Tokyo",
-     "outcome": "SUCCESS",
-     "prm_signal": 1.0
-   }}
-       │
-       │  3. skill-writer returns JSON artifact
-       │
-       │  4. Your app POSTs artifact to backend:
-       │     File:  append to ~/.skill-artifacts/YYYYMMDD_weather-query.jsonl
-       │     Gist:  PATCH https://api.github.com/gists/{gist_id}
-       │     DB:    INSERT INTO skill_artifacts (json_data, created_at)
-       │
-       │  5. UTE cadence (your app tracks count):
-       │     every 10 invocations  → call COLLECT with mode: "ute_lightweight"
-       │     every 50 invocations  → call with mode: "ute_full_recompute"
-       │     every 100 invocations → call with mode: "ute_tier_drift_check"
-       ▼
-  AGGREGATE (run on demand):
-  {"tool": "skill-writer", "mode": "aggregate",
-   "artifacts": [artifact1_json, artifact2_json, ...]}
-```
-
-**Who triggers COLLECT?** Your application wrapper (not the end user). Build it as a
-post-hook that fires after every successful skill invocation. If using a Slack bot, call
-COLLECT in the bot's response handler. If using CI, add a COLLECT step after the skill step.
-
-**Minimal integration example (Python pseudocode)**:
-```python
-import mcp_client, json, os, datetime
-
-def invoke_skill_and_collect(skill_name, trigger_phrase, user_input):
-    # Step 1 — invoke the actual skill
-    skill_response = mcp_client.call("skill-writer", {
-        "mode": "run",
-        "skill": skill_name,
-        "input": user_input
-    })
-
-    # Step 2 — rate the outcome (your app logic)
-    outcome = "SUCCESS" if skill_response.get("status") == "ok" else "FAILURE"
-    prm_signal = 1.0 if outcome == "SUCCESS" else 0.0
-
-    # Step 3 — trigger COLLECT immediately after
-    collect_response = mcp_client.call("skill-writer", {
-        "mode": "collect",
-        "session_context": {
-            "skill_name": skill_name,
-            "invocation_id": skill_response.get("invocation_id"),
-            "trigger_phrase": trigger_phrase,
-            "outcome": outcome,
-            "prm_signal": prm_signal
-        }
-    })
-
-    # Step 4 — persist artifact to your backend
-    artifact = collect_response["artifact"]
-    store_artifact(artifact)  # see backend choice table above
-    return skill_response
-
-def store_artifact(artifact):
-    # PostgreSQL example:
-    # cursor.execute("INSERT INTO skill_artifacts (data) VALUES (%s)", [json.dumps(artifact)])
-    # File system example:
-    today = datetime.date.today().isoformat()
-    path = os.path.expanduser(f"~/.skill-artifacts/{today}_{artifact['skill_name']}.jsonl")
-    with open(path, "a") as f:
-        f.write(json.dumps(artifact) + "\n")
-
-# UTE cadence check (call in your periodic job / cron):
-def ute_cadence_check(invocation_count, skill_name):
-    if invocation_count % 100 == 0:
-        mode = "ute_tier_drift_check"
-    elif invocation_count % 50 == 0:
-        mode = "ute_full_recompute"
-    elif invocation_count % 10 == 0:
-        mode = "ute_lightweight"
-    else:
-        return  # no check needed this invocation
-    mcp_client.call("skill-writer", {"mode": mode, "skill": skill_name})
-```
-
-- **UTE auto-trigger** does not fire (no chat to observe). Add `use_to_evolve.enabled: true`
-  to skill YAML; your application handles the cadence (every 10/50/100 invocations above).
-- **COLLECT**: Call explicitly from your application after each skill invocation.
-  Output is JSON artifact — store in your chosen backend (see table above).
-- **AGGREGATE**: Call with 2+ artifacts to get ranked improvement priorities.
-  Provide artifacts as inline JSON in the call body (Method B) or point to a backend path.
+**Key difference from chat platforms**: MCP is stateless — all 8 elicitation answers must be
+provided in a single call (`elicitation_answers` field). UTE auto-trigger does not fire;
+call explicitly from your application. Full protocol: `docs/mcp-integration.md §3`.
 
 ---
 
@@ -2202,7 +2013,11 @@ skill generation respectively.
 
 ---
 
-## §19  COLLECT Mode — Session Data Recording
+## §19  COLLECT + AGGREGATE Mode
+
+> **COLLECT** `[CORE]` — Record one session's skill performance as a structured artifact.
+> **AGGREGATE** `[EXTENDED — basic flow available]` — Synthesize 2+ COLLECT artifacts into ranked improvement priorities.
+> Both are invoked via COLLECT mode; AGGREGATE runs after you have multiple artifacts.
 
 > **COLLECT at a Glance**
 >
@@ -2493,7 +2308,7 @@ Full spec: `refs/session-artifact.md §8`
 >
 > **Research basis**: SkillNet (arxiv:2603.04448), GoS bundle retrieval, SkillX tiers
 > **Full spec**: `refs/skill-graph.md`
-> **Implementation**: `builder/src/core/graph.js`
+> **Implementation**: YAML-only MVR `[CORE]`; full graph engine is a v4.0+ target
 >
 > **When to use**:
 > - Before installing a skill that has `graph.depends_on` entries
@@ -2522,7 +2337,7 @@ Full spec: `refs/session-artifact.md §8`
 Step 1: Route to primary skill via SkillRouter trigger matching
         → primary: api-tester (seed node)
      ↓
-Step 2: BFS expansion via builder/src/core/graph.js resolveBundle()
+Step 2: BFS expansion via YAML-only MVR (§20 GoS MVR); full engine is v4.0+ target
         → Follow depends_on (required=true)  → schema-validator
         → Follow depends_on (required=false) → auth-helper (optional)
         → Match provides → consumes         → report-generator
@@ -2563,13 +2378,61 @@ After running `/graph check`:
 - If D8 score < 15: GRAPH mode identifies which D8 sub-checks are failing and suggests fixes
 - Successful `/graph plan` execution = proof the graph declarations work → D8 boost
 
+### GoS Minimum Viable Runtime (`[CORE]` — no builder required)
+
+> **Context**: The full GoS (Graph of Skills) runtime specified in `refs/skill-graph.md`
+> requires the full graph engine (v4.0+ target; not yet shipped). However, the most valuable
+> GoS capability — `depends_on` dependency resolution for `/graph plan` and `/install --bundle`
+> — can be implemented entirely from YAML frontmatter reading, without any external code.
+
+The following algorithm is the **Minimum Viable GoS Runtime** that the AI executes `[CORE]`:
+
+```
+MINIMUM VIABLE GoS (depends_on only):
+
+Input: task description + local skill files with graph: blocks
+
+Step 1 — SEED (find primary skill):
+  Run SkillRouter trigger matching against task description.
+  Primary skill = highest-confidence match.
+
+Step 2 — EXPAND (read depends_on chains from YAML only):
+  For the primary skill, read its YAML `graph.depends_on` list (if present).
+  For each dependency, read THAT skill's `graph.depends_on` list.
+  Repeat until no new dependencies found OR depth > 5.
+  Collect: required=true deps (mandatory) and required=false deps (optional).
+
+Step 3 — DEDUPLICATE:
+  Remove duplicates. If two skills declare similar_to ≥ 0.90, keep higher LEAN score.
+
+Step 4 — TOPOLOGICAL SORT:
+  Order: dependencies first, then the skill that depends on them.
+  Output: ordered install list.
+
+Step 5 — TOKEN BUDGET CHECK:
+  Estimate tokens for all skills (≈ file_size / 4).
+  If total > 12,000 tokens: drop optional deps first, warn user.
+
+Output: "Bundle resolved: [list in install order]. Run /install for each."
+```
+
+**What this runtime does NOT support** (v4.0+ only):
+- `composes` edge traversal (planning skill orchestration)
+- `provides/consumes` type matching
+- BFS cycle detection (just stops at depth 5)
+- Auto-inferred edges from COLLECT artifacts
+
+**When to escalate to full spec**: Any `/graph check` that returns GRAPH-001 (dangling edge)
+or GRAPH-003 (cycle detected) requires the full graph engine implementation (v4.0+ target).
+For depth-limited linear chains (most real-world cases), the MVR is sufficient.
+
 ### Key references
 
 - Full GoS spec: `refs/skill-graph.md`
 - Registry v2.0 format: `refs/skill-registry.md §10`
 - D8 scoring rules: `eval/rubrics.md §9`
-- Graph algorithms: `builder/src/core/graph.js`
-- Validation checks: `builder/src/commands/validate.js` (GRAPH-001–005)
+- Graph algorithms: YAML-only MVR `[CORE]` (see GoS MVR section above); full engine v4.0+
+- Validation checks: GRAPH-001–008 defined in §20 error table
 
 ---
 

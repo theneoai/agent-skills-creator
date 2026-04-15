@@ -18,6 +18,7 @@ TARGET_DIR="${1:-$(pwd)}"
 info()    { echo "  $*"; }
 success() { echo "  ✓ $*"; }
 warn()    { echo "  ⚠ $*" >&2; }
+err()     { echo "  ✗ $*" >&2; }
 
 for arg in "$@"; do
   case "$arg" in
@@ -29,6 +30,16 @@ done
 
 if $DRY_RUN; then
   info "[DRY RUN] No files will be written."
+fi
+
+# ── Dependency check ──────────────────────────────────────────────────────────
+if ! $DRY_RUN; then
+  if ! command -v python3 &>/dev/null; then
+    err "python3 is required for routing-file merge (AGENTS.md)."
+    err "  macOS:  brew install python3"
+    err "  Ubuntu: sudo apt install python3"
+    exit 1
+  fi
 fi
 
 SKILLS_DIR="${TARGET_DIR}/skills"
@@ -65,6 +76,7 @@ BLOCK_START="<!-- skill-writer:start -->"
 
 if [[ -f "$AGENTS_DST" ]] && grep -q "$BLOCK_START" "$AGENTS_DST"; then
   if ! $DRY_RUN; then
+    cp "$AGENTS_DST" "${AGENTS_DST}.bak.$(date +%Y%m%d_%H%M%S)" 2>/dev/null || true
     python3 -c "
 import re
 with open('$AGENTS_DST', 'r') as f: content = f.read()
@@ -72,7 +84,7 @@ with open('$AGENTS_SRC', 'r') as f: block = f.read().strip()
 pattern = r'<!-- skill-writer:start -->.*?<!-- skill-writer:end -->'
 new = re.sub(pattern, block, content, flags=re.DOTALL)
 with open('$AGENTS_DST', 'w') as f: f.write(new)
-"
+" || { err "Routing file merge failed. Backup at ${AGENTS_DST}.bak.*"; exit 1; }
   fi
   success "AGENTS.md → updated skill-writer block"
 else

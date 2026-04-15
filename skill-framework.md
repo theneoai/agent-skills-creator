@@ -1,16 +1,16 @@
 ---
 name: skill-writer
 version: "3.4.0"
-description: "Meta-skill framework: CREATE from templates (incl. --from-failures), LEAN/EVALUATE/OPTIMIZE lifecycle, Behavioral Verifier, Pragmatic Test Phase, honest skill labeling (generation_method+validation_status), GRAPH mode with MVR runtime, GoS bundle retrieval, COLLECT for collective skill evolution, Edit Audit Guard, Skill Registry v2.0 + SkillRouter weighted ranking + cold-start fix, supply-chain trust verification, three-tier Hook routing, UTE hooks in standard install, OPTIMIZE score persistence, and deploy to 8 platforms."
+description: "Universal skill-writer v3.4.0: CREATE (incl. --from-failures) → LEAN/EVALUATE (Behavioral Verifier +20, --pragmatic) → OPTIMIZE → GRAPH (GoS MVR) → COLLECT/SHARE. Honest labeling, supply-chain trust, UTE 2.0. Auto-installs to 8 platforms."
 description_i18n:
-  en: "Full lifecycle meta-skill framework v3.4.0: CREATE with --from-failures (SkillForge-style), honest labeling (generation_method+validation_status), LEAN fast-eval + D8 Composability bonus, EVALUATE 4-phase + Behavioral Verifier (+20 bonus) + Pragmatic Test Phase (pragmatic_success_rate) + OWASP Agentic Top 10, OPTIMIZE 8-dim loop + score persistence (.optimize-history.jsonl) + co-evolutionary VERIFY, GRAPH mode with Minimum Viable Runtime (depends_on chains, [CORE]) + full GoS (v4.0+), supply-chain trust verification (SHA-256 signatures), SkillRouter cold-start fix (lean-passed=0.5), UTE hooks in standard install + cross-session persistence, deploy to 8 platforms."
+  en: "Full lifecycle meta-skill framework v3.4.0: CREATE with --from-failures (SkillForge-style), honest labeling (generation_method+validation_status), LEAN fast-eval (500pt triage), EVALUATE 4-phase + Behavioral Verifier (+20 bonus) + Pragmatic Test Phase (pragmatic_success_rate) + OWASP Agentic Top 10, OPTIMIZE 8-dim loop + score persistence (.optimize-history.jsonl) + co-evolutionary VERIFY, GRAPH mode with Minimum Viable Runtime (depends_on chains, [CORE]) + full GoS (v4.0+), supply-chain trust verification (SHA-256 signatures), SkillRouter cold-start fix (lean-passed=0.5), UTE hooks in standard install + cross-session persistence, deploy to 8 platforms."
   zh: "全生命周期元技能框架v3.4.0：支持--from-failures失败驱动创建+诚实标注(generation_method+validation_status)的CREATE、带D8奖励的LEAN快速评测、带行为验证器(+20分)+实用测试阶段+OWASP Agentic Top 10的4阶段EVALUATE、带得分历史持久化+协同进化VERIFY的OPTIMIZE、支持最小可运行时(depends_on链路[CORE])+完整GoS(v4.0+)的GRAPH模式、供应链信任验证(SHA-256签名)、SkillRouter冷启动修复(lean-passed=0.5)、标准安装中的UTE hooks+跨会话持久化、部署至8平台。"
 
 license: MIT
 author:
   name: theneoai
 created: "2026-03-31"
-updated: "2026-04-14"
+updated: "2026-04-15"
 type: meta-framework
 skill_tier: planning
 
@@ -77,6 +77,8 @@ use_to_evolve:
   pending_patches: 0
   total_micro_patches_applied: 0
   cumulative_invocations: 0
+  generation_method: "human-authored"   # auto-generated | human-authored | hybrid
+  validation_status: "full-eval"        # unvalidated | lean-only | full-eval | pragmatic-verified
 ---
 
 <!-- PATH CONVENTION
@@ -121,14 +123,14 @@ questions, direct API calls, or non-skill automation tasks — see Negative Boun
 | Deploy to platforms | `/install [platform]` | `/安装 [平台]` | <30s |
 | Record session data | `/collect` | `/采集` | ~10s |
 
-> **双语支持 / Bilingual**: All 6 modes work in English and Chinese. The router auto-detects
+> **双语支持 / Bilingual**: All 8 modes work in English and Chinese. The router auto-detects
 > your language — use `/eval` or `评测`, `create a skill` or `创建新技能`, interchangeably.
 > Cursor exception: use keyword phrases, not `/commands` (IDE intercepts `/` key).
-> See §2 Mode Router for the full keyword list in both languages.
+> See §3 Mode Router for the full keyword list in both languages.
 
 ### Workflow A — "I want to create a new skill"
 1. Type `/create` followed by a one-sentence description of what the skill should do
-2. Answer the 8 elicitation questions (§7) one at a time
+2. Answer the 8 elicitation questions (§8) one at a time
 3. Receive the completed skill file with a LEAN score attached
 4. LEAN ≥ 350 → ready to use immediately (LEAN_CERT)
 5. Before pushing to skill registry → run `/eval` for an authoritative score
@@ -157,6 +159,25 @@ questions, direct API calls, or non-skill automation tasks — see Negative Boun
 3. Accumulate 2+ Session Artifacts, then type: "aggregate skill feedback"
 4. Use the ranked improvement list as input to `/opt`
 
+---
+
+> **About this file**: `skill-framework.md` is the universal install. The AI auto-detects
+> your platform (Claude / OpenCode / Cursor / Gemini / Kimi / etc.) from context and applies
+> the correct path conventions automatically. For a platform-specific pre-configured version,
+> use `<platform>/skill-writer.md` from the repository.
+>
+> **Path conventions by platform** (auto-applied at runtime):
+> | Platform | Skills dir | Routing file |
+> |----------|-----------|-------------|
+> | Claude | `~/.claude/skills/` | `CLAUDE.md` |
+> | OpenCode | `~/.config/opencode/skills/` | `AGENTS.md` |
+> | Cursor | `~/.cursor/rules/` | (MDC rules) |
+> | Gemini | `~/.gemini/skills/` | `GEMINI.md` |
+> | OpenAI | `~/.openai/skills/` | `AGENTS.md` |
+> | Kimi | `~/.config/kimi/skills/` | `AGENTS.md` |
+> | Hermes | `~/.hermes/skills/` | `AGENTS.md` |
+> | OpenClaw | `~/.openclaw/skills/` | `AGENTS.md` |
+
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │  功能标签 / Enforcement Labels (used throughout this document)       │
@@ -168,8 +189,8 @@ questions, direct API calls, or non-skill automation tasks — see Negative Boun
 │               Requires file system access, hooks, or external store. │
 │               框架不依赖此类功能——它们增加持久化能力，但非必要。      │
 │                                                                     │
-│  不确定有没有后端？→ 假设只有 [CORE]，全部 6 个模式仍可正常使用。    │
-│  Unsure? → Assume [CORE] only. All 6 modes work fully.             │
+│  不确定有没有后端？→ 假设只有 [CORE]，全部 8 个模式均可正常使用（AGGREGATE 需要 [EXTENDED]）。    │
+│  Unsure? → Assume [CORE] only. All 8 modes work; AGGREGATE requires [EXTENDED].             │
 └─────────────────────────────────────────────────────────────────────┘
 
 ```
@@ -300,6 +321,23 @@ See `claude/refs/self-review.md §1` for full spec.
 
 ## §3  Mode Router
 
+**How it works**: Paste any natural-language request — the AI auto-detects the mode from keywords.
+You never need to type slash commands.
+
+| If your request mentions... | Mode triggered | Time |
+|-----------------------------|---------------|------|
+| create / build / new / 新建 + skill | CREATE | ~5 min (9 phases) |
+| lean / quick check / 快评 | LEAN | <5 s |
+| evaluate / score / 评测 | EVALUATE | ~60 s |
+| optimize / improve / 优化 | OPTIMIZE | ~2 min/round |
+| install skill-writer / 安装 | INSTALL | ~30 s |
+| share / publish / 发布 | SHARE | ~30 s |
+| collect session / 采集 | COLLECT | ~2 min |
+| graph view / dependencies / 技能图 | GRAPH | ~30 s |
+
+> **Ambiguous input?** The router shows a 3-option menu. You pick.
+> **ZH input?** All modes work in Chinese — keywords above accept Chinese equivalents.
+
 > **Cursor users — read this first**: Cursor's IDE command palette intercepts `/` key presses.
 > Do NOT type `/create`, `/lean`, `/eval`, etc. — they will open the IDE command palette,
 > not the skill framework. Instead, use **keyword phrases only**:
@@ -414,7 +452,7 @@ Not sure which mode to use. Please choose:
                Time: 2–5 min
 
   2. /lean    — Quick quality check on an existing skill (5 seconds)
-               Runs 17 structural checks. Tells you if the skill is well-formed.
+               Runs 16 structural checks. Tells you if the skill is well-formed.
                Best for: After writing a draft, before running full eval
                Time: ~5s
 
@@ -627,13 +665,13 @@ Submit skill file via PR with this EVALUATE report attached as context.
 
 | # | Phase | Gate |
 |---|-------|------|
-| 1 | **ELICIT** — Inversion pattern, one question at a time (§7) | All Qs answered |
+| 1 | **ELICIT** — Inversion pattern, one question at a time (§8) | All Qs answered |
 | 2 | **SELECT TEMPLATE** — match skill type → `claude/templates/<type>.md` | Template chosen |
 | 3 | **PLAN** — multi-pass self-review (`claude/refs/self-review.md §2`) | Plan reviewed |
 | 4 | **GENERATE** — fill template; write Skill Summary (¶1), Negative Boundaries section. If Q7 or Q8 was skipped, pause and show auto-filled content for user confirmation before proceeding. | Draft complete, no placeholders |
 | 5 | **SECURITY SCAN** — CWE + OWASP Agentic Top 10 (`claude/refs/security-patterns.md`) | No P0 violations; ASI01 CLEAR |
-| 6 | **LEAN EVAL** — fast heuristic check (§6) | Score ≥ 350; negative boundaries present |
-| 7 | **FULL EVALUATE** — 4-phase pipeline if LEAN uncertain (§8) | Score ≥ 700 BRONZE |
+| 6 | **LEAN EVAL** — fast heuristic check (§7) | Score ≥ 350; negative boundaries present |
+| 7 | **FULL EVALUATE** — 4-phase pipeline if LEAN uncertain (§9) | Score ≥ 700 BRONZE |
 | 8 | **INJECT UTE** — append `§UTE` section from snippet, fill placeholders (§15) | UTE section present |
 | 9 | **DELIVER** — annotate, certify, inject honest labels, write audit entry | CERTIFIED / TEMP_CERT |
 
@@ -1087,7 +1125,7 @@ High variance = artifact looks good on paper but fails runtime (or vice versa).
 ### Evaluation Workflow
 
 ```
-1. LEAN pre-check (§6) → if UNCERTAIN or FAIL → full pipeline
+1. LEAN pre-check (§7) → if UNCERTAIN or FAIL → full pipeline
 2. READ skill_tier from YAML frontmatter (planning | functional | atomic)
    READ generation_method + validation_status (advisory — emit INFO if absent)
    → If skill_tier present: apply tier-adjusted Phase 2 weights (claude/eval/rubrics.md §8)
@@ -1324,6 +1362,29 @@ When VOLATILITY or PLATEAU detected AND score < 350 (FAIL), output structured di
 Strategy catalog: `claude/optimize/strategies.md`
 Convergence spec: `claude/refs/convergence.md`
 
+### Score Persistence (`.optimize-history.jsonl`)
+
+After each OPTIMIZE session, append one record to `.skill-audit/optimize-history.jsonl`:
+
+```json
+{
+  "timestamp": "<ISO-8601>",
+  "skill_name": "<name>",
+  "rounds_completed": 0,
+  "start_lean": 0,
+  "end_lean": 0,
+  "delta": 0,
+  "session_best": 0,
+  "verify_score": 0,
+  "strategy": "A|B|C|D",
+  "rollbacks": 0,
+  "outcome": "IMPROVED|PLATEAU|VOLATILITY|ROLLBACK"
+}
+```
+
+> `[CORE]` — Output this record as part of your response.
+> `[EXTENDED]` — Auto-write to `.skill-audit/optimize-history.jsonl` with file system access.
+
 ---
 
 ## §11  Self-Evolution (3-Trigger System)
@@ -1556,7 +1617,7 @@ Snippet: `claude/templates/use-to-evolve-snippet.md`
 3. FILL PLACEHOLDERS:
      {{SKILL_NAME}}           = skill's `name` YAML field
      {{VERSION}}              = skill's `version` YAML field
-     {{FRAMEWORK_VERSION}}    = "2.2.0"
+     {{FRAMEWORK_VERSION}}    = "3.4.0"
      {{INJECTION_DATE}}       = today ISO-8601
      {{CERTIFIED_LEAN_SCORE}} = LEAN score from Step 6 (or 350 if unknown)
 
@@ -1640,7 +1701,7 @@ read https://github.com/theneoai/skill-writer/releases/latest/download/skill-wri
 ```bash
 git clone https://github.com/theneoai/skill-writer.git && cd skill-writer
 ./install.sh              # auto-detect + install
-./install.sh --all        # all 6 platforms
+./install.sh --all        # all 8 platforms
 ./install.sh --platform claude
 ```
 
@@ -2002,7 +2063,7 @@ read https://github.com/theneoai/skill-writer/releases/latest/download/skill-wri
 ### After install — team usage
 
 After the MCP manifest is installed, restart your MCP host. Team members can invoke
-skill-writer via MCP calls. All 6 modes are available via MCP. Output is returned as structured JSON.
+skill-writer via MCP calls. All 8 modes are available via MCP. Output is returned as structured JSON.
 
 **Testing installation** — run this first to confirm MCP is working:
 ```json
@@ -2013,7 +2074,7 @@ If no response or error → verify `~/.mcp/servers/skill-writer/mcp-manifest.jso
 
 ### CREATE mode via MCP (important — read before using)
 
-CREATE uses an 8-question elicitation interview (§7 Inversion). In chat-based platforms
+CREATE uses an 8-question elicitation interview (§8 Inversion). In chat-based platforms
 (Claude, Cursor), questions are asked one at a time interactively. **MCP is stateless**, so
 all 8 answers must be provided in a single call using `elicitation_answers`:
 
@@ -2277,7 +2338,11 @@ skill generation respectively.
 
 ---
 
-## §19  COLLECT Mode — Session Data Recording
+## §19  COLLECT + AGGREGATE Mode
+
+> **COLLECT** `[CORE]` — Record one session's skill performance as a structured artifact.
+> **AGGREGATE** `[EXTENDED — basic flow available]` — Synthesize 2+ COLLECT artifacts into ranked improvement priorities.
+> Both are invoked via COLLECT mode; AGGREGATE runs after you have multiple artifacts.
 
 > **COLLECT at a Glance**
 >
@@ -2640,7 +2705,7 @@ After running `/graph check`:
 ### GoS Minimum Viable Runtime (`[CORE]` — no builder required)
 
 > **Context**: The full GoS (Graph of Skills) runtime specified in `claude/refs/skill-graph.md`
-> requires `builder/src/core/graph.js`, which is a v4.0+ target. However, the most valuable
+> requires the full graph engine (v4.0+ target; not yet shipped). However, the most valuable
 > GoS capability — `depends_on` dependency resolution for `/graph plan` and `/install --bundle`
 > — can be implemented entirely from YAML frontmatter reading, without any external code.
 
@@ -2682,7 +2747,7 @@ Output: "Bundle resolved: [list in install order]. Run /install for each."
 - Auto-inferred edges from COLLECT artifacts
 
 **When to escalate to full spec**: Any `/graph check` that returns GRAPH-001 (dangling edge)
-or GRAPH-003 (cycle detected) requires the full `builder/src/core/graph.js` implementation.
+or GRAPH-003 (cycle detected) requires the full graph engine implementation (v4.0+ target).
 For depth-limited linear chains (most real-world cases), the MVR is sufficient.
 
 ### Key references

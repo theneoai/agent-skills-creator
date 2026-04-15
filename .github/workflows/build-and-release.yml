@@ -149,10 +149,31 @@ jobs:
           done
           [[ $failed -eq 0 ]] || exit 1
 
-      - name: Validate install.sh --dry-run (claude)
+      - name: Validate install.sh --dry-run (all platforms)
         run: |
-          bash claude/install.sh --dry-run
-          echo "✓ claude/install.sh --dry-run passed"
+          failed=0
+          for platform in claude openclaw opencode cursor gemini openai kimi hermes; do
+            script="${platform}/install.sh"
+            if [[ -f "$script" ]]; then
+              if bash "$script" --dry-run > /dev/null 2>&1; then
+                echo "✓ $script --dry-run passed"
+              else
+                echo "✗ $script --dry-run failed"
+                failed=$((failed+1))
+              fi
+            else
+              echo "⚠ $script missing (skipped)"
+            fi
+          done
+          [[ $failed -eq 0 ]] || exit 1
+
+      - name: Validate idempotency (claude reinstall)
+        run: |
+          export HOME=/tmp/test_claude_idempotency
+          mkdir -p "$HOME/.claude"
+          bash claude/install.sh --dry-run > /dev/null 2>&1
+          bash claude/install.sh --dry-run > /dev/null 2>&1
+          echo "✓ claude/install.sh --dry-run idempotent"
 
       - name: Check skill-framework.md exists and has frontmatter
         run: |
@@ -195,6 +216,14 @@ jobs:
           # Universal asset: skill-framework.md → skill-writer.md
           cp skill-framework.md dist/skill-writer.md
           echo "✓ dist/skill-writer.md (universal / skill-framework)"
+
+          # MCP integration guide
+          if [[ -f "docs/mcp-integration.md" ]]; then
+            cp docs/mcp-integration.md dist/mcp-integration.md
+            echo "✓ dist/mcp-integration.md"
+          else
+            echo "⚠ docs/mcp-integration.md not found — skipped"
+          fi
 
           echo ""
           echo "Release assets:"

@@ -29,7 +29,7 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 - **Template-Based**: 4 built-in templates for common skill patterns
 - **Quality Assurance**: 1000-point scoring system with certification tiers
 - **Tier-Aware Evaluation**: Tier-adjusted scoring weights for `planning` / `functional` / `atomic` skills (SkillX three-tier hierarchy)
-- **Reliable LEAN Scoring**: 17 checks split into `[STATIC]` (deterministic, 335 pts, zero variance) and `[HEURISTIC]` (LLM-judged, 165 pts) — score variance documented per phase
+- **Reliable LEAN Scoring**: 16 checks split into `[STATIC]` (deterministic, 335 pts, zero variance) and `[HEURISTIC]` (LLM-judged, 165 pts) — score variance documented per phase
 - **Security Built-In**: CWE-based + OWASP Agentic Skills Top 10 (ASI01–ASI10) detection + supply-chain trust verification for pulled skills
 - **Continuous Improvement**: Automated optimization with convergence detection + co-evolutionary VERIFY step + persistent score history
 - **Self-Evolution**: UTE (Use-to-Evolve) L1 in-session always active; L2 collective with hooks/backend
@@ -106,6 +106,44 @@ All platforms receive the same skill file, companion files (refs/, templates/, e
 > ```
 > Each step feeds the next. Skip ahead only if you already have a skill file.
 
+### System Requirements
+
+| Requirement | Version | Purpose | Install |
+|-------------|---------|---------|---------|
+| **Bash** | 4.0+ | Install scripts | Pre-installed on macOS/Linux |
+| **Python 3** | 3.8+ | Routing-file merge (CLAUDE.md / AGENTS.md) | See below |
+| **Node.js** | 16+ | Optional — UTE cross-session hooks only | See below |
+| **Git** | any | Clone repository | Pre-installed or [git-scm.com](https://git-scm.com) |
+
+**macOS (Homebrew):**
+```bash
+brew install python3          # required
+brew install node             # optional — only if you want UTE cross-session hooks
+```
+
+**Ubuntu / Debian:**
+```bash
+sudo apt update && sudo apt install python3   # required
+sudo apt install nodejs npm                   # optional
+```
+
+**Windows (Git Bash + WSL2 recommended):**
+```bash
+# Option A — Git Bash (for Cursor install only; no python3 needed):
+#   Download: https://git-scm.com/download/win
+#   Run cursor/install.sh inside Git Bash — no Python required for Cursor
+
+# Option B — WSL2 (full support, all platforms):
+wsl --install                 # enable WSL2
+# then follow Ubuntu instructions above inside WSL2
+
+# Option C — PowerShell (Cursor only):
+#   See cursor/install.ps1 for a PowerShell-native installer
+```
+
+> **Cursor users on Windows**: Python 3 is NOT required for Cursor installation
+> (the Cursor installer only copies files; no routing-file merge is needed).
+
 ### Installation
 
 #### Option 1 — Shell Script (from git clone, recommended)
@@ -133,6 +171,18 @@ Each platform's install script copies:
 - `{platform}/skill-writer.md` → `~/{platform-home}/skills/`
 - `refs/ templates/ eval/ optimize/` → `~/{platform-home}/`
 - Routing rules (CLAUDE.md / AGENTS.md) → merged idempotently
+
+**After installation → restart your AI platform, then try:**
+```
+"create a skill that summarizes git diffs"
+```
+That's it. The AI will ask 8 questions and generate a complete skill file.
+
+> **Cursor users**: Use keyword phrases — NOT slash commands.
+> The IDE intercepts `/` for its own command palette.
+> ✓ `create a skill`  ✗ `/create`
+> ✓ `lean eval`       ✗ `/lean`
+> ✓ `evaluate this skill`  ✗ `/eval`
 
 #### Option 2 — Manual Copy (no script needed)
 
@@ -180,8 +230,8 @@ cp opencode/skill-writer.md ~/.config/opencode/skills/skill-writer.md
 
 **Install skill-writer (agent-driven):**
 ```
-"read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install"
-"read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install to claude"
+"read https://raw.githubusercontent.com/theneoai/skill-writer/main/skill-framework.md and install"
+"read https://raw.githubusercontent.com/theneoai/skill-writer/main/skill-framework.md and install to claude"
 "安装 skill-writer"
 ```
 
@@ -270,7 +320,7 @@ Fast evaluator for rapid quality assessment. Core rubric is **500 points** (7 di
 - **`[HEURISTIC]`** — requires LLM judgment to assess adequacy (165 pts max, ±5–15 pts variance)
 - **`[BONUS]`** — D8 Composability; only scored when `graph:` block is present; 0 pts if absent (no penalty)
 
-#### 17-Check Rubric (organized by dimension)
+#### 16-Check Rubric (organized by dimension)
 
 | Dimension | Check | Points | Type |
 |-----------|-------|--------|------|
@@ -908,7 +958,8 @@ skill-writer/
 │   ├── code-reviewer/             # GOLD 947/1000
 │   └── doc-generator/             # GOLD 895/1000
 ├── docs/                          # Documentation
-│   └── skill-creator-analysis.md  # Architecture analysis and design decisions
+│   ├── skill-creator-analysis.md  # Architecture analysis and design decisions
+│   └── mcp-integration.md         # MCP server integration guide
 ├── skill-framework.md             # Complete specification (source of truth)
 └── install.sh                     # Top-level dispatcher → delegates to platform scripts
 ```
@@ -926,7 +977,7 @@ skill-writer/
 │  │ CREATE Mode │  │    LEAN Mode     │  │   EVALUATE Mode     │  │
 │  │             │  │                  │  │                     │  │
 │  │ • Templates │  │ • 500-pt scoring │  │ • 4-Phase pipeline  │  │
-│  │ • Elicit 8Q │  │ • 17 checks      │  │ • 1000-pt scoring   │  │
+│  │ • Elicit 8Q │  │ • 16 checks      │  │ • 1000-pt scoring   │  │
 │  │ • 9-Phase   │  │ • [STATIC] +     │  │ • Tier-adjusted     │  │
 │  │   Workflow  │  │   [HEURISTIC]    │  │   Phase 2 weights   │  │
 │  └─────────────┘  └──────────────────┘  └─────────────────────┘  │
