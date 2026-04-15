@@ -642,7 +642,7 @@ Submit skill file via PR with this EVALUATE report attached as context.
 | 4 | **GENERATE** — fill template; write Skill Summary (¶1), Negative Boundaries section. If Q7 or Q8 was skipped, pause and show auto-filled content for user confirmation before proceeding. | Draft complete, no placeholders |
 | 5 | **SECURITY SCAN** — CWE + OWASP Agentic Top 10 (`refs/security-patterns.md`) | No P0 violations; ASI01 CLEAR |
 | 6 | **LEAN EVAL** — fast heuristic check (§7) | Score ≥ 350; negative boundaries present |
-| 7 | **FULL EVALUATE** — 4-phase pipeline if LEAN uncertain (§8) | Score ≥ 700 BRONZE |
+| 7 | **FULL EVALUATE** — 4-phase pipeline if LEAN uncertain (§9) | Score ≥ 700 BRONZE |
 | 8 | **INJECT UTE** — append `§UTE` section from snippet, fill placeholders (§15) | UTE section present |
 | 9 | **DELIVER** — annotate, certify, inject honest labels, write audit entry | CERTIFIED / TEMP_CERT |
 
@@ -1064,7 +1064,7 @@ High variance = artifact looks good on paper but fails runtime (or vice versa).
 ### Evaluation Workflow
 
 ```
-1. LEAN pre-check (§6) → if UNCERTAIN or FAIL → full pipeline
+1. LEAN pre-check (§7) → if UNCERTAIN or FAIL → full pipeline
 2. READ skill_tier from YAML frontmatter (planning | functional | atomic)
    READ generation_method + validation_status (advisory — emit INFO if absent)
    → If skill_tier present: apply tier-adjusted Phase 2 weights (eval/rubrics.md §8)

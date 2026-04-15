@@ -29,7 +29,7 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 - **Template-Based**: 4 built-in templates for common skill patterns
 - **Quality Assurance**: 1000-point scoring system with certification tiers
 - **Tier-Aware Evaluation**: Tier-adjusted scoring weights for `planning` / `functional` / `atomic` skills (SkillX three-tier hierarchy)
-- **Reliable LEAN Scoring**: 17 checks split into `[STATIC]` (deterministic, 335 pts, zero variance) and `[HEURISTIC]` (LLM-judged, 165 pts) — score variance documented per phase
+- **Reliable LEAN Scoring**: 16 checks split into `[STATIC]` (deterministic, 335 pts, zero variance) and `[HEURISTIC]` (LLM-judged, 165 pts) — score variance documented per phase
 - **Security Built-In**: CWE-based + OWASP Agentic Skills Top 10 (ASI01–ASI10) detection + supply-chain trust verification for pulled skills
 - **Continuous Improvement**: Automated optimization with convergence detection + co-evolutionary VERIFY step + persistent score history
 - **Self-Evolution**: UTE (Use-to-Evolve) L1 in-session always active; L2 collective with hooks/backend
@@ -320,7 +320,7 @@ Fast evaluator for rapid quality assessment. Core rubric is **500 points** (7 di
 - **`[HEURISTIC]`** — requires LLM judgment to assess adequacy (165 pts max, ±5–15 pts variance)
 - **`[BONUS]`** — D8 Composability; only scored when `graph:` block is present; 0 pts if absent (no penalty)
 
-#### 17-Check Rubric (organized by dimension)
+#### 16-Check Rubric (organized by dimension)
 
 | Dimension | Check | Points | Type |
 |-----------|-------|--------|------|

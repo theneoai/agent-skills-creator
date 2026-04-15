@@ -670,8 +670,8 @@ Submit skill file via PR with this EVALUATE report attached as context.
 | 3 | **PLAN** — multi-pass self-review (`claude/refs/self-review.md §2`) | Plan reviewed |
 | 4 | **GENERATE** — fill template; write Skill Summary (¶1), Negative Boundaries section. If Q7 or Q8 was skipped, pause and show auto-filled content for user confirmation before proceeding. | Draft complete, no placeholders |
 | 5 | **SECURITY SCAN** — CWE + OWASP Agentic Top 10 (`claude/refs/security-patterns.md`) | No P0 violations; ASI01 CLEAR |
-| 6 | **LEAN EVAL** — fast heuristic check (§6) | Score ≥ 350; negative boundaries present |
-| 7 | **FULL EVALUATE** — 4-phase pipeline if LEAN uncertain (§8) | Score ≥ 700 BRONZE |
+| 6 | **LEAN EVAL** — fast heuristic check (§7) | Score ≥ 350; negative boundaries present |
+| 7 | **FULL EVALUATE** — 4-phase pipeline if LEAN uncertain (§9) | Score ≥ 700 BRONZE |
 | 8 | **INJECT UTE** — append `§UTE` section from snippet, fill placeholders (§15) | UTE section present |
 | 9 | **DELIVER** — annotate, certify, inject honest labels, write audit entry | CERTIFIED / TEMP_CERT |
 
@@ -1125,7 +1125,7 @@ High variance = artifact looks good on paper but fails runtime (or vice versa).
 ### Evaluation Workflow
 
 ```
-1. LEAN pre-check (§6) → if UNCERTAIN or FAIL → full pipeline
+1. LEAN pre-check (§7) → if UNCERTAIN or FAIL → full pipeline
 2. READ skill_tier from YAML frontmatter (planning | functional | atomic)
    READ generation_method + validation_status (advisory — emit INFO if absent)
    → If skill_tier present: apply tier-adjusted Phase 2 weights (claude/eval/rubrics.md §8)
@@ -1617,7 +1617,7 @@ Snippet: `claude/templates/use-to-evolve-snippet.md`
 3. FILL PLACEHOLDERS:
      {{SKILL_NAME}}           = skill's `name` YAML field
      {{VERSION}}              = skill's `version` YAML field
-     {{FRAMEWORK_VERSION}}    = "2.2.0"
+     {{FRAMEWORK_VERSION}}    = "3.4.0"
      {{INJECTION_DATE}}       = today ISO-8601
      {{CERTIFIED_LEAN_SCORE}} = LEAN score from Step 6 (or 350 if unknown)
 
@@ -2063,7 +2063,7 @@ read https://github.com/theneoai/skill-writer/releases/latest/download/skill-wri
 ### After install — team usage
 
 After the MCP manifest is installed, restart your MCP host. Team members can invoke
-skill-writer via MCP calls. All 6 modes are available via MCP. Output is returned as structured JSON.
+skill-writer via MCP calls. All 8 modes are available via MCP. Output is returned as structured JSON.
 
 **Testing installation** — run this first to confirm MCP is working:
 ```json
