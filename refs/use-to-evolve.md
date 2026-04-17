@@ -83,7 +83,7 @@ use_to_evolve:
   validation_status: "lean-only"        # (string) unvalidated | lean-only | full-eval | pragmatic-verified
 ```
 
-> **Note**: Phase 4 certification checks that all 13 fields are present. Missing any field fails the UTE injection check (−60 points). The two v3.4.0 fields (`generation_method`, `validation_status`) affect SkillRouter ranking and SHARE gate behavior — see `refs/security-patterns.md §6` for supply chain trust integration.
+> **Note**: Phase 4 certification checks that all 13 fields are present. Missing any field fails the UTE injection check (−60 points). The two v3.4.0 fields (`generation_method`, `validation_status`) affect Skill Summary heuristic ranking and SHARE gate behavior — see `refs/security-patterns.md §6` for supply chain trust integration.
 
 ---
 
@@ -338,7 +338,7 @@ With the above setup, these items upgrade from `[EXTENDED]` to `[CORE]`:
 | Audit trail | `[CORE]` — sessions.jsonl append on Stop |
 
 **Remaining `[EXTENDED]` items** (require L2 collective infrastructure):
-- Multi-user artifact aggregation (SkillClaw / SkillRL collective pipeline)
+- Multi-user artifact aggregation (collective-evolution design / reinforcement-style evolution design collective pipeline)
 - Cross-skill tier drift monitoring (requires shared registry backend)
 
 ---
@@ -354,7 +354,7 @@ With the above setup, these items upgrade from `[EXTENDED]` to `[CORE]`:
 - **Output**: Evidence-backed evolution proposals (stronger signal than single-session L1)
 - **State**: Persistent storage (`sessions/` directory in shared storage backend)
 
-**Key insight** (from SkillClaw research): L2 collective evolution produces measurably better
+**Key insight** (from collective-evolution design research): L2 collective evolution produces measurably better
 skills than L1 single-user optimization — not because of bigger models, but because broader
 usage data reveals blind spots that single-user testing misses.
 

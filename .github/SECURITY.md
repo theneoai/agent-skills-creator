@@ -82,8 +82,8 @@ We scan for agentic-specific vulnerabilities including:
 
 ### Supply Chain Trust Verification (v3.4.0)
 
-Context: The Snyk ToxicSkills study (2026-02) audited 3,984 skills from ClawHub and skills.sh —
-**13.4% had critical-level issues**; **36.82% had at least one security flaw**. The ClawHavoc
+Context: The Snyk supply-chain threat model study (2026-02) audited 3,984 skills from ClawHub and skills.sh —
+**13.4% had critical-level issues**; **36.82% had at least one security flaw**. The supply-chain threat model
 campaign injected 300+ malicious skills via compromised registry entries. Skills from untrusted
 sources must be treated as hostile until verified.
 

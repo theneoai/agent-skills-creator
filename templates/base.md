@@ -45,75 +45,72 @@ All remaining placeholders are inferred by CREATE mode from your answers.
 
 ```markdown
 ---
+# ─── agentskills.io v1.0 spec-pure top level ──────────────────────────────────
+# Only `name` and `description` are REQUIRED. All other top-level keys are
+# allowed by the spec but optional. Private fields live under `x-skill-writer:`.
 name: {{SKILL_NAME}}
-version: "1.0.0"
-spec_version: "1.0"            # agentskills.io Agent Skills Open Standard v1.0 (v3.5.0+)
 description: "{{ONE_LINE_DESCRIPTION}}"
-description_i18n:
-  en: "{{EN_DESCRIPTION}}"
-  zh: "{{ZH_DESCRIPTION}}"
-
+version: "1.0.0"
+spec_version: "1.0"            # agentskills.io v1.0
 license: MIT
 author:
   name: {{AUTHOR}}
-created: "{{DATE}}"
-updated: "{{DATE}}"
-type: {{SKILL_TYPE}}          # e.g. assistant, tool-wrapper, analyzer
-
-# Skill tier (three-tier hierarchy)
-skill_tier: {{TIER}}          # planning | functional | atomic
-
 tags:
   - {{TAG_1}}
   - {{TAG_2}}
 
-# Trigger phrases (3–8 canonical user phrasings that invoke this skill)
-triggers:
-  en:
-    - "{{TRIGGER_PHRASE_EN_1}}"
-    - "{{TRIGGER_PHRASE_EN_2}}"
-    - "{{TRIGGER_PHRASE_EN_3}}"
-  zh:
-    - "{{TRIGGER_PHRASE_ZH_1}}"
-    - "{{TRIGGER_PHRASE_ZH_2}}"
+# ─── skill-writer private extensions (ignored by strict spec validators) ─────
+# Runtime-mutating state (cumulative_invocations, last_ute_check, pending_*,
+# total_micro_patches_applied) MUST live in a sidecar file, not here —
+# see scripts/emit_spec_pure.py.
+x-skill-writer:
+  description_i18n:
+    en: "{{EN_DESCRIPTION}}"
+    zh: "{{ZH_DESCRIPTION}}"
+  created: "{{DATE}}"
+  updated: "{{DATE}}"
+  type: {{SKILL_TYPE}}          # e.g. assistant, tool-wrapper, analyzer
+  skill_tier: {{TIER}}          # planning | functional | atomic
+  # Trigger phrases (3–8 canonical user phrasings that invoke this skill)
+  triggers:
+    en:
+      - "{{TRIGGER_PHRASE_EN_1}}"
+      - "{{TRIGGER_PHRASE_EN_2}}"
+      - "{{TRIGGER_PHRASE_EN_3}}"
+    zh:
+      - "{{TRIGGER_PHRASE_ZH_1}}"
+      - "{{TRIGGER_PHRASE_ZH_2}}"
+  interface:
+    input: {{INPUT_FORMAT}}
+    output: {{OUTPUT_FORMAT}}
+    modes: [{{MODE_1}}, {{MODE_2}}]
+  use_to_evolve:
+    enabled: true
+    injected_by: "skill-writer"
+    injected_at: "{{DATE}}"
+    check_cadence: {lightweight: 10, full_recompute: 50, tier_drift: 100}
+    micro_patch_enabled: true
+    feedback_detection: true
+    generation_method: "auto-generated"   # auto-generated | human-authored | hybrid
+    validation_status: "lean-only"        # unvalidated | lean-only | full-eval | pragmatic-verified
 
-interface:
-  input: {{INPUT_FORMAT}}     # e.g. user-natural-language, structured-json
-  output: {{OUTPUT_FORMAT}}   # e.g. text, json, markdown
-  modes: [{{MODE_1}}, {{MODE_2}}]
-
-use_to_evolve:
-  enabled: true
-  injected_by: "skill-writer v3.4.0"
-  injected_at: "{{DATE}}"
-  check_cadence: {lightweight: 10, full_recompute: 50, tier_drift: 100}
-  micro_patch_enabled: true
-  feedback_detection: true
-  certified_lean_score: null
-  last_ute_check: null
-  pending_patches: 0
-  total_micro_patches_applied: 0
-  cumulative_invocations: 0
-  generation_method: "auto-generated"   # auto-generated | human-authored | hybrid
-  validation_status: "lean-only"        # unvalidated | lean-only | full-eval | pragmatic-verified
-
-# Graph of Skills — optional (v3.2.0). Unlocks D8 Composability scoring (+20 LEAN pts).
-# graph:
-#   depends_on:              # Skills that must be available before this one executes
-#     - id: "{{GRAPH_DEP_ID}}"
-#       name: "{{GRAPH_DEP_NAME}}"
-#       required: true       # true = hard dependency; false = optional enhancement
-#   composes:                # Sub-skills this planning skill coordinates (planning tier only)
-#     - id: "{{GRAPH_CHILD_ID}}"
-#       name: "{{GRAPH_CHILD_NAME}}"
-#   similar_to:              # Functionally similar skills (substitutable in some contexts)
-#     - id: "{{GRAPH_SIMILAR_ID}}"
-#       name: "{{GRAPH_SIMILAR_NAME}}"
-#       similarity: 0.80     # 0.0–1.0; ≥ 0.95 triggers GRAPH-004 merge advisory
-#   provides:                # Output types this skill produces (for downstream depends_on)
-#     - "{{GRAPH_OUTPUT_TYPE}}"   # e.g. "structured-test-report", "validated-api-schema"
-#   consumes:                # Input types this skill requires from upstream skills
-#     - "{{GRAPH_INPUT_TYPE}}"    # e.g. "raw-api-spec", "unstructured-log-data"
+  # Graph of Skills — optional. Unlocks D8 Composability scoring (+20 LEAN pts).
+  # graph:
+  #   depends_on:              # Skills that must be available before this one executes
+  #     - id: "{{GRAPH_DEP_ID}}"
+  #       name: "{{GRAPH_DEP_NAME}}"
+  #       required: true
+  #   composes:                # Sub-skills this planning skill coordinates
+  #     - id: "{{GRAPH_CHILD_ID}}"
+  #       name: "{{GRAPH_CHILD_NAME}}"
+  #   similar_to:              # Functionally similar skills
+  #     - id: "{{GRAPH_SIMILAR_ID}}"
+  #       name: "{{GRAPH_SIMILAR_NAME}}"
+  #       similarity: 0.80
+  #   provides:
+  #     - "{{GRAPH_OUTPUT_TYPE}}"
+  #   consumes:
+  #     - "{{GRAPH_INPUT_TYPE}}"
 ---
 
 ## Skill Summary

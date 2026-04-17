@@ -10,14 +10,16 @@
 #   make build-platforms-check Drift-check platform files vs platforms.yaml (migration mode)
 #   make sign ARTIFACT=path    Ed25519-sign a release artifact (+ .sig/.pubkey/.provenance)
 #   make verify ARTIFACT=path  Verify Ed25519 signature on a release artifact
-#   make mcp-selftest      Self-test the MCP server (zero-LLM, 7 tools)
+#   make eval-trigger ARGS="--skill ... --eval-set ..."   Run real trigger-accuracy eval
+#   make optimize-description ARGS="--skill ... --eval-set ..." Iterative description optimizer
 #   make install           Auto-detect and install to local platforms
 #   make install-all       Install to all 8 platforms
 #   make ci                Run lint + validate + check-version + check-spec-compat
 #                          + build-platforms-check + check-platform-sync
 
 .PHONY: help lint validate check-version check-spec-compat \
-        build-platforms build-platforms-check sign verify mcp-selftest \
+        build-platforms build-platforms-check sign verify \
+        eval-trigger optimize-description \
         check-platform-sync install install-all ci
 
 VERSION := $(shell cat VERSION)
@@ -36,7 +38,8 @@ help:
 	@echo "  build-platforms-check    Drift-check platform files vs platforms.yaml (migration mode)"
 	@echo "  sign ARTIFACT=<path>     Ed25519-sign a release artifact"
 	@echo "  verify ARTIFACT=<path>   Verify Ed25519 signature"
-	@echo "  mcp-selftest             Self-test the MCP server (7 tools, zero-LLM)"
+	@echo "  eval-trigger             Real trigger-accuracy eval (needs ANTHROPIC_API_KEY)"
+	@echo "  optimize-description     Iterative description optimizer (needs ANTHROPIC_API_KEY)"
 	@echo "  check-platform-sync      Diff all platform skill files against claude/skill-writer.md"
 	@echo "  install                  Auto-detect installed platforms and install"
 	@echo "  install-all              Install to all 8 platforms"
@@ -161,11 +164,23 @@ verify:
 	fi
 	@bash scripts/verify-signature.sh "$(ARTIFACT)"
 
-# ── MCP server self-test (v3.5.0+) ────────────────────────────────────────────
+# ── Real eval pipeline (matches Anthropic skill-creator design) ──────────────
 
-mcp-selftest:
-	@echo "==> MCP server self-test (zero-LLM, 7 tools)"
-	@python3 mcp/server.py --selftest
+eval-trigger:
+	@echo "==> real trigger-accuracy eval"
+	@python3 scripts/run_trigger_eval.py $(ARGS)
+
+optimize-description:
+	@echo "==> iterative description optimizer"
+	@python3 scripts/optimize_description.py $(ARGS)
+
+# ── Spec-pure emission (agentskills.io v1.0 conformance) ──────────────────────
+
+emit-spec-pure:
+	@if [ -z "$(SKILL)" ]; then \
+		echo "usage: make emit-spec-pure SKILL=<path> OUT=<path> [STATE=<path>]"; exit 1; \
+	fi
+	@python3 scripts/emit_spec_pure.py "$(SKILL)" --out "$(OUT)" $(if $(STATE),--state-out "$(STATE)",)
 
 # ── Install ───────────────────────────────────────────────────────────────────
 

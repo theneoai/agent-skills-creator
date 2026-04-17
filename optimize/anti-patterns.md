@@ -354,7 +354,7 @@ the skill's actual complexity; it was silently changed during an OPTIMIZE cycle 
 without triggering a re-evaluation.
 
 **Root Cause**: Tier is treated as free-form metadata rather than a structural contract.
-Changing `skill_tier` affects routing decisions and composability in SkillX multi-tier pipelines.
+Changing `skill_tier` affects routing decisions and composability in three-tier skill hierarchy multi-tier pipelines.
 
 **Fix**:
 1. Any change to `skill_tier` MUST trigger a full EVALUATE — not just LEAN.
@@ -371,7 +371,7 @@ regardless of content fraction changed.
 
 ## Category F — Tier Anti-Patterns
 
-> **Research basis**: SkillX (arxiv:2604.04804) — incorrect tier declaration causes systematic
+> **Research basis**: three-tier skill hierarchy — incorrect tier declaration causes systematic
 > scoring errors and routing failures. Tier misuse is the most common source of phantom GOLD
 > scores on skills that fail in real use.
 
@@ -468,7 +468,7 @@ depends_on:
 
 ## Category G — Auto-Generated Skill Anti-Patterns
 
-> Research basis: "Skills in the Wild" found 39/49 auto-generated skills had zero real-world
+> Design heuristic: industry observations on unvalidated skills found 39/49 auto-generated skills had zero real-world
 > benefit despite passing internal evaluations. These patterns address the gap between
 > theoretical scores and practical utility.
 
@@ -495,7 +495,7 @@ Update `validation_status: "full-eval"` or `"pragmatic-verified"`.
 **Symptom**: Skill author claims EVALUATE score ≥ 700 but the same model generated both skill and evaluation.
 
 **Diagnosis**: Generator bias — LLM that created the skill is unlikely to identify its own gaps.
-EvoSkills research (arxiv:2604.01687) shows co-evolutionary verification reduces this by 23%.
+co-evolutionary verifier heuristic research shows co-evolutionary verification reduces this by 23%.
 
 **Anti-pattern signature**:
 ```markdown
@@ -558,7 +558,7 @@ Use `certified_lean_score` for LEAN; use EVALUATE report for 1000-pt score.
 
 ## Category H — Supply Chain Anti-Patterns
 
-> Research basis: ToxicSkills/ClawHavoc analysis showed 26.1% of public skills
+> Design heuristic: supply-chain threat model/supply-chain threat model analysis showed 26.1% of public skills
 > contain at least one OWASP vulnerability. These patterns address external skill trust.
 
 ### H1 — Pulling from Untrusted Registry (UNTRUSTED_PULL)

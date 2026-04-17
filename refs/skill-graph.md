@@ -5,10 +5,10 @@
 > **Load**: When §18 (GRAPH Mode) of `claude/skill-writer.md` is accessed, or when
 > INSTALL mode performs dependency resolution.
 > **Research basis**:
->   - SkillNet (arxiv:2603.04448): 3-layer ontology (taxonomy / relations / packages)
+>   - typed-dependency Graph of Skills design: 3-layer ontology (taxonomy / relations / packages)
 >   - GoS bundle retrieval: Personalized PageRank for execution-complete skill bundles
->   - SkillX (arxiv:2604.04804): tier hierarchy (planning / functional / atomic)
->   - SkillClaw (arxiv:2604.08377): collective evolution via artifact aggregation
+>   - three-tier skill hierarchy: tier hierarchy (planning / functional / atomic)
+>   - collective-evolution design: collective evolution via artifact aggregation
 > **Implementation**: **`[ROADMAP v4.0+]`** — runtime library not yet shipped.
 >   Current release delivers ONLY the Minimum Viable Runtime described in §2a.
 > **[CORE] Minimum Viable Runtime**: See §2a — LLM-executable `depends_on` resolution from YAML only (works today)
@@ -49,7 +49,7 @@ Each Skill in the registry is a graph node:
 Node {
   id:         string       // SHA-256(name)[:12] — deterministic, immutable
   name:       string       // human-readable skill name
-  skill_tier: string       // planning | functional | atomic (SkillX)
+  skill_tier: string       // planning | functional | atomic (three-tier skill hierarchy)
   version:    string       // semver
   lean_score: int          // last known LEAN score (0–520 with D8)
   tier_cert:  string       // PLATINUM | GOLD | SILVER | BRONZE | FAIL
@@ -123,7 +123,7 @@ These properties MUST hold in a valid graph (checked by validate.js GRAPH-001–
 MINIMUM VIABLE GoS — 5-Step Algorithm [CORE]
 
 Step 1 — SEED (trigger matching)
-  Route user request → primary skill via SkillRouter trigger matching.
+  Route user request → primary skill via Skill Summary heuristic trigger matching.
   Read primary skill's YAML frontmatter.
 
 Step 2 — EXPAND (DFS on depends_on, max depth 5, with cycle guard)
@@ -239,7 +239,7 @@ Input:  query task description, registry graph
 Output: ordered bundle [skill_id_1, skill_id_2, ...]
 
 Step 1 — SEED
-  Use SkillRouter (trigger phrase matching + Skill Summary) to identify
+  Use Skill Summary heuristic (trigger phrase matching + Skill Summary) to identify
   the primary matching skill(s). These are seed nodes.
 
 Step 2 — EXPAND (BFS traversal, max depth = GRAPH_MAX_TRAVERSAL_DEPTH)
@@ -256,7 +256,7 @@ Step 3 — DEDUPLICATE
 
 Step 4 — SCORE
   Assign each skill a bundle_rank:
-    base_rank = SkillRouter confidence score for this skill + task
+    base_rank = Skill Summary heuristic confidence score for this skill + task
     dependency_boost = +0.2 per incoming depends_on edge from other bundle members
     bundle_rank = base_rank + dependency_boost
 

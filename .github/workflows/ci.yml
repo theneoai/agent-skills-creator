@@ -156,7 +156,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Self-test handler table
-        run: python3 mcp/server.py --selftest
+        run: python3 experimental/mcp/server.py --selftest
 
   platform-sync:
     name: Platform skill file sync check

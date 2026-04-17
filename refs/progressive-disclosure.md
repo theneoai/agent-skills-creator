@@ -26,7 +26,7 @@ v3.2.0 — it provides bundle-level awareness before individual skills are loade
 
 > **v3.3.0 addition**: Layer -1 (Hook Injection) is prepended to the existing four layers.
 > Inspired by the AGENTS.md + Hook + Skill three-layer model (得物 AI Coding practice, 2026).
-> Research basis: Vercel benchmarks show explicit context injection improves skill trigger
+> Design heuristic: Vercel benchmarks show explicit context injection improves skill trigger
 > accuracy vs. trigger-phrase matching alone; AGENTS.md indexing is the most stable routing approach.
 
 ```
@@ -157,7 +157,7 @@ description: Meta-skill framework — CREATE, LEAN, EVALUATE, OPTIMIZE, INSTALL,
 
 Trigger matching criteria:
 - Exact keyword match against `triggers.en` or `triggers.zh` YAML fields
-- Semantic match by platform-native routing (SkillRouter 91.7% cross-encoder accuracy)
+- Semantic match by platform-native routing (Skill Summary heuristic 91.7% cross-encoder accuracy)
 - Explicit user invocation (`/create`, `评测`, etc.)
 
 **What belongs in Layer 2**:

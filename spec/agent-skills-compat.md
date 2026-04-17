@@ -71,16 +71,23 @@ without validation failure.
 
 ## §3  Emission modes
 
-skill-writer produces three flavors of output from a single source:
+skill-writer produces two flavors of output from a single source:
 
-| Mode            | Command                     | Target audience |
-|-----------------|------------------------------|-----------------|
-| `native`        | `make build-platforms`       | skill-writer users — full feature set |
-| `spec`          | `make build-spec`            | cross-platform consumers — spec v1.0 only |
-| `spec+ext`      | `make build-spec-ext`        | hybrid — spec baseline + `x-skill-writer:` extensions for feature-aware readers |
+| Mode       | Command                                   | Target audience |
+|------------|-------------------------------------------|-----------------|
+| `native`   | `make build-platforms`                    | skill-writer users — full feature set (extensions at top level) |
+| `spec+ext` | `make emit-spec-pure SKILL=... OUT=...`   | cross-platform consumers — spec v1.0 pure top level + extensions under `x-skill-writer:` |
 
-The `spec` flavor is what you publish to agentskills.io registries, share on
-the agentskills marketplace, or distribute to unknown consumers.
+The spec-pure flavor is what you publish to agentskills.io registries, share
+on the agentskills marketplace, or distribute to unknown consumers. The
+runtime-state subset of `use_to_evolve` (`cumulative_invocations`,
+`last_ute_check`, `pending_patches`, `total_micro_patches_applied`,
+`certified_lean_score`) is stripped to an optional sidecar JSON — those
+fields mutate on every invocation and do not belong in the source file.
+
+**New in this release**: the base template emits the `x-skill-writer:`
+nested layout by default, so new skills are spec-pure out of the box. The
+emit script is for migrating older skills that used the flat layout.
 
 ---
 

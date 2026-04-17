@@ -47,7 +47,7 @@ preserves ~80% of your context window vs. reading the whole file.
 | §15 | Usage Examples | 1507–1598 | Demo scripts | `examples/` |
 | §16 | UTE Injection | 1599–1662 | Use-to-Evolve bootstrap | `refs/use-to-evolve.md` |
 | §17 | INSTALL Mode | 1663–2036 | Install + platform routing | `install.sh` |
-| §17b | MCP Integration Guide | 2037–2280 | Claude Code MCP hook | `docs/mcp-integration.md` |
+| §17b | MCP Integration Guide | 2037–2280 | Claude Code MCP hook | `experimental/mcp-integration.md` |
 | §18 | Memory Architecture | 2281–2340 | `[EXTENDED]` backend design | — |
 | §19 | COLLECT + AGGREGATE Mode | 2341–2625 | Session Artifact pipeline | `refs/session-artifact.md` |
 | §20 | GRAPH Mode (v3.2.0) | 2626–end | Skill graph operations | `refs/skill-graph.md` |

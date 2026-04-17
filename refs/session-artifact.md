@@ -2,7 +2,7 @@
 
 > **Purpose**: Canonical format for session data recorded by COLLECT mode.
 > **Load**: When §17 (COLLECT Mode) of `claude/skill-writer.md` is accessed.
-> **Inspired by**: SkillClaw (arxiv:2604.08377) + SkillRL lesson distillation (arxiv:2602.08234)
+> **Inspired by**: collective-evolution design + reinforcement-style evolution design lesson distillation
 > **Main doc**: `claude/skill-writer.md §17`
 > **Last updated**: 2026-04-15 — v3.4.0: Added `generation_method`, `validation_status`, `pragmatic_success_rate` fields (§2, §3, §8a); schema_version bumped to "1.1"
 > **Previous**: 2026-04-13 — v3.2.0: Added GoS `bundle_context` + `graph_signals` fields
@@ -24,7 +24,7 @@ A **Session Artifact** is a structured record of a single skill invocation. The 
 generates it at the end of every session where COLLECT mode is active. Artifacts
 accumulate in shared storage and feed the AGGREGATE mode distillation pipeline.
 
-**Key principle** (from SkillClaw): collective evolution — aggregating artifacts from
+**Key principle** (from collective-evolution design): collective evolution — aggregating artifacts from
 *many users* across *many sessions* — consistently outperforms single-user optimization.
 The Session Artifact is the atomic unit that enables this.
 
@@ -180,7 +180,7 @@ to a strength rating for this session. Use `"n/a"` when a dimension wasn't exerc
 
 ### Trigger signals (v3.3.0) `[CORE]`
 
-> Added for SkillRouter feedback loop (refs/skill-registry.md §11.4 Rule 4).
+> Added for Skill Summary heuristic feedback loop (refs/skill-registry.md §11.4 Rule 4).
 
 | Field | Required | Description |
 |-------|----------|-------------|
@@ -247,9 +247,9 @@ For each skill S with N ≥ 10 session artifacts:
 
 ---
 
-### SkillRL Lesson Distillation fields `[CORE]`
+### reinforcement-style evolution design Lesson Distillation fields `[CORE]`
 
-Inspired by SkillRL (arxiv:2602.08234): distilling raw trajectories into typed lessons yields
+Inspired by reinforcement-style evolution design: distilling raw trajectories into typed lessons yields
 10-20% token compression while improving reasoning utility in downstream AGGREGATE pipelines.
 
 | Field | Values | Description |
@@ -316,7 +316,7 @@ on next session. Improvement opportunity: add retry logic to error handling sect
 > **`[EXTENDED]`**: Full pipeline requires external storage backend.
 > Minimum viable: user exports artifact as JSON and provides it as input to AGGREGATE mode.
 
-### Storage layout (SkillClaw-compatible)
+### Storage layout (collective-evolution design-compatible)
 
 ```
 storage-root/
@@ -335,7 +335,7 @@ storage-root/
 | **processed** | Artifact incorporated into a skill evolution; safe to archive |
 | **failed** | AGGREGATE failed; artifact remains in queue for retry |
 
-**Queue semantics** (from SkillClaw): artifacts remain in the queue until AGGREGATE
+**Queue semantics** (from collective-evolution design): artifacts remain in the queue until AGGREGATE
 successfully processes them. This guarantees at-least-once delivery even if the
 AGGREGATE server restarts mid-cycle.
 
@@ -348,7 +348,7 @@ that the user can:
 
 1. Save locally as `<session_id>.json`
 2. Paste into a future AGGREGATE mode session alongside other artifacts
-3. Manually push to shared storage via `skillclaw push` (if using SkillClaw backend)
+3. Manually push to shared storage via `skillclaw push` (if using collective-evolution design backend)
 
 This manual flow degrades gracefully — single-user COLLECT is still valuable for
 tracking personal usage patterns over time.
@@ -357,7 +357,7 @@ tracking personal usage patterns over time.
 
 ## §8  Graph of Skills Fields (v3.2.0)
 
-> **Research basis**: GoS bundle retrieval, SkillNet (arxiv:2603.04448).
+> **Research basis**: GoS bundle retrieval, typed-dependency Graph of Skills design.
 > These fields enable the AGGREGATE pipeline to auto-infer graph edges from collective
 > session data. Full spec: `claude/refs/skill-graph.md`
 
@@ -440,14 +440,14 @@ Rule 4 — Trigger Discovery (v3.3.0):
 
 **Rule 4 rationale**: Trigger phrases are written at skill creation time, but users
 develop natural phrasings through actual use. Rule 4 closes the feedback loop by
-promoting observed user language into canonical triggers, improving SkillRouter
+promoting observed user language into canonical triggers, improving Skill Summary heuristic
 weighted ranking (refs/skill-registry.md §11.4) over time.
 
 ---
 
 ## §6a  AGGREGATE Conflict Resolution Protocol `[CORE]`
 
-> **Research basis**: SkillClaw (arxiv:2604.08377) — collective evolution aggregates signals
+> **Research basis**: collective-evolution design — collective evolution aggregates signals
 > from many users, but provides no conflict resolution when user preferences diverge.
 > Without a protocol, the AGGREGATE ranked improvement list is unreliable for multi-user
 > skill ecosystems where different users report contradictory signals for the same dimension.
@@ -534,12 +534,12 @@ RESOLVED: workflow dimension
 
 ---
 
-## §7  SkillClaw Interoperability
+## §7  collective-evolution design Interoperability
 
-Session Artifacts are designed to be compatible with the SkillClaw evolve server
+Session Artifacts are designed to be compatible with the collective-evolution design evolve server
 session format. Key alignment points:
 
-| SkillClaw concept | skill-writer equivalent | Notes |
+| collective-evolution design concept | skill-writer equivalent | Notes |
 |-------------------|------------------------|-------|
 | Programmatic trajectory | `dimension_observations` | skill-writer maps to 7 unified dimensions |
 | LLM session summary | `session_summary` | Same 8–15 sentence causal-chain format |

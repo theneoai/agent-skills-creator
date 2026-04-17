@@ -32,7 +32,7 @@ When the user asks to **create, evaluate, optimize, install, or share a skill**:
 ## v3.4.0 Quick Reference
 
 **New in v3.4.0**:
-- `/create --from-failures` — build skill from failure trajectory inputs (SkillForge)
+- `/create --from-failures` — build skill from failure trajectory inputs (Failure-Driven CREATE heuristic)
 - `/eval --pragmatic` — test against 3–5 real tasks; produces `pragmatic_success_rate`
 - Behavioral Verifier — Phase 4 sub-step: 5 auto-generated test cases (in-session, no setup)
 - Honest Skill Labeling — `generation_method` + `validation_status` YAML fields in all skills

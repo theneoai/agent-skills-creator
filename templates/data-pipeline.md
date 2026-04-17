@@ -32,7 +32,7 @@ created: "{{DATE}}"
 updated: "{{DATE}}"
 type: data-pipeline
 
-# Skill tier (SkillX three-tier hierarchy — arxiv:2604.04804)
+# Skill tier (three-tier skill hierarchy three-tier hierarchy —)
 skill_tier: {{TIER}}          # planning | functional | atomic
 # data-pipeline skills are typically: functional (ETL pipeline) or atomic (single transform)
 
@@ -78,7 +78,7 @@ use_to_evolve:
   generation_method: "auto-generated"   # auto-generated | human-authored | hybrid
   validation_status: "lean-only"        # unvalidated | lean-only | full-eval | pragmatic-verified
 
-# Graph of Skills — optional (v3.2.0, research: SkillNet arxiv:2603.04448)
+# Graph of Skills — optional (v3.2.0, research: typed-dependency Graph of Skills design)
 # graph:
 #   depends_on:
 #     - id: "{{GRAPH_DEP_ID}}"
@@ -93,7 +93,7 @@ use_to_evolve:
 ## Skill Summary
 
 <!-- REQUIRED — ≤5 sentences: WHAT / WHEN / WHO / NOT-FOR.
-     SkillRouter research: skill body is the decisive routing signal. Write this last.
+     Skill Summary heuristic research: skill body is the decisive routing signal. Write this last.
 -->
 
 {{SKILL_NAME}} {{WHAT_IT_DOES}}. Use it when {{CANONICAL_USE_CASE_1}} or {{CANONICAL_USE_CASE_2}}. Designed for {{TARGET_USERS}}. This skill does NOT handle {{OUT_OF_SCOPE_TEASER}} — see Negative Boundaries.

@@ -201,4 +201,4 @@ User: "comment 'LGTM' on PR #5 in acme/widgets"
 
 `generation_method: human-authored` · `validation_status: lean-only` ·
 Companion to `examples/data-pipeline-demo/`; demonstrates MCP delegation for the
-`docs/mcp-integration.md` story (see `mcp/README.md` for the skill-writer server).
+`experimental/mcp-integration.md` story (see `mcp/README.md` for the skill-writer server).

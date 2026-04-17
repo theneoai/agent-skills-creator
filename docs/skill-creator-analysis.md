@@ -95,7 +95,7 @@ A skill file REFERENCES companion files; it does not embed them. This keeps the 
 
 ### 4.2 Negative Boundaries (Anti-Pattern Prevention)
 
-Research basis: SkillProbe (2026) — negation reduces false trigger rate significantly when semantically similar requests could mis-trigger a skill.
+Design heuristic: Negative Boundaries heuristic (2026) — negation reduces false trigger rate significantly when semantically similar requests could mis-trigger a skill.
 
 Required format: ≥3 "Do NOT use for `<scenario>`" entries, each with an alternative skill or escalation path. These prevent skill-writer from being activated for:
 - General coding help (use native code assistance)
@@ -104,7 +104,7 @@ Required format: ≥3 "Do NOT use for `<scenario>`" entries, each with an altern
 
 ### 4.3 Skill Summary (Routing Optimization)
 
-Research basis: SkillRouter (arxiv:2603.22455) — 91.7% of cross-encoder attention focuses on the skill body (not triggers) for routing. The Skill Summary (≤5 dense sentences encoding WHAT/WHEN/WHO/NOT-FOR) is the decisive routing signal when multiple skills exist in a large pool.
+Design heuristic: Skill Summary heuristic — a large share of router attention (empirical, unpublished) focuses on the skill body (not triggers) for routing. The Skill Summary (≤5 dense sentences encoding WHAT/WHEN/WHO/NOT-FOR) is the decisive routing signal when multiple skills exist in a large pool.
 
 ### 4.4 Use-to-Evolve (Self-Improvement Protocol)
 
@@ -115,16 +115,16 @@ Research basis: SkillRouter (arxiv:2603.22455) — 91.7% of cross-encoder attent
 - `certified_lean_score`, `last_ute_check` — certification state
 - `pending_patches`, `total_micro_patches_applied`, `cumulative_invocations` — counters
 
-### 4.5 Three-Tier Skill Hierarchy (SkillX)
+### 4.5 Three-Tier Skill Hierarchy (three-tier skill hierarchy)
 
-Research basis: SkillX (arxiv:2604.04804) — skills form a planning-functional-atomic hierarchy:
+Design heuristic: three-tier skill hierarchy — skills form a planning-functional-atomic hierarchy:
 - **planning**: Orchestrates other skills (skill-writer is planning tier)
 - **functional**: Reusable subroutine with clear I/O (e.g., lean-eval)
 - **atomic**: Single execution-oriented operation (e.g., validate-yaml)
 
 ### 4.6 Graph of Skills (Optional)
 
-Research basis: SkillNet (arxiv:2603.04448) — typed dependency edges between skills enable:
+Design heuristic: typed-dependency Graph of Skills design — typed dependency edges between skills enable:
 - Dependency resolution during install
 - Bundle retrieval (GRAPH mode)
 - D8 Composability scoring (+20 LEAN pts)
@@ -212,7 +212,7 @@ All 8 platforms are functionally equivalent (v3.4.0). Platform differences are m
 **Rationale**: OpenClaw's AgentSkills format requires this block for compatibility detection. It's a 10-line addition to the frontmatter — no other changes needed.
 
 ### Decision 5: skill_tier = planning (not functional)
-**Rationale**: skill-writer orchestrates all other modes (CREATE, LEAN, EVALUATE, OPTIMIZE, etc.) and coordinates sub-skills. This matches the `planning` tier definition in SkillX.
+**Rationale**: skill-writer orchestrates all other modes (CREATE, LEAN, EVALUATE, OPTIMIZE, etc.) and coordinates sub-skills. This matches the `planning` tier definition in three-tier skill hierarchy.
 
 ---
 
@@ -222,13 +222,13 @@ The v3.4.0 release built on the v3.3.0 simplified architecture with quality and 
 
 ### 9.1 Honest Skill Labeling
 
-**Problem**: Auto-generated skills were being deployed to production with no indication of their validation level. Research ("Skills in the Wild") showed 39/49 auto-generated skills had zero real-world benefit despite passing internal evaluations.
+**Problem**: Auto-generated skills were being deployed to production with no indication of their validation level. Research (industry observations on unvalidated skills) showed 39/49 auto-generated skills had zero real-world benefit despite passing internal evaluations.
 
 **Solution**: Two new YAML fields in `use_to_evolve`:
 - `generation_method`: `auto-generated | human-authored | hybrid` — provenance tracking
 - `validation_status`: `unvalidated | lean-only | full-eval | pragmatic-verified` — evaluation milestone
 
-These affect SkillRouter ranking (lower source_quality_score for unvalidated skills) and SHARE gate (hard block on unvalidated, warning on lean-only).
+These affect Skill Summary heuristic ranking (lower source_quality_score for unvalidated skills) and SHARE gate (hard block on unvalidated, warning on lean-only).
 
 ### 9.2 Behavioral Verifier (Generator Bias Elimination)
 
@@ -242,11 +242,11 @@ These affect SkillRouter ranking (lower source_quality_score for unvalidated ski
 
 ### 9.4 Failure-Driven CREATE
 
-**New mode variant**: `/create --from-failures` — uses observed failure trajectories as input to generate skills targeting specific failure patterns (SkillForge: arxiv:2604.08618).
+**New mode variant**: `/create --from-failures` — uses observed failure trajectories as input to generate skills targeting specific failure patterns (Failure-Driven CREATE heuristic:).
 
 ### 9.5 Supply Chain Trust
 
-**Problem**: ToxicSkills/ClawHavoc research shows 26.1% of public skills have OWASP vulnerabilities.
+**Problem**: supply-chain threat model/supply-chain threat model research shows a material fraction of public skills have OWASP vulnerabilities (industry audits).
 
 **Solution**: SHA-256 signature verification + trust tier system (TRUSTED/VERIFIED/UNVERIFIED/LOW_TRUST/UNTRUSTED) in `refs/security-patterns.md §6`. INSTALL mode runs security scan before loading external skills.
 
@@ -278,9 +278,9 @@ No manual cleanup required. Old companion files in ~/.claude/refs/ are overwritt
 
 ## 10. References
 
-- SkillRouter: arxiv:2603.22455 — trigger phrase coverage as routing signal
-- SkillX: arxiv:2604.04804 — three-tier skill hierarchy
-- SkillNet: arxiv:2603.04448 — Graph of Skills typed dependency edges
+- Skill Summary heuristic: — trigger phrase coverage as routing signal
+- three-tier skill hierarchy: — three-tier skill hierarchy
+- typed-dependency Graph of Skills design: — Graph of Skills typed dependency edges
 - SKILL.md Pattern: agentskills.io — skill file specification
-- SkillProbe: 2026 — negation reduces false trigger rates
+- Negative Boundaries heuristic: 2026 — negation reduces false trigger rates
 - Anthropic skills design: github.com/anthropics/skills

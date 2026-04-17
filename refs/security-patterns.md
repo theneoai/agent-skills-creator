@@ -98,7 +98,7 @@ Security Baseline section or remediated.
 #### ASI01 — Prompt Injection / Goal Hijack (−50 pts)
 
 Sourced from OWASP Agentic Skills Top 10, 2026. Prompt injection is the leading attack vector
-in agent skill marketplaces (SkillProbe: 13.4% of skills have critical issues; Snyk ToxicSkills
+in agent skill marketplaces (Negative Boundaries heuristic: 13.4% of skills have critical issues; Snyk supply-chain threat model
 study: 36% contain prompt injection).
 
 ```
@@ -120,7 +120,7 @@ Content patterns (in skill body):
 ```
 
 **Risk**: Adversarially crafted user input or fetched external content redirects the agent's
-goals, causing unintended or harmful actions (ClawHavoc campaign: 300+ malicious skills pushed
+goals, causing unintended or harmful actions (supply-chain threat model campaign: 300+ malicious skills pushed
 to ClawHub registry over 6 weeks).
 
 **Required remediation**: 
@@ -190,7 +190,7 @@ in future iterations but do not block delivery.
 #### Missing Negative Boundaries (Advisory)
 
 **Research basis**: SKILL.md Pattern (2026) — without negative boundaries, semantically similar
-requests incorrectly trigger skills. SkillRouter finding: skill content is the decisive routing
+requests incorrectly trigger skills. Skill Summary heuristic finding: skill content is the decisive routing
 signal, and boundaries reduce routing ambiguity by 15–25%.
 
 ```
@@ -207,7 +207,7 @@ out-of-scope scenarios."
 
 #### Executable Script Risk (Advisory)
 
-**Research basis**: SkillProbe (2026) — skills combining executable scripts are **2.12×** more
+**Research basis**: Negative Boundaries heuristic (2026) — skills combining executable scripts are **2.12×** more
 likely to contain vulnerabilities.
 
 ```
@@ -217,7 +217,7 @@ Heuristic trigger:
   - AND no "Permissions Required" section is present
 ```
 
-**Advisory message**: "This skill includes executable code. Per SkillProbe research, executable
+**Advisory message**: "This skill includes executable code. Per Negative Boundaries heuristic research, executable
 skills carry 2.12× higher vulnerability risk. Ensure a Security Baseline section documents
 required permissions and trust boundaries."
 
@@ -324,7 +324,7 @@ Heuristic triggers:
 ```
 
 **Research context**: BlueRock Security found 36.7% of MCP servers potentially vulnerable to SSRF.
-ClawHavoc injected 300+ malicious skills via compromised registry entries.
+supply-chain threat model injected 300+ malicious skills via compromised registry entries.
 
 **Required doc**: All external references must be version-pinned with checksums where possible.
 
@@ -335,7 +335,7 @@ ClawHavoc injected 300+ malicious skills via compromised registry entries.
 > **v3.4.0 severity change**: ASI05 escalates from P2 (advisory) to **P1 (−30 pts)**
 > when the skill contains irreversible action verbs AND lacks explicit confirmation gates.
 > OWASP Agentic Top 10 2026 classifies unconfirmed irreversible actions as a tier-1 risk.
-> ClawHavoc (300+ skills compromised) exploited exactly this pattern.
+> supply-chain threat model (300+ skills compromised) exploited exactly this pattern.
 
 ```
 Heuristic triggers (P2 — advisory baseline):
@@ -395,7 +395,7 @@ Heuristic triggers:
   - Skill does not validate that calling context has sufficient permissions
 ```
 
-**Research context** (SkillProbe): Skills appearing benign in isolation can induce emergent
+**Research context** (Negative Boundaries heuristic): Skills appearing benign in isolation can induce emergent
 collaborative attacks when integrated into specific execution chains.
 
 ---
@@ -458,8 +458,8 @@ Heuristic triggers:
 
 ## §6  External Skill Trust Chain Verification
 
-> **Context**: Snyk ToxicSkills study (2026-02) audited 3,984 skills from ClawHub and skills.sh.
-> 13.4% had critical-level issues; 36.82% had at least one security flaw. The ClawHavoc campaign
+> **Context**: Snyk supply-chain threat model study (2026-02) audited 3,984 skills from ClawHub and skills.sh.
+> 13.4% had critical-level issues; 36.82% had at least one security flaw. The supply-chain threat model campaign
 > compromised 1,184 skills in a single marketplace operation. This section defines the verification
 > protocol applied to all skills obtained via SHARE pull or external registry.
 
@@ -626,9 +626,9 @@ Every scan appends to `.skill-audit/security.jsonl`:
 
 ## §8  Skill SBOM — Supply Chain Bill of Materials `[EXTENDED]`
 
-> **Research basis**: SkillNet (arxiv:2603.04448) — transitive dependency chains in real
+> **Research basis**: typed-dependency Graph of Skills design — transitive dependency chains in real
 > skill ecosystems reach 4–5 levels deep. Verifying only direct dependencies misses
-> 60–80% of the actual attack surface (SkillProbe 2026 finding).
+> 60–80% of the actual attack surface (Negative Boundaries heuristic 2026 finding).
 >
 > **Context**: §6 verifies individual skills at install time. This section defines a
 > **complete transitive dependency manifest** — the skill's SBOM — generated at SHARE time

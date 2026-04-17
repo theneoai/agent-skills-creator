@@ -28,7 +28,7 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 - **Eight Powerful Modes**: CREATE, LEAN, EVALUATE, OPTIMIZE, INSTALL, COLLECT, SHARE, and GRAPH
 - **Template-Based**: 4 built-in templates for common skill patterns
 - **Quality Assurance**: 1000-point scoring system with certification tiers
-- **Tier-Aware Evaluation**: Tier-adjusted scoring weights for `planning` / `functional` / `atomic` skills (SkillX three-tier hierarchy)
+- **Tier-Aware Evaluation**: Tier-adjusted scoring weights for `planning` / `functional` / `atomic` skills (three-tier skill hierarchy three-tier hierarchy)
 - **Reliable LEAN Scoring**: 16 checks split into `[STATIC]` (deterministic, 335 pts, zero variance) and `[HEURISTIC]` (LLM-judged, 165 pts) — score variance documented per phase
 - **Security Built-In**: CWE-based + OWASP Agentic Skills Top 10 (ASI01–ASI10) detection + supply-chain trust verification for pulled skills
 - **Continuous Improvement**: Automated optimization with convergence detection + co-evolutionary VERIFY step + persistent score history
@@ -58,16 +58,16 @@ Not all features require infrastructure. This table shows what works out-of-the-
 | SHARE — push/pull to remote registry | `[EXTENDED]` | S3 / OSS / HTTP backend |
 | COLLECT — auto-write artifacts to disk | `[EXTENDED]` | File system hooks |
 | Trust-chain verification for pulled skills | `[EXTENDED]` | Registry with Ed25519 dual-layer signing (v3.5.0) |
-| GoS full bundle retrieval + health checks | `[ROADMAP v4.0+]` | Not yet shipped — see `spec/agent-skills-compat.md §6` |
-| GEPA reflective OPTIMIZE (S15) | `[ROADMAP v3.6.0]` | Design ready; impl pending — see `optimize/strategies.md §4a` |
-| MCP tool server (`mcp/server.py`) | `[ROADMAP v3.6.0]` | Skeleton shipped in v3.5.0 — see `docs/mcp-integration.md` |
+| Real trigger-accuracy eval (`scripts/run_trigger_eval.py`) | `[CORE]` | Needs `ANTHROPIC_API_KEY` + a trigger-eval JSON set |
+| Iterative description optimizer (`scripts/optimize_description.py`) | `[CORE]` | Needs `ANTHROPIC_API_KEY`; 60/40 train/test split |
 
 > **Legend**:
 > - `[CORE]` — shipped and works anywhere with zero setup.
 > - `[EXTENDED]` — shipped but needs opt-in infra (hooks, backend, signing).
-> - `[ROADMAP]` — **not yet shipped**; design is public but calling these features today is a no-op. Do not base production workflows on `[ROADMAP]` items.
 >
-> **Unsure?** Assume `[CORE]` only. All 8 modes work fully without any backend — `[EXTENDED]` adds persistence and collective learning; `[ROADMAP]` is future work.
+> **Unsure?** Assume `[CORE]` only. All 8 modes work fully without any backend — `[EXTENDED]` adds persistence and collective learning.
+>
+> Features previously listed as `[ROADMAP]` (GoS full bundle retrieval, GEPA S15 reflective OPTIMIZE, MCP tool server) are no longer advertised here. See `experimental/` for skeleton code; do not base production workflows on it.
 
 ## Supported Platforms
 
@@ -298,7 +298,7 @@ Instead of starting from scratch, you can feed recent task failures directly to 
 
 You'll be prompted to paste 1–3 conversation snippets where the AI produced incorrect or incomplete results. CREATE extracts the recurring failure patterns and uses them to pre-fill the Workflow, Error Handling, and Negative Boundaries sections — resulting in a domain-grounded skill rather than a generic template output.
 
-> **Research basis**: SkillForge (arxiv:2604.08618) shows that domain-contextualized skill creation (grounded in failure trajectories) produces skills significantly better aligned with real-world task requirements than template-only generation.
+> **Research basis**: Failure-Driven CREATE heuristic shows that domain-contextualized skill creation (grounded in failure trajectories) produces skills significantly better aligned with real-world task requirements than template-only generation.
 
 #### Honest Skill Labeling
 
@@ -311,7 +311,7 @@ validation_status: "lean-only"         # unvalidated | lean-only | full-eval | p
 
 These fields are checked at SHARE and INSTALL time. Skills marked `auto-generated + lean-only` trigger a deployment warning and require at minimum a full EVALUATE before being pushed to a shared registry. This prevents unvalidated skills from silently reaching production.
 
-> **Research basis**: SkillsBench (arxiv:2602.12670) found that self-generated skills provide zero average benefit and can degrade performance. Explicit labeling ensures users know what they are deploying.
+> **Research basis**: SkillsBench found that self-generated skills provide zero average benefit and can degrade performance. Explicit labeling ensures users know what they are deploying.
 
 #### What's in the Generated Skill File
 
@@ -433,7 +433,7 @@ PRAGMATIC RESULTS:  4/5 tasks passed  (80%)  →  PRAGMATIC_GOOD
 
 This closes the gap between "looks good on paper" and "works in my actual workflow". If `pragmatic_success_rate < 60%`, deployment is blocked until the skill is optimized against the failing samples.
 
-> **Research basis**: "Skills in the Wild" (arxiv:2604.04323) found that 39 of 49 evaluated skills yielded zero pass-rate improvement in realistic settings — high theoretical scores do not guarantee real-world utility.
+> **Research basis**: industry observations on unvalidated skills found that 39 of 49 evaluated skills yielded zero pass-rate improvement in realistic settings — high theoretical scores do not guarantee real-world utility.
 
 #### Tier-Adjusted Phase 2 Weights
 
@@ -895,7 +895,7 @@ Recommendations:
 
 Self-improvement protocol that enables skills to evolve through usage. Two-tier architecture:
 - **L1 (Single-user)** `[CORE]`: Post-invocation hook runs per session; persists state to `~/.claude/skills/.ute-state/`
-- **L2 (Collective)** `[EXTENDED]`: Requires external aggregation infrastructure (SkillClaw-compatible). See `refs/use-to-evolve.md §10`.
+- **L2 (Collective)** `[EXTENDED]`: Requires external aggregation infrastructure (collective-evolution design-compatible). See `refs/use-to-evolve.md §10`.
 
 ### UTE YAML Block
 
@@ -1071,7 +1071,7 @@ skill-writer/
 │  │  • CWE + OWASP ASI01–ASI10 Security Patterns              │   │
 │  │  • UTE 2.0 Self-Evolution — 6 triggers (L1 + L2)          │   │
 │  │  • Multi-Pass Self-Review (Generate/Review/Reconcile)      │   │
-│  │  • Skill Registry v2.0 + SkillRouter weighted ranking      │   │
+│  │  • Skill Registry v2.0 + Skill Summary heuristic weighted ranking      │   │
 │  │    (quality threshold gate + usage_stats) — v3.3.0         │   │
 │  │  • Edit Audit Guard (MICRO/MINOR/MAJOR/REWRITE classes)    │   │
 │  │  • Five-Layer Progressive Disclosure (Layer -1 Hook,       │   │
@@ -1290,7 +1290,7 @@ MIT License - See [LICENSE](LICENSE) file for details.
 - [x] **v3.2.0** — Graph of Skills (GoS) algorithm: buildGraph, detectCycles, topologicalSort, resolveBundle, checkGraphHealth, scoreD8Composability
 - [x] **v3.3.0** — Three-Tier Hook Routing: AGENTS.md (session-constant) + UserPromptSubmit Hook (per-message) + trigger phrases
 - [x] **v3.3.0** — Progressive Disclosure Layer -1 (Hook Injection): ≤50-token per-message skill-awareness nudge; five-layer architecture
-- [x] **v3.3.0** — SkillRouter Weighted Ranking: multi-factor rank formula (trigger×0.4 + lean×0.3 + usage×0.2 + quality×0.1); quality threshold gate (0.35)
+- [x] **v3.3.0** — Skill Summary heuristic Weighted Ranking: multi-factor rank formula (trigger×0.4 + lean×0.3 + usage×0.2 + quality×0.1); quality threshold gate (0.35)
 - [x] **v3.3.0** — Trigger Discovery Pipeline: `trigger_signals` in session artifact; AGGREGATE Rule 4 promotes observed user language to canonical triggers
 - [x] **v3.3.0** — Simplified 3-platform direct-file architecture; removed Node.js build pipeline
 

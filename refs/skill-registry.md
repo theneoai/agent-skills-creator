@@ -2,7 +2,7 @@
 
 > **Purpose**: Canonical format for skill identity, versioning, and shared distribution.
 > **Load**: When §16 (INSTALL / SHARE) of `claude/skill-writer.md` is accessed.
-> **Inspired by**: SkillClaw's skill registry with deterministic IDs and version history.
+> **Inspired by**: collective-evolution design's skill registry with deterministic IDs and version history.
 > **Enforcement**: `[CORE]` for ID generation and format; `[EXTENDED]` for remote sync.
 > **v3.1.0**: Added `skill_tier` and `triggers` fields to registry entry; schema_version bumped to 1.1.
 
@@ -36,7 +36,7 @@ Examples:
 **Properties**:
 - Same name always produces the same ID — enables idempotent push/pull
 - 12 hex characters = 48 bits — collision probability negligible for skill libraries < 10M skills
-- Compatible with SkillClaw's registry format
+- Compatible with collective-evolution design's registry format
 
 ### Adding `skill_id` to YAML frontmatter
 
@@ -239,7 +239,7 @@ skill_id: "a1b2c3d4e5f6"
 
 # v3.1.0: new classification fields (added on first push for new skills;
 #          added to existing skills on next OPTIMIZE cycle or explicit re-register)
-skill_tier: "functional"          # planning | functional | atomic (SkillX tier)
+skill_tier: "functional"          # planning | functional | atomic (three-tier skill hierarchy tier)
 triggers:
   en: ["test api", "call endpoint", "check api response"]
   zh: ["测试接口", "调用API"]
@@ -324,8 +324,8 @@ When a MAJOR version is published:
 
 ## §10  Graph of Skills — Schema v2.0
 
-> **v3.2.0 addition**. Research basis: SkillNet (arxiv:2603.04448), GoS bundle retrieval,
-> SkillX tier hierarchy (arxiv:2604.04804).
+> **v3.2.0 addition**. Design heuristic: typed-dependency Graph of Skills design, GoS bundle retrieval,
+> three-tier skill hierarchy tier hierarchy.
 > **Backward compatible**: existing v1.x registries work unchanged; `graph` key is optional.
 > Full specification: `claude/refs/skill-graph.md`
 
@@ -438,13 +438,13 @@ populated automatically on the next `skillclaw push` or `/install` command.
 
 ---
 
-## §9  Integration with SkillClaw
+## §9  Integration with collective-evolution design
 
-Skills published via the SHARE registry are directly consumable by a SkillClaw
+Skills published via the SHARE registry are directly consumable by a collective-evolution design
 deployment. The `skills/` directory layout and `registry.json` format are intentionally
-compatible with SkillClaw's storage spec.
+compatible with collective-evolution design's storage spec.
 
-| SkillClaw concept | skill-writer registry equivalent |
+| collective-evolution design concept | skill-writer registry equivalent |
 |-------------------|----------------------------------|
 | `skills/` directory | `skills/<skill_id>/` |
 | Deterministic skill ID | `SHA-256(name)[:12]` |
@@ -454,11 +454,11 @@ compatible with SkillClaw's storage spec.
 
 ---
 
-## §11  SkillRouter — Weighted Ranking & Quality Gate (v3.3.0)
+## §11  Skill Summary heuristic — Weighted Ranking & Quality Gate (v3.3.0)
 
 > **Research basis**: 得物 AI Coding component reuse practice (2026) — multi-factor weighted
 > ranking with quality threshold gate prevents AI from "going with wrong result" (将错就错).
-> Extends the existing SkillRouter (91.7% cross-encoder accuracy) with usage-signal weighting.
+> Extends the existing Skill Summary heuristic (91.7% cross-encoder accuracy) with usage-signal weighting.
 
 ### §11.1  Ranking Formula
 
@@ -476,7 +476,7 @@ where:
     1.0  = exact phrase match (e.g. "test api" matches trigger "test api")
     0.8  = token overlap ≥ 80%
     0.6  = acronym expansion match (e.g. "dlp" → "DateLinkPicker")
-    0.4  = semantic match via cross-encoder (existing SkillRouter behavior)
+    0.4  = semantic match via cross-encoder (existing Skill Summary heuristic behavior)
     0.0  = no match
 
   lean_score_normalized: lean_score / 520.0  (clamp to [0.0, 1.0])
@@ -580,8 +580,8 @@ update `usage_stats` at session end if the user runs `/collect` and confirms the
 
 ## §12  Honest Skill Labeling — `generation_method` and `validation_status`
 
-> **Research basis**: SkillsBench (arxiv:2602.12670) — self-generated skills provide zero average
-> benefit; "Skills in the Wild" (arxiv:2604.04323) — skill utility degrades sharply in realistic
+> **Research basis**: SkillsBench — self-generated skills provide zero average
+> benefit; industry observations on unvalidated skills — skill utility degrades sharply in realistic
 > settings. Explicit provenance labeling prevents unvalidated skills from silently reaching prod.
 
 ### §12.1  Required YAML Fields (added by CREATE, maintained by OPTIMIZE/SHARE)

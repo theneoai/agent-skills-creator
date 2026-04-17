@@ -13,7 +13,7 @@ created: "2026-03-31"
 updated: "2026-04-11"
 type: api-integration
 
-skill_tier: functional   # Reusable, tool-based subroutine with clear I/O (SkillX three-tier)
+skill_tier: functional   # Reusable, tool-based subroutine with clear I/O (three-tier skill hierarchy three-tier)
 
 tags:
   - api

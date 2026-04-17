@@ -2,7 +2,7 @@
 
 > **Purpose**: Prevent destructive rewrites during OPTIMIZE and UTE micro-patch cycles.
 > **Load**: When §9 (OPTIMIZE) or §15 (UTE Injection) of `claude/skill-writer.md` is accessed.
-> **Inspired by**: SkillClaw's "rewrite-like" rejection rule (50%+ section modifications blocked).
+> **Inspired by**: collective-evolution design's "rewrite-like" rejection rule (50%+ section modifications blocked).
 > **Enforcement**: `[CORE]` — AI applies this via content comparison reasoning within a session.
 
 ---
@@ -13,7 +13,7 @@ Without limits, OPTIMIZE can drift into destroying what works:
 
 - A skill scoring SILVER (800) may have excellent Error Handling (90/100) and weak Examples (55/100)
 - Unconstrained OPTIMIZE might rewrite Error Handling to "fix" Examples — net result: degradation
-- SkillClaw data shows "rewrite-like" improvements (>50% modification) destabilize skill quality
+- collective-evolution design data shows "rewrite-like" improvements (>50% modification) destabilize skill quality
 
 **The guard enforces surgical edits** — change the minimum to achieve the target improvement.
 
@@ -158,7 +158,7 @@ Step 5 — IMPLEMENT (with edit guard):
 
 Any change to `skill_tier` in YAML frontmatter is treated as **MAJOR class** by the edit guard,
 regardless of the content fraction changed, because tier changes affect:
-- Routing behavior in SkillX multi-tier pipelines (planning → functional → atomic)
+- Routing behavior in three-tier skill hierarchy multi-tier pipelines (planning → functional → atomic)
 - Registry versioning (mandatory MINOR version bump: x.N+1.0)
 - Evolution trigger classification (fires Trigger 5 — see `refs/evolution.md §1 Trigger 5`)
 

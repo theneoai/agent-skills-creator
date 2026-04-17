@@ -55,7 +55,7 @@ Heuristic checks only. Fast, no LLM.
 | `interface.modes` array present | 5 | |
 | `tags` array with ≥ 2 entries | 5 | |
 | `triggers` field present (EN ≥ 3, ZH ≥ 2) | 5 | v3.1.0: trigger phrase coverage required |
-| `skill_tier` declared (planning/functional/atomic) | 5 | v3.1.0: SkillX three-tier hierarchy |
+| `skill_tier` declared (planning/functional/atomic) | 5 | v3.1.0: three-tier skill hierarchy three-tier hierarchy |
 | ≥ 3 `## §N` sections | 10 | Identity, Loop, at least one mode |
 | Identity section present (name/role/purpose) | 10 | |
 | Red Lines / 严禁 section present | 10 | |
@@ -207,7 +207,7 @@ Scored in Pass 3 (Reconciliation). Integrates all previous phases.
 
 ### §6.4  Behavioral Verifier (Phase 4 sub-step, v3.4.0)
 
-> **Research basis**: EvoSkills (arxiv:2604.01687) — independent verifier co-evolving alongside
+> **Research basis**: co-evolutionary verifier heuristic — independent verifier co-evolving alongside
 > generator eliminates generator bias and lifts pass rates from 32% to 75%. The same model that
 > generates cannot reliably self-verify without informational isolation.
 
@@ -251,7 +251,7 @@ BEHAVIORAL VERIFIER SEQUENCE:
 
 ### §6.4a  Behavioral Verifier Test Persistence `[EXTENDED]`
 
-> **Research basis**: EvoSkills (arxiv:2604.01687) — verifier quality improves as the test set
+> **Research basis**: co-evolutionary verifier heuristic — verifier quality improves as the test set
 > accumulates across iterations. Discarding tests after each EVALUATE run prevents convergence.
 
 Auto-generated Behavioral Verifier test cases MUST be persisted alongside the skill file
@@ -297,7 +297,7 @@ and ask the user to save them. On the next EVALUATE run, paste saved cases back 
 
 ## §6.5  Pragmatic Test Phase (Optional — `[CORE]` with user samples)
 
-> **Research basis**: "Skills in the Wild" (arxiv:2604.04323) — "skill benefits are fragile:
+> **Research basis**: industry observations on unvalidated skills — "skill benefits are fragile:
 > performance gains degrade consistently as settings become more realistic." High theoretical
 > scores do not predict real-world task success. The Pragmatic Test Phase bridges this gap.
 >
@@ -430,7 +430,7 @@ To get more reliable scores from a single run:
 > skills have fundamentally different quality signals. Applying the same weights to all
 > three tiers systematically under-scores or over-scores the wrong dimensions.
 >
-> Research basis: SkillX (arxiv:2604.04804) — three-tier hierarchy (Planning / Functional /
+> Design heuristic: three-tier skill hierarchy — three-tier hierarchy (Planning / Functional /
 > Atomic) has distinct quality criteria at each level.
 
 ### How to Apply Tier Adjustments
@@ -500,7 +500,7 @@ Phase 2 minimum thresholds (used in tier certification) adjust proportionally:
 
 ## §9  D8 Composability — LEAN Bonus Dimension (v3.2.0)
 
-> **Research basis**: SkillNet (arxiv:2603.04448), GoS bundle retrieval.
+> **Research basis**: typed-dependency Graph of Skills design, GoS bundle retrieval.
 > **Implementation**: LLM-native — computed from `graph:` YAML block directly.
 >   Future runtime library (`[ROADMAP v4.0+]`) will provide cached scoring.
 > **Full spec**: `refs/skill-graph.md §5`

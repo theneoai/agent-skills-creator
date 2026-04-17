@@ -274,7 +274,7 @@ Template: `claude/templates/workflow-automation.md`
 ## §8  Failure-Driven CREATE Benchmarks
 
 > `create --from-failures` uses failure trajectory inputs to generate skills targeting
-> observed failure patterns (SkillForge research: arxiv:2604.08618).
+> observed failure patterns (Failure-Driven CREATE heuristic research:).
 
 ### Failure Input Cases
 
@@ -368,7 +368,7 @@ A skill may add domain-specific test cases beyond these minimums.
 > fixed set of frozen test cases that never change between evaluations. These cases have
 > deterministic expected outputs — no LLM judgment required for pass/fail decision.
 >
-> **Research basis**: SkillRouter (arxiv:2603.22455) used 35,000 labeled examples with fixed
+> **Research basis**: Skill Summary heuristic used 35,000 labeled examples with fixed
 > correct answers, achieving deterministic 74% routing accuracy with zero evaluation variance.
 >
 > **Integration**: These cases replace 60 pts of the "Trigger Routing Accuracy" sub-category

@@ -147,7 +147,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Independent of theoretical score — additive quality signal
 
 #### Failure-Driven CREATE (`skill-framework.md §6`, `eval/benchmarks.md §8`)
-- `/create --from-failures`: CREATE mode variant using failure trajectory inputs (SkillForge: arxiv:2604.08618)
+- `/create --from-failures`: CREATE mode variant using failure trajectory inputs (Failure-Driven CREATE heuristic:)
 - Generates skills with Negative Boundaries pre-populated from observed failure patterns
 - Auto-sets `generation_method: "auto-generated"` and validation_status warning in DELIVER
 
@@ -155,7 +155,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Trust tier system**: TRUSTED / VERIFIED / UNVERIFIED / LOW_TRUST / UNTRUSTED
 - **SHA-256 signature verification** on INSTALL: FETCH→HASH→COMPARE→AUTHOR→SCAN→CONFIRM
 - **Pull-time security scan**: P0-only for TRUSTED GOLD+; full scan for all others
-- Motivated by ToxicSkills/ClawHavoc research: 26.1% of public skills have OWASP vulnerabilities
+- Motivated by supply-chain threat model/supply-chain threat model research: a material fraction of public skills have OWASP vulnerabilities (industry audits)
 
 #### GoS Minimum Viable Runtime — MVR (`refs/skill-graph.md §2a`)
 - **[CORE] 5-step algorithm** for LLM-executable dependency resolution from YAML only (no builder required)
@@ -194,13 +194,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **All example skills** (00-starter, api-tester, code-reviewer, doc-generator): `injected_by` updated to v3.4.0; added `generation_method` + `validation_status` fields; v2.0.0 footer references updated to v3.4.0
 - **`optimize/strategies.md`** header: added v3.4.0 changelog entry; selection matrix extended with S13/S14 triggers
 - **`refs/skill-graph.md`** header: `builder/src/core/graph.js` annotated as v4.0+ / not yet implemented; [CORE] vs [EXTENDED] feature boundary documented
-- **`refs/session-artifact.md`** last updated timestamp updated; SkillClaw interoperability table extended
+- **`refs/session-artifact.md`** last updated timestamp updated; collective-evolution design interoperability table extended
 
 ---
 
 ## [3.3.0] - 2026-04-14
 
-### ✨ Added — Three-Tier Hook Routing + SkillRouter Weighted Ranking + Trigger Discovery
+### ✨ Added — Three-Tier Hook Routing + Skill Summary heuristic Weighted Ranking + Trigger Discovery
 
 - **Layer -1 Hook Injection** (`refs/progressive-disclosure.md §2 Layer -1`)
   - New lowest layer in the Progressive Disclosure stack — fires at `UserPromptSubmit` before the LLM sees the message
@@ -213,7 +213,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Step 4e — AGENTS.md generation**: After skill file install, generate or update `~/.claude/CLAUDE.md` / `~/.config/opencode/AGENTS.md` / etc. with skill registry routing rules block (idempotent `<!-- skill-writer:start/end -->` markers); Cursor gets `.mdc` with `alwaysApply: true`
   - **Step 4f — Hook injection**: Merge `UserPromptSubmit` hook entry into `~/.claude/settings.json` (Claude/OpenCode only); appends to existing hook array without overwriting; skipped with note for unsupported platforms
 
-- **SkillRouter Weighted Ranking** (`refs/skill-registry.md §11`)
+- **Skill Summary heuristic Weighted Ranking** (`refs/skill-registry.md §11`)
   - Multi-factor rank formula: `trigger_match × 0.40 + lean_score_normalized × 0.30 + usage_frequency × 0.20 + source_quality × 0.10`
   - **Quality threshold gate** (default 0.35): returns `noMatch` if best candidate is below threshold — prevents AI from "going with wrong result" (将错就错)
   - **Disambiguation**: if top-2 candidates differ by < 0.05, surface choice to user instead of auto-routing
@@ -224,7 +224,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New `trigger_signals` object in session artifact schema: `trigger_used`, `matched_trigger`, `match_type` (exact/fuzzy/acronym/semantic/none), `trigger_miss`, `candidate_triggers[]`
   - **AGGREGATE Rule 4** (v3.3.0): mines `candidate_triggers` across artifacts; when phrase count ≥ 5 and confidence ≥ 0.70, proposes adding phrase to `triggers.en/zh` (user confirms before registry update)
   - **`trigger_miss` signal**: set when skill activated via AGENTS.md/Hook but no trigger phrase matched — highest-priority signal for discovery (threshold reduced to count ≥ 3)
-  - Closes the feedback loop: observed user language → confirmed canonical triggers → improved SkillRouter accuracy
+  - Closes the feedback loop: observed user language → confirmed canonical triggers → improved Skill Summary heuristic accuracy
 
 - **Incremental Build Cache** (`builder/src/core/reader.js` + `builder/src/commands/build.js`)
   - `computeHash()`: SHA-256 first 16 hex chars per source file; `parseFile()` now returns `source_hash` field
@@ -246,7 +246,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - §16 INSTALL: new steps 4e (AGENTS.md) and 4f (Hook injection) with full merge strategy, platform notes, and safety rules
   - REPORT step updated to confirm AGENTS.md path and three-tier model notice
 
-- **`refs/skill-registry.md`**: new §11 (SkillRouter Weighted Ranking & Quality Gate)
+- **`refs/skill-registry.md`**: new §11 (Skill Summary heuristic Weighted Ranking & Quality Gate)
   - §11.1 ranking formula, §11.2 source quality weights, §11.3 quality threshold gate, §11.4 trigger phrase discovery, §11.5 `usage_stats` spec
 
 - **`refs/session-artifact.md`**: schema updated for v3.3.0
@@ -269,7 +269,7 @@ v3.3.0 addresses two root causes of skill trigger instability identified in prod
 
 **Trigger instability** (solved by three-tier routing model): The four-layer disclosure model (v3.2.0) relied on trigger-phrase matching for Layer 1 → Layer 2 routing. Vercel benchmarks (2026) show default skill triggering via description matching alone does not improve task pass rates; explicit context injection is required. AGENTS.md provides a session-constant skill inventory; the UserPromptSubmit Hook provides a per-message nudge. Together they ensure skills are always "visible" to the LLM before it decides how to respond. Inspired by 得物 AI Coding component reuse practice (2026).
 
-**Trigger vocabulary gap** (solved by Trigger Discovery pipeline): Skill trigger phrases are authored once at creation time but users develop natural phrasings through actual use. AGGREGATE Rule 4 mines `candidate_triggers` from session artifacts and promotes high-frequency phrases to canonical triggers at ≥70% confidence, continuously improving SkillRouter accuracy without manual curation.
+**Trigger vocabulary gap** (solved by Trigger Discovery pipeline): Skill trigger phrases are authored once at creation time but users develop natural phrasings through actual use. AGGREGATE Rule 4 mines `candidate_triggers` from session artifacts and promotes high-frequency phrases to canonical triggers at ≥70% confidence, continuously improving Skill Summary heuristic accuracy without manual curation.
 
 ---
 
@@ -310,7 +310,7 @@ v3.3.0 addresses two root causes of skill trigger instability identified in prod
 
 ### 📋 Background
 
-v3.2.0 implements the Graph of Skills framework inspired by SkillNet (arxiv:2603.04448), which demonstrated that inference-time typed directed graphs retrieve **execution-complete bundles** rather than isolated semantically-similar skills. The GoS features build directly on the three-tier hierarchy (SkillX arxiv:2604.04804) introduced in v3.1.0. Bundle context in COLLECT is informed by SkillClaw (arxiv:2604.08377) collective evolution methodology.
+v3.2.0 implements the Graph of Skills framework inspired by typed-dependency Graph of Skills design, which demonstrated that inference-time typed directed graphs retrieve **execution-complete bundles** rather than isolated semantically-similar skills. The GoS features build directly on the three-tier hierarchy (three-tier skill hierarchy) introduced in v3.1.0. Bundle context in COLLECT is informed by collective-evolution design collective evolution methodology.
 
 ---
 
@@ -371,14 +371,14 @@ v3.2.0 implements the Graph of Skills framework inspired by SkillNet (arxiv:2603
 ### ✨ Added
 
 - **`RESEARCH-SYNTHESIS-2026.md`** — comprehensive synthesis of 9 academic papers and industry best practices; documents Gap Matrix and improvement rationale for v3.1.0
-- **Co-Evolutionary VERIFY step (§9 OPTIMIZE Step 10)** — independent re-evaluation pass after OPTIMIZE convergence, approximating EvoSkills' Surrogate Verifier (arxiv:2604.01687); detects score inflation (delta > 50 pts → HUMAN_REVIEW)
-- **Mandatory Skill Summary paragraph** — first content paragraph in every generated skill; ≤5 sentences densely encoding domain knowledge; decisive for skill routing (SkillRouter arxiv:2603.22455: 91.7% cross-encoder attention on body)
+- **Co-Evolutionary VERIFY step (§9 OPTIMIZE Step 10)** — independent re-evaluation pass after OPTIMIZE convergence, approximating co-evolutionary verifier heuristic' Surrogate Verifier; detects score inflation (delta > 50 pts → HUMAN_REVIEW)
+- **Mandatory Skill Summary paragraph** — first content paragraph in every generated skill; ≤5 sentences densely encoding domain knowledge; decisive for skill routing (Skill Summary heuristic: 91.7% cross-encoder attention on body)
 - **Mandatory Negative Boundaries section** — required `## Negative Boundaries` in every skill; "Do NOT use for" list with 3+ anti-cases; prevents mis-triggering (SKILL.md Pattern best practice)
-- **OWASP Agentic Skills Top 10 (2026) detection** — 10 new ASI checks in `refs/security-patterns.md §5`; ASI01-ASI04 are P1 (score penalty); ASI05-ASI10 are P2 (advisory); addresses SkillProbe finding that 26.1% of community skills contain vulnerabilities
+- **OWASP Agentic Skills Top 10 (2026) detection** — 10 new ASI checks in `refs/security-patterns.md §5`; ASI01-ASI04 are P1 (score penalty); ASI05-ASI10 are P2 (advisory); addresses Negative Boundaries heuristic finding that 26.1% of community skills contain vulnerabilities
 - **ASI01 Prompt Injection as P1 pattern** — new `refs/security-patterns.md §1.2`; detection heuristics for goal hijack and external content injection; −50 pts
-- **P2 advisory patterns** — new `refs/security-patterns.md §1.3`: Missing Negative Boundaries + Executable Script Risk (2.12× higher vulnerability per SkillProbe)
-- **SkillRL lesson distillation** — `refs/session-artifact.md` new fields: `lesson_type: strategic_pattern | failure_lesson | neutral` + `lesson_summary` (≤3 sentences); `skill-framework.md §18 COLLECT` new Step 4 CLASSIFY LESSON TYPE
-- **`skill_tier` metadata field** — `templates/base.md` YAML: `planning | functional | atomic` (SkillX three-tier hierarchy, arxiv:2604.04804)
+- **P2 advisory patterns** — new `refs/security-patterns.md §1.3`: Missing Negative Boundaries + Executable Script Risk (2.12× higher vulnerability per Negative Boundaries heuristic)
+- **reinforcement-style evolution design lesson distillation** — `refs/session-artifact.md` new fields: `lesson_type: strategic_pattern | failure_lesson | neutral` + `lesson_summary` (≤3 sentences); `skill-framework.md §18 COLLECT` new Step 4 CLASSIFY LESSON TYPE
+- **`skill_tier` metadata field** — `templates/base.md` YAML: `planning | functional | atomic` (three-tier skill hierarchy three-tier hierarchy,)
 - **`triggers` metadata field** — `templates/base.md` YAML: 3–8 EN + 2–5 ZH canonical trigger phrases; scored in LEAN metadata dimension
 - **Inversion Q7 + Q8** — two new mandatory elicitation questions: negative scenarios (Q7) and trigger phrase examples (Q8); template-specific follow-up prompts added
 
@@ -396,8 +396,8 @@ v3.2.0 implements the Graph of Skills framework inspired by SkillNet (arxiv:2603
 ### 📋 Background
 
 v3.1.0 is grounded in a systematic literature review of 9 recent papers (April 2026):
-EvoSkills (2604.01687), SkillX (2604.04804), SkillRL (2602.08234), SkillRouter (2603.22455),
-SkillClaw (2604.08377), Skills-in-the-Wild (2604.04323), SkillProbe (2603.21019),
+co-evolutionary verifier heuristic (2604.01687), three-tier skill hierarchy (2604.04804), reinforcement-style evolution design (2602.08234), Skill Summary heuristic (2603.22455),
+collective-evolution design (2604.08377), Skills-in-the-Wild (2604.04323), Negative Boundaries heuristic (2603.21019),
 SoK: Agentic Skills (2602.20867), and Agent Skills Survey (2602.12430).
 Community sources: OWASP Agentic Top 10 (2026), SKILL.md Pattern, agentskills.io spec.
 
@@ -409,7 +409,7 @@ Community sources: OWASP Agentic Top 10 (2026), SKILL.md Pattern, agentskills.io
 
 - **COLLECT Mode (§18)** — structured session artifact recording; fires after every skill invocation when UTE is enabled; enables collective skill evolution via the AGGREGATE pipeline
 - **AGGREGATE Mode** — multi-session distillation pipeline (Summarize → Aggregate → Execute) synthesizing N session artifacts into ranked improvement signals
-- **`refs/session-artifact.md`** — canonical Session Artifact schema (skill_id, outcome, prm_signal, dimension_observations, causal-chain summary); SkillClaw-compatible format
+- **`refs/session-artifact.md`** — canonical Session Artifact schema (skill_id, outcome, prm_signal, dimension_observations, causal-chain summary); collective-evolution design-compatible format
 - **`refs/edit-audit.md`** — Edit Audit Guard: classifies OPTIMIZE changes as MICRO/MINOR/MAJOR/REWRITE; blocks destructive rewrites (>50% content change); prevents skill drift
 - **`refs/skill-registry.md`** — Skill Registry spec: deterministic SHA-256[:12] IDs, 20-entry version history, push/pull/sync SHARE protocol, conflict resolution with LLM-based merge
 - **UTE 2.0 two-tier architecture** — L1 (single-user, `[ENFORCED]`, current behavior) + L2 (collective, `[ASPIRATIONAL]`, requires COLLECT + AGGREGATE pipeline)
@@ -425,11 +425,11 @@ Community sources: OWASP Agentic Top 10 (2026), SKILL.md Pattern, agentskills.io
 ### 📐 Architecture
 
 - `builder/src/config.js` — three new `refs/` files added to `REQUIRED_FILES` (session-artifact, edit-audit, skill-registry)
-- `ARCHITECTURE-REVIEW.md` — new Section 十 synthesizing SkillClaw research into product and architecture design recommendations
+- `ARCHITECTURE-REVIEW.md` — new Section 十 synthesizing collective-evolution design research into product and architecture design recommendations
 
 ### 📋 Background
 
-The v3.0 additions are informed by SkillClaw (arxiv.org/abs/2604.08377, AMAP-ML), which
+The v3.0 additions are informed by collective-evolution design (arxiv.org/abs/2604.08377, AMAP-ML), which
 demonstrated that collective skill evolution from multi-user session data outperforms
 single-user optimization — "not by using a bigger model, but by leveraging smarter experience."
 

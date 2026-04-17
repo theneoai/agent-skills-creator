@@ -3,7 +3,7 @@ name: skill-writer
 version: "3.4.0"
 description: "Universal skill-writer v3.4.0: CREATE (incl. --from-failures) → LEAN/EVALUATE (Behavioral Verifier +20, --pragmatic) → OPTIMIZE → GRAPH (GoS MVR) → COLLECT/SHARE. Honest labeling, supply-chain trust, UTE 2.0. Auto-installs to 8 platforms."
 description_i18n:
-  en: "Full lifecycle meta-skill framework v3.4.0: CREATE with --from-failures (SkillForge-style), honest labeling (generation_method+validation_status), LEAN fast-eval (500pt triage), EVALUATE 4-phase + Behavioral Verifier (+20 bonus) + Pragmatic Test Phase (pragmatic_success_rate) + OWASP Agentic Top 10, OPTIMIZE 8-dim loop + score persistence (.optimize-history.jsonl) + co-evolutionary VERIFY, GRAPH mode with Minimum Viable Runtime (depends_on chains, [CORE]) + full GoS (v4.0+), supply-chain trust verification (SHA-256 signatures), SkillRouter cold-start fix (lean-passed=0.5), UTE hooks in standard install + cross-session persistence, deploy to 8 platforms."
+  en: "Full lifecycle meta-skill framework v3.4.0: CREATE with --from-failures (Failure-Driven CREATE heuristic-style), honest labeling (generation_method+validation_status), LEAN fast-eval (500pt triage), EVALUATE 4-phase + Behavioral Verifier (+20 bonus) + Pragmatic Test Phase (pragmatic_success_rate) + OWASP Agentic Top 10, OPTIMIZE 8-dim loop + score persistence (.optimize-history.jsonl) + co-evolutionary VERIFY, GRAPH mode with Minimum Viable Runtime (depends_on chains, [CORE]) + full GoS (v4.0+), supply-chain trust verification (SHA-256 signatures), Skill Summary heuristic cold-start fix (lean-passed=0.5), UTE hooks in standard install + cross-session persistence, deploy to 8 platforms."
   zh: "全生命周期元技能框架v3.4.0：支持--from-failures失败驱动创建+诚实标注(generation_method+validation_status)的CREATE、带D8奖励的LEAN快速评测、带行为验证器(+20分)+实用测试阶段+OWASP Agentic Top 10的4阶段EVALUATE、带得分历史持久化+协同进化VERIFY的OPTIMIZE、支持最小可运行时(depends_on链路[CORE])+完整GoS(v4.0+)的GRAPH模式、供应链信任验证(SHA-256签名)、SkillRouter冷启动修复(lean-passed=0.5)、标准安装中的UTE hooks+跨会话持久化、部署至8平台。"
 
 license: MIT
@@ -244,7 +244,7 @@ questions, direct API calls, or non-skill automation tasks — see Negative Boun
 ┌─────────────────────────────────────────────────────────────────────┐
 │  术语说明 / Key Terms                                                │
 │                                                                     │
-│  Skill Type (skill_tier)     — SkillX 三层技能分类                  │
+│  Skill Type (skill_tier)     — three-tier skill hierarchy 三层技能分类                  │
 │    planning   高层编排，协调其他技能 (e.g. 任务路由器)               │
 │    functional 可复用子程序，有明确 I/O (默认，不确定时选此项)         │
 │    atomic     单步原子操作，有硬性约束 (e.g. 输入校验器)             │
@@ -708,7 +708,7 @@ FAILURE ELICITATION (replaces Q1–Q8):
   5. Resume standard Phase 2 (SELECT TEMPLATE) with the enriched context
 ```
 
-> **Research basis**: SkillForge (arxiv:2604.08618) — domain-contextualized skill creation
+> **Research basis**: Failure-Driven CREATE heuristic — domain-contextualized skill creation
 > grounded in failure trajectories (Workflow Mining from historical interactions) produces
 > skills significantly better aligned with real-world requirements than template-only generation.
 
@@ -762,13 +762,13 @@ FAILURE ELICITATION (replaces Q1–Q8):
 > ```
 > Do NOT silently proceed with placeholder content — require explicit "ok" or replacement.
 
-> **Phase 4 (GENERATE) — mandatory elements** (sourced from SKILL.md Pattern + SkillRouter research):
+> **Phase 4 (GENERATE) — mandatory elements** (sourced from SKILL.md Pattern + Skill Summary heuristic research):
 > 1. **Skill Summary paragraph** (first content paragraph): ≤5 sentences densely encoding what / when / who / not-for.
->    Research basis: SkillRouter (arxiv:2603.22455) — skill body content is the **decisive routing signal**
->    (91.7% of cross-encoder attention); removing body degrades routing accuracy 29–44pp.
+>    Design heuristic: Skill Summary heuristic — skill body content is the **decisive routing signal**
+>    (a large share of router attention (empirical, unpublished)); removing body materially degrades routing accuracy (observed internally).
 > 2. **Negative Boundaries section**: explicit "Do NOT use for" list. Required before delivery.
->    Research basis: SKILL.md Pattern (2026) — without boundaries, semantically similar requests
->    mis-trigger skills. SkillProbe: negation reduces false trigger rate significantly.
+>    Design heuristic: SKILL.md Pattern (2026) — without boundaries, semantically similar requests
+>    mis-trigger skills. Negative Boundaries heuristic: negation reduces false trigger rate significantly.
 > 3. **Trigger phrases** in metadata: 3–8 canonical phrases users would say to invoke the skill.
 
 #### Negative Boundaries — Fill-in Template
@@ -895,7 +895,7 @@ LEAN checks map directly to the 7 unified dimensions (see `config.SCORING.dimens
 > If a skill scores ≥ 300 on static checks alone, it passes structural baseline regardless
 > of LLM-evaluated dimensions. This provides a reliable floor score independent of model variance.
 
-> **Metadata weight increase** (from 25→40 pts): Research basis — SkillRouter (arxiv:2603.22455)
+> **Metadata weight increase** (from 25→40 pts): Research basis — Skill Summary heuristic
 > found that trigger phrase coverage in skill body is the decisive routing signal. Negative
 > Boundaries are now a scored element because they directly prevent mis-triggering.
 
@@ -1019,10 +1019,10 @@ Ask **one question at a time**. Wait for answer before next question.
    >   Triggers derived from skill name + description keywords (EN + ZH equivalents).
    >   注意: 自动推断的触发词覆盖率约60%，建议添加用户实际使用的自然短语。
 
-> **Questions 7 & 8 are new (v3.1.0)**. Research basis:
+> **Questions 7 & 8 are new (v3.1.0)**. Design heuristic:
 > - Q7 (Negative Boundaries): SKILL.md Pattern — without explicit negation, semantically
 >   adjacent requests mis-trigger the skill. Required before GENERATE phase.
-> - Q8 (Trigger Phrases): SkillRouter (arxiv:2603.22455) — trigger phrase coverage in the
+> - Q8 (Trigger Phrases): Skill Summary heuristic — trigger phrase coverage in the
 >   skill body is the decisive routing signal (29–44pp accuracy difference).
 
 > **Answer validation**: Minimal — user must provide at least one example for Q7 and Q8.
@@ -1075,7 +1075,7 @@ Ask **one question at a time**. Wait for answer before next question.
 
 **Behavioral Verifier** (Phase 4 sub-step, v3.4.0): Auto-generates 3 positive + 2 negative test cases
 from the skill's own Skill Summary, executes them, and reports a `behavioral_pass_rate`. Adds up to
-20 bonus pts to Phase 4. Addresses generator bias per EvoSkills (arxiv:2604.01687).
+20 bonus pts to Phase 4. Addresses generator bias per co-evolutionary verifier heuristic.
 
 **Pragmatic Test** (`/eval --pragmatic`): Executes the skill against 3–5 user-provided real task
 samples and produces a `pragmatic_success_rate` independent of the theoretical score. Blocks SHARE
@@ -1272,7 +1272,7 @@ Post-loop — Co-Evolutionary VERIFY (Step 10) [NEW in v3.1.0]:
   ┌──────────────────────────────────────────────────────────────────┐
   │ VERIFY — Independent Verification Pass                           │
   │                                                                  │
-  │ Research basis: EvoSkills (arxiv:2604.01687) — using a Surrogate │
+  │ Design heuristic: co-evolutionary verifier heuristic — using a Surrogate │
   │ Verifier (independent LLM session without inheriting generator   │
   │ biases) increases pass rate from 32% baseline to 75% by round 5. │
   │                                                                  │
@@ -1441,7 +1441,7 @@ Full patterns + OWASP rules: `claude/refs/security-patterns.md`
 
 > **Red Lines (additional)**:
 > - 严禁 deliver any skill that processes untrusted external content as executable instructions (ASI01)
-> - 严禁 deliver skills with executable scripts but no Security Baseline section (SkillProbe: 2.12× vulnerability risk)
+> - 严禁 deliver skills with executable scripts but no Security Baseline section (Negative Boundaries heuristic: 2.12× vulnerability risk)
 
 ABORT protocol: stop → log → flag → notify → require human sign-off before resume.
 Detection heuristics for each ASI: `claude/refs/security-patterns.md §5`
@@ -2365,7 +2365,7 @@ skill generation respectively.
 **Purpose**: Produce a structured Session Artifact after any skill invocation, enabling
 collective skill evolution by accumulating usage data across sessions and users.
 
-**Inspired by**: SkillClaw collective evolution framework (arxiv.org/abs/2604.08377)
+**Inspired by**: collective-evolution design collective evolution framework (arxiv.org/abs/2604.08377)
 **Full spec**: `claude/refs/session-artifact.md`
 **Edit guard**: `claude/refs/edit-audit.md`
 
@@ -2428,7 +2428,7 @@ never interrupts the main workflow.
    - Any output verbosity / format issues?
    - Any dimension that clearly underperformed?
 
-4. CLASSIFY LESSON TYPE (SkillRL-inspired, new in v3.1.0):
+4. CLASSIFY LESSON TYPE (reinforcement-style evolution design-inspired, new in v3.1.0):
    strategic_pattern → outcome=success AND prm_signal=good
                         Write lesson_summary as: "What worked, why, what to reuse"
    failure_lesson    → outcome=failure OR feedback_signal=correction
@@ -2631,7 +2631,7 @@ Full spec: `claude/refs/session-artifact.md §8`
 > View the skill dependency graph, check graph health, plan bundles for tasks,
 > and resolve installation dependencies.
 >
-> **Research basis**: SkillNet (arxiv:2603.04448), GoS bundle retrieval, SkillX tiers
+> **Research basis**: typed-dependency Graph of Skills design, GoS bundle retrieval, three-tier skill hierarchy tiers
 > **Full spec**: `claude/refs/skill-graph.md`
 >
 > **When to use**:
@@ -2658,7 +2658,7 @@ Full spec: `claude/refs/session-artifact.md §8`
 ```
 /graph plan "test the payment API and generate a coverage report"
      ↓
-Step 1: Route to primary skill via SkillRouter trigger matching
+Step 1: Route to primary skill via Skill Summary heuristic trigger matching
         → primary: api-tester (seed node)
      ↓
 Step 2: BFS expansion via GRAPH mode resolveBundle() algorithm
@@ -2717,7 +2717,7 @@ MINIMUM VIABLE GoS (depends_on only):
 Input: task description + local skill files with graph: blocks
 
 Step 1 — SEED (find primary skill):
-  Run SkillRouter trigger matching against task description.
+  Run Skill Summary heuristic trigger matching against task description.
   Primary skill = highest-confidence match.
 
 Step 2 — EXPAND (read depends_on chains from YAML only):

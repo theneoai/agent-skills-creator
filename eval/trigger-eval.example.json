@@ -1,0 +1,23 @@
+[
+  {"query": "I want to create a new skill that summarizes git diffs for PRs", "should_trigger": true},
+  {"query": "Help me build a reusable AI skill for my team's code-review workflow", "should_trigger": true},
+  {"query": "evaluate this skill and tell me its certification tier", "should_trigger": true},
+  {"query": "optimize this skill — it keeps failing on edge cases", "should_trigger": true},
+  {"query": "can you give me a quick quality check on my skill.md file?", "should_trigger": true},
+  {"query": "install skill-writer to my Claude setup", "should_trigger": true},
+  {"query": "share this skill to the team registry", "should_trigger": true},
+  {"query": "record this session as a skill artifact for later improvement", "should_trigger": true},
+  {"query": "show me the dependency graph of skills I've installed", "should_trigger": true},
+  {"query": "创建一个总结 git diff 的技能", "should_trigger": true},
+
+  {"query": "write me a Python script that parses a git diff", "should_trigger": false},
+  {"query": "explain what this regex does", "should_trigger": false},
+  {"query": "summarize this PDF document", "should_trigger": false},
+  {"query": "what's the capital of France?", "should_trigger": false},
+  {"query": "run `git status` and show me the output", "should_trigger": false},
+  {"query": "fix this TypeScript compilation error", "should_trigger": false},
+  {"query": "what's 2 + 2?", "should_trigger": false},
+  {"query": "review my pull request for security issues", "should_trigger": false},
+  {"query": "translate this sentence to Japanese", "should_trigger": false},
+  {"query": "generate a prompt that makes Claude more concise", "should_trigger": false}
+]

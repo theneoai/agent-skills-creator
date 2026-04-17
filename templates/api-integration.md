@@ -48,7 +48,7 @@ created: "{{DATE}}"
 updated: "{{DATE}}"
 type: api-integration
 
-# Skill tier (SkillX three-tier hierarchy — arxiv:2604.04804)
+# Skill tier (three-tier skill hierarchy three-tier hierarchy —)
 skill_tier: {{TIER}}          # planning | functional | atomic
 # api-integration skills are typically: functional (wraps one API)
 #   or planning (orchestrates multiple API calls across sub-skills)
@@ -59,8 +59,8 @@ tags:
   - {{TAG_EXTRA}}
 
 # Trigger phrases (3–8 canonical user phrasings that invoke this skill)
-# Research: SkillRouter (arxiv:2603.22455) — trigger phrase coverage is the decisive
-# routing signal; removing body text degrades routing accuracy 29–44pp.
+# Research: Skill Summary heuristic — trigger phrase coverage is the decisive
+# routing signal; removing body text materially degrades routing accuracy (observed internally).
 triggers:
   en:
     - "{{TRIGGER_PHRASE_EN_1}}"
@@ -98,7 +98,7 @@ use_to_evolve:
   generation_method: "auto-generated"   # auto-generated | human-authored | hybrid
   validation_status: "lean-only"        # unvalidated | lean-only | full-eval | pragmatic-verified
 
-# Graph of Skills — optional (v3.2.0, research: SkillNet arxiv:2603.04448)
+# Graph of Skills — optional (v3.2.0, research: typed-dependency Graph of Skills design)
 # Declare typed relationships to other skills. Presence of this block unlocks D8
 # Composability scoring (+20 LEAN pts).
 # graph:
@@ -119,7 +119,7 @@ use_to_evolve:
 ## Skill Summary
 
 <!-- REQUIRED — ≤5 sentences. Dense encoding of: WHAT / WHEN / WHO / NOT-FOR.
-     Research: SkillRouter (arxiv:2603.22455) — skill body is the decisive routing signal
+     Research: Skill Summary heuristic — skill body is the decisive routing signal
      (91.7% cross-encoder attention on body). This paragraph determines whether your skill
      gets selected from a large skill pool. Write it last, after you know the full skill.
 

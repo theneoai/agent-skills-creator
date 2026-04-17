@@ -137,7 +137,7 @@ generation_method: "auto-generated"   # created by skill-writer CREATE mode
 validation_status: "full-eval"        # EVALUATE completed; PLATINUM tier confirmed
 ```
 
-> Per SkillsBench (arxiv:2602.12670): auto-generated skills carry this label so teams can
+> Per SkillsBench: auto-generated skills carry this label so teams can
 > decide whether additional human review is warranted before production deployment.
 > This skill passed Behavioral Verifier (5/5) which provides pragmatic validation evidence.
 

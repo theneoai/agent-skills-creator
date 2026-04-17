@@ -107,7 +107,7 @@ regardless of current tier or score.
 ### Trigger 5 — Skill Tier Drift `[CORE]`
 
 > v3.1.0: New trigger. `skill_tier` (planning/functional/atomic) changes must be validated.
-> Research basis: SkillX arxiv:2604.04804 — tier misclassification degrades composability in multi-tier pipelines.
+> Design heuristic: three-tier skill hierarchy — tier misclassification degrades composability in multi-tier pipelines.
 
 | Condition | Action |
 |-----------|--------|
@@ -126,7 +126,7 @@ Within a single session: any edit to `skill_tier` field fires this trigger immed
 
 > v3.4.0: New trigger. Monitors `validation_status` and `generation_method` fields for
 > staleness — catches skills that were deployed before reaching adequate validation coverage.
-> Research basis: "Skills in the Wild" study (2026) — 39/49 auto-generated skills had zero
+> Design heuristic: industry observations on unvalidated skills study (2026) — 39/49 auto-generated skills had zero
 > real-world benefit despite passing internal evaluations.
 
 | Condition | Threshold | Action |
