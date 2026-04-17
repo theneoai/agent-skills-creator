@@ -9,9 +9,10 @@
 >   - GoS bundle retrieval: Personalized PageRank for execution-complete skill bundles
 >   - SkillX (arxiv:2604.04804): tier hierarchy (planning / functional / atomic)
 >   - SkillClaw (arxiv:2604.08377): collective evolution via artifact aggregation
-> **Implementation**: `builder/src/core/graph.js` (**v4.0+, not yet implemented**)
-> **[CORE] Minimum Viable Runtime**: See §2a — LLM-executable depends_on resolution from YAML only
-> **[EXTENDED]**: Full bundle retrieval, health checks, PageRank — requires builder/src/core/graph.js
+> **Implementation**: **`[ROADMAP v4.0+]`** — runtime library not yet shipped.
+>   Current release delivers ONLY the Minimum Viable Runtime described in §2a.
+> **[CORE] Minimum Viable Runtime**: See §2a — LLM-executable `depends_on` resolution from YAML only (works today)
+> **[ROADMAP v4.0+]**: Full bundle retrieval, health checks, PageRank — design documented in §3–§8 but NOT callable today
 > **Schema**: `refs/skill-registry.md §10` (registry v2.0)
 > **v3.2.0**: Initial spec — data layer (edges, bundles, bundle retrieval, D8 evaluation)
 > **v3.4.0**: Added §2a Minimum Viable Runtime ([CORE] algorithm); annotated EXTENDED features
@@ -108,13 +109,13 @@ These properties MUST hold in a valid graph (checked by validate.js GRAPH-001–
 ## §2a  Minimum Viable Runtime (MVR) `[CORE]`
 
 > **Purpose**: The full bundle retrieval algorithm (§3) and graph health checks (§7)
-> require `builder/src/core/graph.js` which is a v4.0+ planned implementation.
-> This section defines what an LLM can do *right now* using only YAML reading — no builder
-> infrastructure required. All features in this section are `[CORE]`.
+> are **`[ROADMAP v4.0+]`** — no runtime library currently exists. This section
+> defines what an LLM can do *right now* using only YAML reading. All features in
+> this section are `[CORE]`.
 >
 > **Key distinction**:
 > - `[CORE]` = AI executes this algorithm by reading skill YAML files in conversation context
-> - `[EXTENDED]` = requires builder runtime, graph database, or network registry
+> - `[ROADMAP v4.0+]` = requires future runtime library, graph database, or network registry
 
 ### §2a.1  MVR Algorithm (depends_on chain resolution)
 
@@ -502,7 +503,7 @@ For graphs > 20 skills: show subgraph for specified skill only:
 | `refs/skill-registry.md §10` | Registry schema v2.0 (graph storage) |
 | `refs/session-artifact.md §8` | bundle_context + graph_signals (edge inference source) |
 | `refs/progressive-disclosure.md §2` | Layer 0 Graph Context (bundle-aware loading) |
-| `builder/src/core/graph.js` | Runtime implementation (buildGraph, resolveBundle, etc.) — **v4.0+, not yet implemented** [EXTENDED] |
-| `builder/src/commands/validate.js` | GRAPH-001–008 static checks — **v4.0+** [EXTENDED] |
+| GoS runtime library | Planned runtime (buildGraph, resolveBundle, etc.) — **`[ROADMAP v4.0+]`**, not yet shipped |
+| GRAPH-001–008 static validator | Planned CLI validator — **`[ROADMAP v4.0+]`**, not yet shipped |
 | `optimize/strategies.md §4 S10–S12` | Graph-level OPTIMIZE strategies |
 | `eval/rubrics.md §5 D8` | D8 Composability scoring (LEAN + Phase 5) |

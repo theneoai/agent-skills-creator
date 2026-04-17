@@ -1,15 +1,24 @@
 # Makefile — skill-writer development helpers
 #
 # Targets:
-#   make help          Show this help
-#   make lint          Run shellcheck on all install scripts
-#   make validate      Dry-run all platform installers
-#   make check-version Verify version consistency across all platform files
-#   make install       Auto-detect and install to local platforms
-#   make install-all   Install to all 8 platforms
-#   make ci            Run lint + validate + check-version (full local CI)
+#   make help              Show this help
+#   make lint              Run shellcheck on all install scripts
+#   make validate          Dry-run all platform installers
+#   make check-version     Verify version consistency across all platform files
+#   make check-spec-compat Validate frontmatter against agentskills.io v1.0 spec
+#   make build-platforms       Regenerate 8 platform files from platforms.yaml (strict)
+#   make build-platforms-check Drift-check platform files vs platforms.yaml (migration mode)
+#   make sign ARTIFACT=path    Ed25519-sign a release artifact (+ .sig/.pubkey/.provenance)
+#   make verify ARTIFACT=path  Verify Ed25519 signature on a release artifact
+#   make mcp-selftest      Self-test the MCP server (zero-LLM, 7 tools)
+#   make install           Auto-detect and install to local platforms
+#   make install-all       Install to all 8 platforms
+#   make ci                Run lint + validate + check-version + check-spec-compat
+#                          + build-platforms-check + check-platform-sync
 
-.PHONY: help lint validate check-version check-platform-sync install install-all ci
+.PHONY: help lint validate check-version check-spec-compat \
+        build-platforms build-platforms-check sign verify mcp-selftest \
+        check-platform-sync install install-all ci
 
 VERSION := $(shell cat VERSION)
 PLATFORMS := claude openclaw opencode cursor gemini openai kimi hermes
@@ -19,13 +28,19 @@ PLATFORMS := claude openclaw opencode cursor gemini openai kimi hermes
 help:
 	@echo "skill-writer $(VERSION) — development helpers"
 	@echo ""
-	@echo "  lint                  Run shellcheck on all install scripts"
-	@echo "  validate              Dry-run every platform installer (smoke test)"
-	@echo "  check-version         Verify version $(VERSION) is consistent across all platform files"
-	@echo "  check-platform-sync   Diff all platform skill files against claude/skill-writer.md"
-	@echo "  install               Auto-detect installed platforms and install"
-	@echo "  install-all           Install to all 8 platforms"
-	@echo "  ci                    Full local CI: lint + validate + check-version + check-platform-sync"
+	@echo "  lint                     Run shellcheck on all install scripts"
+	@echo "  validate                 Dry-run every platform installer (smoke test)"
+	@echo "  check-version            Verify version $(VERSION) is consistent across all platform files"
+	@echo "  check-spec-compat        Validate frontmatter against agentskills.io v1.0 spec"
+	@echo "  build-platforms          Regenerate 8 platform files from platforms.yaml (strict)"
+	@echo "  build-platforms-check    Drift-check platform files vs platforms.yaml (migration mode)"
+	@echo "  sign ARTIFACT=<path>     Ed25519-sign a release artifact"
+	@echo "  verify ARTIFACT=<path>   Verify Ed25519 signature"
+	@echo "  mcp-selftest             Self-test the MCP server (7 tools, zero-LLM)"
+	@echo "  check-platform-sync      Diff all platform skill files against claude/skill-writer.md"
+	@echo "  install                  Auto-detect installed platforms and install"
+	@echo "  install-all              Install to all 8 platforms"
+	@echo "  ci                       Full local CI (lint + validate + version + spec-compat + build-check + platform-sync)"
 
 # ── Lint ──────────────────────────────────────────────────────────────────────
 
@@ -114,6 +129,44 @@ else:
     print("  ✓ all platforms in sync")
 EOF
 
+# ── agentskills.io spec compatibility (v3.5.0+) ───────────────────────────────
+
+check-spec-compat:
+	@echo "==> agentskills.io v1.0 frontmatter validation"
+	@python3 scripts/check-spec-compat.py
+
+# ── Single-source platform build (v3.5.0+) ────────────────────────────────────
+# Strict mode regenerates files from platforms.yaml; migration mode only warns
+# on drift. v3.5.0 ships in migration mode; v3.6.0 flips to strict.
+
+build-platforms:
+	@echo "==> build all platform files from platforms.yaml (strict)"
+	@python3 scripts/build-platforms.py
+
+build-platforms-check:
+	@echo "==> drift-check platform files vs platforms.yaml (migration mode)"
+	@python3 scripts/build-platforms.py --check-warn
+
+# ── Ed25519 release signing (v3.5.0+) ─────────────────────────────────────────
+
+sign:
+	@if [ -z "$(ARTIFACT)" ]; then \
+		echo "usage: make sign ARTIFACT=<path>"; exit 1; \
+	fi
+	@bash scripts/sign-release.sh "$(ARTIFACT)"
+
+verify:
+	@if [ -z "$(ARTIFACT)" ]; then \
+		echo "usage: make verify ARTIFACT=<path>"; exit 1; \
+	fi
+	@bash scripts/verify-signature.sh "$(ARTIFACT)"
+
+# ── MCP server self-test (v3.5.0+) ────────────────────────────────────────────
+
+mcp-selftest:
+	@echo "==> MCP server self-test (zero-LLM, 7 tools)"
+	@python3 mcp/server.py --selftest
+
 # ── Install ───────────────────────────────────────────────────────────────────
 
 install:
@@ -124,6 +177,6 @@ install-all:
 
 # ── Full local CI ─────────────────────────────────────────────────────────────
 
-ci: lint validate check-version check-platform-sync
+ci: lint validate check-version check-spec-compat build-platforms-check check-platform-sync
 	@echo ""
 	@echo "  ✓ all CI checks passed"

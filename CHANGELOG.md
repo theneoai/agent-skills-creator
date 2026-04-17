@@ -9,6 +9,115 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.5.0-dev] - 2026-04-17 (in progress on `claude/research-architecture-review-pEXSL`)
+
+### Added — Spec compatibility, supply-chain hardening, MCP, CLEAR, GEPA roadmap
+
+#### agentskills.io v1.0 compatibility (`spec/agent-skills-compat.md`, `scripts/check-spec-compat.py`)
+- New **compatibility spec** documents how skill-writer's schema maps to
+  agentskills.io v1.0 (name/description/version/license/author/homepage/keywords)
+  and declares `x-skill-writer:` as the reserved extension namespace.
+- Three emission modes defined: native (current), spec (minimal v1.0), spec+ext
+  (v1.0 fields + `x-skill-writer` extensions).
+- **`scripts/check-spec-compat.py`** — stdlib-only validator that reads
+  frontmatter across the 8 platforms + templates + examples. Handles the Cursor
+  MDC dual-frontmatter case. Emits `SPEC-W###` warnings instead of hard failing
+  to keep migration non-blocking. Status: 0 errors, body-length warnings only.
+- `spec_version: "1.0"` added to all templates (base / api-integration /
+  data-pipeline / workflow-automation) and new example skills.
+
+#### Supply-chain: Ed25519 signing + trust tiers (`scripts/sign-release.sh`, `scripts/verify-signature.sh`, `docs/supply-chain-security.md`)
+- **Dual-layer signing pipeline** — author signature + (future) registry
+  counter-signature. Python `cryptography` primary path, OpenSSL fallback.
+- Emits `.sig`, `.pubkey`, and `.provenance` JSON sidecars per release artifact.
+- `verify-signature.sh` supports TOFU (first-use pinning) and a repo-level trust
+  store.
+- **Trust tiers** (TRUSTED / VERIFIED / LOW_TRUST / UNTRUSTED) documented,
+  referencing the 2026 OpenClaw incident (1,184 malicious packages).
+
+#### Sandboxing handbook (`docs/sandboxing.md`)
+- Threat-model tiers T0–T4, Docker reference config (network-none, read-only,
+  cap-drop=ALL, no-new-privileges, pids/memory/cpu caps), Firejail (Linux T1)
+  and macOS seatbelt (T1) equivalents, verification tests, CI recipe.
+- Recommendation: **T2 container is the production default** for third-party
+  skills; T1 for local dev.
+
+#### Single-source platform build (`platforms.yaml`, `scripts/build-platforms.py`)
+- **`platforms.yaml`** — narrow-YAML manifest declaring per-platform
+  transforms (prepend / replace / footer_append / frontmatter_append) so the 8
+  platform files can regenerate from one canonical source.
+- **`scripts/build-platforms.py`** — stdlib-only parser + transform engine.
+  `--check` (strict) and `--check-warn` (migration mode, non-blocking)
+  available; `--only PLATFORM` for single-target builds. Ships in v3.5.0 as
+  migration mode — full sync flip is `[ROADMAP v3.6.0]`.
+
+#### MCP-native integration (`mcp/server.py`, `mcp/README.md`, `docs/mcp-integration.md`)
+- **Zero-LLM MCP server** — exposes 7 tools
+  (`lean` / `evaluate` / `optimize` / `check_spec` / `build_platforms` /
+  `verify_sig` / `list_skills`) that return structured *plans* for the host's
+  LLM to execute. Stateless; no bundled model/provider.
+- Detects the official MCP Python SDK; falls back to a stdlib stdio JSON-RPC
+  loop (keeps zero-build promise).
+- Install configs for Claude Desktop, Cursor, VS Code Copilot + MCP.
+- `python3 mcp/server.py --selftest` validates the 7-tool handler table.
+
+#### CLEAR production dimensions (`eval/rubrics.md §9a`)
+- Opt-in (`/eval --clear`) D9 Cost (50 pts) + D10 Latency (50 pts) dimensions
+  implementing the CLEAR framework (arXiv 2511.14136). Total ceiling rises to
+  1100 when enabled; tier thresholds scale by 1.10.
+- Production envelope fields added under `extends.production:` —
+  `cost_budget_usd`, `est_tokens_p50/p95`, `latency_budget_ms`, `est_p95_ms`.
+
+#### GEPA reflective optimization (`optimize/strategies.md §4a`, `scripts/gepa-optimize.py`)
+- **S15 — Reflective Prompt Evolution** strategy added (arXiv 2507.19457):
+  100–500 rollouts vs 10K+ RL; reflect-and-crossover loop on a Pareto frontier.
+- `scripts/gepa-optimize.py` skeleton with stage stubs (seed/evaluate/reflect/
+  crossover/select/verify). `--dry-run` prints the plan; real execution raises
+  `NotImplementedError` until v3.6.0. Marked `[ROADMAP v3.6.0]` throughout.
+
+#### Framework-index for 2772-line spec (`skill-framework-index.md`)
+- Section-by-section TOC with line ranges, load triggers, and external cross-refs
+  for `skill-framework.md`. Documents the v3.6.0 split plan (framework-core /
+  framework-modes / framework-evolution).
+
+#### Windows-native install (`scripts/merge-routing.ps1`)
+- PowerShell idempotent marker-based routing-file merger — Windows users no
+  longer need WSL2/Python to update `CLAUDE.md` / `GEMINI.md` / `AGENTS.md`.
+  Parameters match the Python merger in `install.sh`.
+
+#### New reference examples (`examples/data-pipeline-demo/`, `examples/mcp-bridge/`)
+- **`data-pipeline-demo/`** — functional-tier `csv-to-json-validator` with
+  schema-first validation, three-mode router, OWASP (ASI02/ASI07 + CWE-22)
+  security baseline, and full CLEAR production fields.
+- **`mcp-bridge/`** — atomic-tier `mcp-github-bridge` showing the
+  thin-skill/delegation pattern: route intent to an MCP tool, render response
+  in a blockquote, refuse write intents.
+
+#### Cursor & roadmap polish
+- README Cursor section: added explicit `.mdc` vs `.md` translation table and
+  loader expectation warning.
+- `refs/skill-graph.md`: three `builder/src/core/graph.js` references tagged
+  `[ROADMAP v4.0+]` so readers don't expect a runtime that doesn't ship yet.
+- README top-level feature table now uses a **CORE / EXTENDED / ROADMAP**
+  legend so availability is unambiguous.
+
+### Changed
+- Templates: added `spec_version: "1.0"` to frontmatter across
+  `templates/base.md`, `templates/api-integration.md`,
+  `templates/data-pipeline.md`, `templates/workflow-automation.md`.
+- `eval/rubrics.md` total-score math updated to reflect opt-in CLEAR (1100 max
+  when `--clear`; default remains 1020 with Behavioral Verifier).
+- `optimize/strategies.md` table of strategies now includes S15 (GEPA).
+
+### Migration notes
+- **No breaking changes**. CLEAR and GEPA are opt-in (`/eval --clear`,
+  `/optimize --gepa`). Platform-build is migration-mode (`--check-warn`);
+  existing platform files are untouched until v3.6.0.
+- Recommend running `python3 scripts/check-spec-compat.py` once to see which
+  skills are already agentskills.io-clean.
+
+---
+
 ## [3.4.0] - 2026-04-15
 
 ### ✨ Added — Honest Skill Labeling, Behavioral Verifier, Pragmatic Test, Supply Chain Trust, GoS MVR

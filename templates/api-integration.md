@@ -35,6 +35,7 @@
 ---
 name: {{SKILL_NAME}}
 version: "1.0.0"
+spec_version: "1.0"            # agentskills.io Agent Skills Open Standard v1.0 (v3.5.0+)
 description: "{{ONE_LINE_DESCRIPTION}} — integrates {{API_NAME}} API."
 description_i18n:
   en: "Integrates {{API_NAME}}: {{EN_DESCRIPTION}}"

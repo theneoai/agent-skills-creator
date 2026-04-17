@@ -57,10 +57,17 @@ Not all features require infrastructure. This table shows what works out-of-the-
 | UTE L2 — collective multi-user evolution | `[EXTENDED]` | AGGREGATE pipeline + shared backend |
 | SHARE — push/pull to remote registry | `[EXTENDED]` | S3 / OSS / HTTP backend |
 | COLLECT — auto-write artifacts to disk | `[EXTENDED]` | File system hooks |
-| Trust-chain verification for pulled skills | `[EXTENDED]` | Registry with SHA-256 signing |
-| GoS full bundle retrieval + health checks | `[EXTENDED]` | `builder/src/core/graph.js` (v4.0+) |
+| Trust-chain verification for pulled skills | `[EXTENDED]` | Registry with Ed25519 dual-layer signing (v3.5.0) |
+| GoS full bundle retrieval + health checks | `[ROADMAP v4.0+]` | Not yet shipped — see `spec/agent-skills-compat.md §6` |
+| GEPA reflective OPTIMIZE (S15) | `[ROADMAP v3.6.0]` | Design ready; impl pending — see `optimize/strategies.md §4a` |
+| MCP tool server (`mcp/server.py`) | `[ROADMAP v3.6.0]` | Skeleton shipped in v3.5.0 — see `docs/mcp-integration.md` |
 
-> **Unsure?** Assume `[CORE]` only. All 8 modes work fully without any backend — `[EXTENDED]` features add persistence and collective learning but are never required.
+> **Legend**:
+> - `[CORE]` — shipped and works anywhere with zero setup.
+> - `[EXTENDED]` — shipped but needs opt-in infra (hooks, backend, signing).
+> - `[ROADMAP]` — **not yet shipped**; design is public but calling these features today is a no-op. Do not base production workflows on `[ROADMAP]` items.
+>
+> **Unsure?** Assume `[CORE]` only. All 8 modes work fully without any backend — `[EXTENDED]` adds persistence and collective learning; `[ROADMAP]` is future work.
 
 ## Supported Platforms
 
@@ -196,11 +203,22 @@ Each platform's install script copies:
 ```
 That's it. The AI will ask 8 questions and generate a complete skill file.
 
-> **Cursor users**: Use keyword phrases — NOT slash commands.
-> The IDE intercepts `/` for its own command palette.
-> ✓ `create a skill`  ✗ `/create`
-> ✓ `lean eval`       ✗ `/lean`
-> ✓ `evaluate this skill`  ✗ `/eval`
+> **⚠ Cursor users — IMPORTANT**: This README sometimes uses `/create`, `/eval`,
+> `/optimize` as shorthand for the mode. In Cursor, `/` is reserved for the IDE
+> command palette and does **not** invoke skills. Use natural-language keyword
+> phrases instead:
+>
+> | Intent        | Claude / OpenCode / CLI | Cursor (use this)        |
+> |---------------|--------------------------|---------------------------|
+> | Create skill  | `/create`                | `create a skill that …`   |
+> | Fast eval     | `/lean` or `lean eval`   | `lean eval this skill`    |
+> | Full eval     | `/eval`                  | `evaluate this skill`     |
+> | Optimize      | `/optimize`              | `optimize this skill`     |
+> | Install       | `/install`               | `install skill-writer`    |
+>
+> Anywhere you see `/X` below, translate mentally to the keyword phrase when in
+> Cursor. The Cursor `.mdc` file injects this mapping automatically via
+> `alwaysApply: true`, so once installed the agent will understand both forms.
 
 #### Option 3 — Manual Copy (no script needed)
 
@@ -1089,6 +1107,8 @@ All example skills are certified with detailed evaluation reports.
 | [api-tester](examples/api-tester/) | API Integration | 🥇 GOLD | 920/1000 | HTTP API testing automation |
 | [code-reviewer](examples/code-reviewer/) | Workflow Automation | 🥇 GOLD | 947/1000 | Code review with security scanning |
 | [doc-generator](examples/doc-generator/) | Data Pipeline | 🥇 GOLD | 895/1000 | Documentation generation |
+| [data-pipeline-demo](examples/data-pipeline-demo/) | Data Pipeline | Functional | — | CSV → JSON validator with schema, OWASP security baseline, CLEAR production fields (v3.5.0 reference) |
+| [mcp-bridge](examples/mcp-bridge/) | Tool Wrapper | Atomic | — | Delegation-style skill: routes GitHub read intents to an MCP tool (v3.5.0 reference) |
 
 ### Walkthrough: Full Lifecycle Example (git-commit-writer)
 

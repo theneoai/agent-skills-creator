@@ -131,6 +131,33 @@ jobs:
             || { echo "✗ skill-framework.md: no YAML frontmatter"; exit 1; }
           echo "  ✓ skill-framework.md present with frontmatter"
 
+  spec-compat:
+    name: agentskills.io v1.0 frontmatter check (v3.5.0+)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run spec compatibility validator
+        run: python3 scripts/check-spec-compat.py
+
+  build-platforms-check:
+    name: Platform build drift check (migration mode, v3.5.0+)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Drift-check platform files vs platforms.yaml
+        run: python3 scripts/build-platforms.py --check-warn
+
+  mcp-selftest:
+    name: MCP server self-test (zero-LLM, 7 tools)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Self-test handler table
+        run: python3 mcp/server.py --selftest
+
   platform-sync:
     name: Platform skill file sync check
     runs-on: ubuntu-latest

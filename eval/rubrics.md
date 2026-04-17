@@ -501,8 +501,9 @@ Phase 2 minimum thresholds (used in tier certification) adjust proportionally:
 ## §9  D8 Composability — LEAN Bonus Dimension (v3.2.0)
 
 > **Research basis**: SkillNet (arxiv:2603.04448), GoS bundle retrieval.
-> **Implementation**: `builder/src/core/graph.js scoreD8Composability()`
-> **Full spec**: `claude/refs/skill-graph.md §5`
+> **Implementation**: LLM-native — computed from `graph:` YAML block directly.
+>   Future runtime library (`[ROADMAP v4.0+]`) will provide cached scoring.
+> **Full spec**: `refs/skill-graph.md §5`
 
 D8 is an **optional bonus dimension**. Skills without a `graph:` YAML block
 score **0 on D8 with no penalty** — their LEAN score is still out of 500.
@@ -542,6 +543,95 @@ Phase 5 adds 100 pts when active. Certification thresholds scale proportionally 
 | Interface contract clarity | 25 | `provides`/`consumes` types are specific (not generic "data") |
 | Tier role consistency | 25 | Skill's graph role matches skill_tier declaration |
 | Edge quality | 20 | similar_to similarities plausible; IDs valid and resolvable |
+
+---
+
+## §9a  CLEAR Production Dimensions — D9 Cost + D10 Latency (v3.5.0 `[OPT-IN]`)
+
+> **Research basis**: arXiv 2511.14136 (CLEAR framework — Cost, Latency, Efficacy,
+> Assurance, Reliability for enterprise agentic AI).
+> **Status**: OPT-IN in v3.5.0. Opt in with `--clear` flag. Default behavior
+> unchanged — existing skills don't receive a zero for D9/D10.
+> **Rationale**: D1–D8 measure *text/functional quality*. Production deployers
+> also need to know operational cost + p95 latency. Without these, a skill can
+> score GOLD yet be unshippable (e.g. 15-round reflection chain that burns $2/call).
+
+### D9 — Cost Efficiency (0–50 pts, opt-in)
+
+Measures expected inference cost per invocation, normalized to the skill's tier.
+
+| Sub-check                                           | Points | Method |
+|----------------------------------------------------|--------|--------|
+| Declared `cost_budget_usd` in YAML                 | 10 | Presence check |
+| Token estimate per invocation declared (`est_tokens`) | 10 | Presence + plausibility |
+| Cost regression vs baseline < +20% over last 3 evals | 15 | Score history comparison |
+| Skill prunes context (progressive disclosure) where safe | 15 | Static analysis: are `refs/` lazy-loaded? |
+
+**Tier targets** (suggested ceilings, not enforced):
+
+| Tier       | Max cost/invocation |
+|------------|---------------------|
+| planning   | $0.50               |
+| functional | $0.10               |
+| atomic     | $0.02               |
+
+**Declaring cost in YAML** (new in v3.5.0):
+
+```yaml
+extends:
+  production:
+    cost_budget_usd: 0.10
+    est_tokens_p50: 4200
+    est_tokens_p95: 9800
+    baseline_model: "claude-sonnet-4-6"
+```
+
+### D10 — Latency Efficiency (0–50 pts, opt-in)
+
+Measures end-to-end wall time from user invocation to final answer.
+
+| Sub-check                                     | Points | Method |
+|----------------------------------------------|--------|--------|
+| Declared `latency_budget_ms` in YAML         | 10 | Presence check |
+| P50 / P95 latency plausibility               | 10 | Heuristic: budget ≥ sum of declared phase times |
+| Progressive disclosure avoids upfront 100k+ context | 15 | Static: no forced ref/* imports in Layer 0 |
+| Caching/memoization hints for repeated calls | 15 | Look for `cache:` block or equivalent |
+
+**Tier targets** (suggested p95 ceilings):
+
+| Tier       | p95 latency |
+|------------|-------------|
+| planning   | 60 s        |
+| functional | 15 s        |
+| atomic     | 3 s         |
+
+**Declaring latency in YAML**:
+
+```yaml
+extends:
+  production:
+    latency_budget_ms: 15000
+    est_p50_ms: 4200
+    est_p95_ms: 11500
+```
+
+### Scoring mode with CLEAR enabled
+
+When `--clear` is passed to EVALUATE:
+
+- Total possible = 1100 (base 1000 + D9 50 + D10 50)
+- Tier thresholds adjust: `min_score = base_min × 1.10` (e.g. GOLD = 990)
+- `validation_status` gains value `pragmatic+clear` for skills that also pass Pragmatic Test
+
+Without `--clear`, D9 and D10 are marked `N/A` in the report — existing skills
+and workflows are unaffected.
+
+### Why opt-in (not default)
+
+Per feedback in `spec/agent-skills-compat.md`, we avoid breaking existing skills'
+scores. CLEAR dimensions require authors to declare cost/latency intent, and
+not every skill (especially `atomic` helpers) benefits from formal declarations.
+Starting v4.0.0, CLEAR becomes default for `planning` tier skills.
 
 ---
 

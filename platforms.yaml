@@ -1,0 +1,145 @@
+# platforms.yaml — single-source platform build manifest (v3.5.0+)
+#
+# Purpose: Defines the per-platform transformations applied to the canonical
+#   skill file (`claude/skill-writer.md`) to produce the 7 other platform
+#   variants. Eliminates the manual 8-file-sync burden identified in the
+#   v3.4 review.
+#
+# Consumed by:
+#   - scripts/build-platforms.py       (generates all 8 files from canonical)
+#   - .github/workflows/ci.yml         (verifies generated == committed)
+#   - .git hooks (optional pre-commit) (prevents drift at commit time)
+#
+# Semantics:
+#   canonical   : single source of truth; edit this file for content changes
+#   platforms[] : list of output variants; each declares the transforms needed
+#   transforms  : ordered list of ops; see scripts/build-platforms.py for the DSL
+#
+# NB: This file is YAML but we keep it deliberately narrow — no anchors,
+#     no merges, no custom tags. Makes it parseable by a stdlib-only Python
+#     reader (no PyYAML dependency).
+
+canonical: claude/skill-writer.md
+
+platforms:
+
+  - name: claude
+    output: claude/skill-writer.md
+    extension: md
+    transforms: []           # claude/ IS the canonical; build emits no-op
+
+  - name: openclaw
+    output: openclaw/skill-writer.md
+    extension: md
+    transforms:
+      - op: frontmatter_append
+        after_key: updated
+        content: |
+          metadata:
+            openclaw:
+              registry_id: skill-writer
+              tier: framework
+              max_recursion: 3
+      - op: footer_append
+        marker: "^# Skill Summary"
+        content: |
+
+          **Triggers**: create a skill | evaluate this skill | optimize this skill | lean eval | install skill-writer | graph view | share my skill | collect session | 创建技能 | 评测技能 | 优化技能 | 安装skill-writer | 技能图
+
+  - name: opencode
+    output: opencode/skill-writer.md
+    extension: md
+    transforms:
+      - op: replace
+        find: "~/.claude/"
+        replace: "~/.config/opencode/"
+      - op: footer_append
+        marker: end_of_file
+        content: |
+
+          **Triggers**: create a skill | evaluate this skill | optimize this skill | lean eval | install skill-writer | graph view | share my skill | collect session | 创建技能 | 评测技能 | 优化技能 | 安装skill-writer | 技能图
+
+  - name: cursor
+    output: cursor/skill-writer.mdc
+    extension: mdc
+    transforms:
+      - op: prepend
+        content: |
+          ---
+          description: skill-writer meta-skill — CREATE, LEAN, EVALUATE, OPTIMIZE, INSTALL, COLLECT, SHARE, GRAPH modes for AI skill lifecycle management
+          globs: ["**/*.md", "**/*.mdc"]
+          alwaysApply: true
+          ---
+
+      - op: replace
+        find: "~/.claude/"
+        replace: ".cursor/rules/"
+      - op: footer_append
+        marker: end_of_file
+        content: |
+
+          **Triggers**: create a skill | evaluate this skill | optimize this skill | lean eval | install skill-writer | graph view | share my skill | collect session | 创建技能 | 评测技能 | 优化技能 | 安装skill-writer | 技能图
+
+  - name: gemini
+    output: gemini/skill-writer.md
+    extension: md
+    transforms:
+      - op: replace
+        find: "~/.claude/"
+        replace: "~/.gemini/"
+      - op: replace
+        find: "CLAUDE.md"
+        replace: "GEMINI.md"
+      - op: footer_append
+        marker: end_of_file
+        content: |
+
+          **Triggers**: create a skill | evaluate this skill | optimize this skill | lean eval | install skill-writer | graph view | share my skill | collect session | 创建技能 | 评测技能 | 优化技能 | 安装skill-writer | 技能图
+
+  - name: openai
+    output: openai/skill-writer.md
+    extension: md
+    transforms:
+      - op: replace
+        find: "~/.claude/"
+        replace: "~/.config/openai/"
+      - op: replace
+        find: "CLAUDE.md"
+        replace: "AGENTS.md"
+      - op: footer_append
+        marker: end_of_file
+        content: |
+
+          **Triggers**: create a skill | evaluate this skill | optimize this skill | lean eval | install skill-writer | graph view | share my skill | collect session | 创建技能 | 评测技能 | 优化技能 | 安装skill-writer | 技能图
+
+  - name: kimi
+    output: kimi/skill-writer.md
+    extension: md
+    transforms:
+      - op: replace
+        find: "~/.claude/"
+        replace: "~/.config/kimi/"
+      - op: replace
+        find: "CLAUDE.md"
+        replace: "AGENTS.md"
+      - op: footer_append
+        marker: end_of_file
+        content: |
+
+          **Triggers**: create a skill | evaluate this skill | optimize this skill | lean eval | install skill-writer | graph view | share my skill | collect session | 创建技能 | 评测技能 | 优化技能 | 安装skill-writer | 技能图
+
+  - name: hermes
+    output: hermes/skill-writer.md
+    extension: md
+    transforms:
+      - op: replace
+        find: "~/.claude/"
+        replace: "~/.hermes/"
+      - op: replace
+        find: "CLAUDE.md"
+        replace: "AGENTS.md"
+      - op: footer_append
+        marker: end_of_file
+        content: |
+
+          **Triggers**: create a skill | evaluate this skill | optimize this skill | lean eval | install skill-writer | graph view | share my skill | collect session | 创建技能 | 评测技能 | 优化技能 | 安装skill-writer | 技能图

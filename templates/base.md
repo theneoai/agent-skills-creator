@@ -47,6 +47,7 @@ All remaining placeholders are inferred by CREATE mode from your answers.
 ---
 name: {{SKILL_NAME}}
 version: "1.0.0"
+spec_version: "1.0"            # agentskills.io Agent Skills Open Standard v1.0 (v3.5.0+)
 description: "{{ONE_LINE_DESCRIPTION}}"
 description_i18n:
   en: "{{EN_DESCRIPTION}}"

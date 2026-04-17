@@ -110,6 +110,62 @@ CURATE:
 
 ---
 
+## §4a  Reflective Optimization Frontier — GEPA (S15) `[ROADMAP v3.6.0]`
+
+> **Research basis**: Agrawal et al. 2025, *"GEPA: Reflective Prompt Evolution
+> Can Outperform Reinforcement Learning"* (arXiv 2507.19457).
+> **Status**: Design ready; skeleton at `scripts/gepa-optimize.py`; end-to-end
+> integration pending v3.6.0.
+> **Why add GEPA**: The in-session 10-step loop (§2) is a local hill climber.
+> GEPA is a *reflective evolutionary* optimizer that leverages the LM's ability
+> to reflect on trajectories ("what went well / what didn't / what to try")
+> rather than purely scalar rewards. It has been shown to converge in **100–500
+> rollouts vs 10,000+ for RL** with better final scores — a strong fit for
+> skill optimization where each rollout costs real inference time.
+
+### S15 — Reflective Prompt Evolution
+
+**Target dimension**: ANY (GEPA is dimension-agnostic; it optimizes the full skill)
+**Estimated delta**: comparable to 15–20 rounds of S1–S14 combined, in ~1/3 the rollouts
+**Runs**: Opt-in alternative to the standard 10-step loop; activated via `/optimize --gepa`
+
+**Algorithm (simplified)**:
+
+1. **Initialize** — seed population with the current skill + N=3 diverse perturbations (e.g. S1, S3, S5 applied independently).
+2. **Evaluate** — run EVALUATE on every member; record dimension scores + rich textual feedback.
+3. **Reflect** — ask the LM: "Given these trajectories and feedback, what specific edits would most improve the lowest-dimension skills? Propose 3 concrete changes and why."
+4. **Crossover + Mutate** — produce K=5 offspring by combining winning edits from different parents (Pareto-optimal on 7 dimensions).
+5. **Select** — keep top-M=3 by sum-of-dimensions, retain 1 elite, replace rest.
+6. **Repeat** until convergence detected (§3) or round budget exhausted.
+7. **VERIFY** — final cross-validation identical to §2 step 10.
+
+**Why it works**: Step 3's *reflection* turns natural-language EVALUATE feedback
+into structured edit proposals. Unlike RL, there's no scalar reward gradient to
+estimate — each rollout yields a detailed reason-trace that the LM consumes.
+
+**When to prefer over §2**:
+- Expensive rollouts (e.g. Pragmatic Test with real API calls)
+- Skills that plateau in §2 below SILVER (score 800)
+- Multi-objective targeting (optimize D5 + D6 simultaneously)
+
+**When §2 still wins**:
+- Single-dimension bottleneck (S1–S14 are more surgical)
+- Skills already ≥ GOLD (900) — diminishing returns
+- Offline/cached environments where rollout cost is negligible
+
+**Integration plan**:
+
+| Version  | Milestone |
+|----------|-----------|
+| v3.5.0   | Skeleton + design doc shipped; `/optimize --gepa` returns "planned" |
+| v3.5.1   | DSPy + gepa-ai/gepa optional dependency; `--dry-run` produces plan |
+| v3.6.0   | Full integration; S15 default for skills in FAIL tier on first OPTIMIZE |
+
+**Reference implementation**: `scripts/gepa-optimize.py` (skeleton; requires
+`pip install dspy gepa` at runtime — NOT a hard dep of skill-writer).
+
+---
+
 ## §4  Strategy Catalog
 
 ### S1 — Expand Trigger Keywords
