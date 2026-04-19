@@ -33,17 +33,22 @@ triggers:
     - "graph view"
     - "share my skill"
     - "collect session"
+    - "benchmark"
+    - "run benchmark"
+    - "A/B test this skill"
   zh:
     - "创建技能"
     - "评测技能"
     - "优化技能"
     - "安装skill-writer"
     - "技能图"
+    - "基准测试"
+    - "对比测试"
 
 interface:
   input: user-natural-language
   output: structured-skill
-  modes: [create, lean, evaluate, optimize, install, share, collect, graph]
+  modes: [create, lean, evaluate, optimize, install, share, collect, graph, benchmark]
   platforms: [claude, opencode, openclaw]
 
 extends:
@@ -124,6 +129,7 @@ questions, direct API calls, or non-skill automation tasks — see Negative Boun
 | Create a new skill | `/create` + one-sentence description | `/创建` + 一句描述 | 2–5 min |
 | Fast quality check | `/lean` + skill content | `/快评` + 技能内容 | <5s |
 | Full certification | `/eval` + skill content | `/评测` + 技能内容 | ~60s |
+| **Empirical A/B test** | **`/benchmark`** + skill + eval prompts | **`/基准测试`** + 技能 + 测试用例 | **2–10 min** |
 | Improve an existing skill | `/opt` + skill + eval report | `/优化` + 技能 + 评测报告 | 5–20 min |
 | Deploy to platforms | `/install [platform]` | `/安装 [平台]` | <30s |
 | Record session data | `/collect` | `/采集` | ~10s |
@@ -132,6 +138,16 @@ questions, direct API calls, or non-skill automation tasks — see Negative Boun
 > your language — use `/eval` or `评测`, `create a skill` or `创建新技能`, interchangeably.
 > Cursor exception: use keyword phrases, not `/commands` (IDE intercepts `/` key).
 > See §3 Mode Router for the full keyword list in both languages.
+
+### Workflow F — "I want to empirically validate my skill (not just score it)"
+1. Run `/benchmark` and provide 3–10 test prompts with expected behaviors
+2. Two parallel subagents run (with-skill vs. baseline) — independent Grader evaluates blind
+3. Review `delta_pass_rate` and `token_overhead_pct` — check for non-discriminating assertions
+4. If BENCHMARK_FAIL: run `/opt --from-benchmark` to fix empirically failing dimensions
+5. Re-run `/benchmark compare v_before v_after` to confirm improvement
+6. Only proceed to SHARE when `delta_pass_rate ≥ 0.15`
+
+> Full spec: [`refs/modes/benchmark.md`](../refs/modes/benchmark.md)
 
 ### Workflow A — "I want to create a new skill"
 1. Type `/create` followed by a one-sentence description of what the skill should do
@@ -272,14 +288,18 @@ The table below defines what is needed and what happens next.
 | *(start)* | **LEAN** | Skill file content or path | Heuristic scoring → PASS/UNCERTAIN/FAIL |
 | *(start)* | **EVALUATE** | Skill file content | 4-phase pipeline → certification |
 | *(start)* | **OPTIMIZE** | Skill file content + EVALUATE report | 7-dim 9-step loop |
+| *(start)* | **BENCHMARK** | Skill file + 3–10 eval prompts | Parallel A/B → delta + token report |
 | *(start)* | **INSTALL** | Platform name (optional) | Deploy to target platforms |
 | **CREATE** | **LEAN** | *(auto)* — output of CREATE | Fast quality gate |
 | **CREATE** | **EVALUATE** | *(auto)* — if LEAN UNCERTAIN | Full certification |
 | **LEAN** | **EVALUATE** | LEAN UNCERTAIN result | Full pipeline |
 | **LEAN** | **OPTIMIZE** | LEAN FAIL result | Improvement loop |
 | **EVALUATE** | **OPTIMIZE** | EVALUATE FAIL result | Improvement loop |
+| **EVALUATE** | **BENCHMARK** | *(recommended)* — after GOLD+ cert | Empirical validation |
+| **BENCHMARK** | **OPTIMIZE** | BENCHMARK_FAIL or high token_overhead | S15/S16 targeted fix |
 | **OPTIMIZE** | **LEAN** | *(auto)* — after each round | Fast re-score check |
 | **OPTIMIZE** | **EVALUATE** | *(optional)* — after loop converges | Full re-certification |
+| **OPTIMIZE** | **BENCHMARK** | `/opt --from-benchmark` input | Empirical loop |
 | Any | **INSTALL** | Certified skill content | Platform deployment |
 
 > **OPTIMIZE → EVALUATE policy**: After the OPTIMIZE loop converges:

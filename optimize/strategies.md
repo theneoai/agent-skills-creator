@@ -819,3 +819,128 @@ Normal round N:
 S13 and S14 CAN be combined: S14 identifies the best strategy to fix pragmatic failures
 (via ROI analysis), then S13 applies that strategy to the specific failure modes found in
 the pragmatic test output.
+
+---
+
+## §9  Token-Efficiency Strategies (S15–S16) (v3.5.0)
+
+> **Why S15/S16?** skill-creator's Benchmark revealed a critical blind spot in S1–S14:
+> they optimize for quality scores without measuring the **token cost** of those improvements.
+> A skill that scores GOLD (920/1000) but costs 5x more tokens than a baseline model
+> is not production-ready. S15 and S16 bring token-delta awareness into the OPTIMIZE loop.
+>
+> **Trigger conditions**:
+> - `/benchmark` reports `token_overhead_pct > 100%` (skill doubles token cost)
+> - `/benchmark` reports `delta_pass_rate < 0.10` (skill barely improves outcomes)
+> - `production.est_tokens_p95` exceeds tier ceiling (functional: 10k, atomic: 2k)
+> - SHARE gate advisory: "token overhead too high for stated tier"
+
+### S15 — Skill Body Slimming (Token-Overhead Reduction)
+
+**Goal**: Reduce skill body token count while preserving or improving pass rate.
+**Target**: Achieve `token_overhead_pct ≤ 50%` without degrading LEAN score by > 20 pts.
+
+**Where skill body tokens go (typical breakdown)**:
+```
+§1 Identity + Red Lines          ~150 tokens  (high value — do NOT slim)
+§2 Negative Boundaries            ~80 tokens  (high value — preserves precision)
+§3–§N Workflow / Mode sections   ~300 tokens  (target for slimming)
+§UTE Use-to-Evolve block          ~60 tokens  (always keep — needed for self-evolution)
+Excessive examples (>3)          ~200 tokens  (slim to 2 examples max)
+Duplicate trigger phrases         ~40 tokens  (remove synonyms covered by LLM semantics)
+YAML comment blocks              ~100 tokens  (remove inline YAML comments in delivery)
+```
+
+**S15 implementation steps** (apply in order, re-score after each):
+
+1. **Trim examples to 2**: Keep the most representative + the most edge-case. Remove extras.
+   Expected reduction: 80–200 tokens. LEAN D5 check: score must stay ≥ 40/45 after trim.
+
+2. **Compress verbose workflows**: Replace multi-paragraph step descriptions with
+   1-line entries in a table. "Step 3: Parse the user input carefully, considering all
+   possible formats including..." → "PARSE: extract intent + format type".
+   Expected reduction: 100–300 tokens. LEAN D3: score must stay ≥ 35/45.
+
+3. **Remove YAML comments**: Strip all inline `# comment` lines from the delivered
+   skill file (keep them in the template source). Affects `production:` block comments,
+   `graph:` block comments, etc.
+   Expected reduction: 50–150 tokens. No LEAN impact.
+
+4. **Deduplicate trigger phrases**: Remove EN trigger phrases that are semantic
+   synonyms of other listed phrases (LLM routing handles synonyms natively).
+   Keep: canonical phrases (1 per intent) + exact phrases users commonly type.
+   Remove: "improve my skill" when "optimize my skill" is already listed.
+   Expected reduction: 20–80 tokens. LEAN D7: `triggers ≥ 3` must still pass.
+
+5. **Collapse UTE block comments**: The `use_to_evolve:` block has extensive comments
+   in templates. In delivered skills, strip comments — keep values only.
+   Expected reduction: 30–60 tokens. No functional impact.
+
+**S15 exit criteria**: Stop when `token_overhead_pct ≤ 50%` OR LEAN drops > 20 pts.
+If LEAN drops: restore last pre-drop version, declare S15 complete at current compression.
+
+**Expected aggregate token reduction**: 30–50% of skill body size.
+Typical result: 300-line skill → 180–220-line skill, same LEAN tier.
+
+**After S15**: Update `production.est_tokens_p50` and `est_tokens_p95` in YAML frontmatter
+to reflect the slimmed skill's new estimated per-invocation cost.
+
+---
+
+### S16 — Benchmark-Driven Targeted Fix (v3.5.0)
+
+**Goal**: Fix the exact failure modes identified by `/benchmark` rather than optimizing
+theoretically weak dimensions. Combines empirical data from BENCHMARK with the OPTIMIZE loop.
+
+**Activation**: Use S16 when `/benchmark` result is available (not just EVALUATE).
+
+**S16 workflow**:
+
+```
+Input required: benchmark.json (from /benchmark run)
+
+Step 1  LOAD FAILURES
+        Read benchmark.json → analysis.top_failure_modes
+        Example: ["error_handling section not followed", "ZH trigger not matched"]
+
+Step 2  MAP TO DIMENSIONS
+        Map each failure mode to the responsible skill dimension:
+          "error_handling section not followed"  → D4 (Error Handling)
+          "ZH trigger not matched"               → D7 (Metadata / triggers)
+          "output format differs from spec"      → D2 (Domain Knowledge / Output Contract)
+          "scope violated — skill fired for OOS" → D2 (Negative Boundaries)
+
+Step 3  PRIORITIZE BY DELTA IMPACT
+        Sort failure modes by: frequency × (1 - with_skill_pass_rate_for_that_case)
+        Highest delta-impact failure first.
+
+Step 4  APPLY TARGETED FIX
+        Fix the highest-delta failure mode ONLY. Do NOT touch other dimensions.
+        Use the corresponding strategy from §5 Strategy Selection Matrix.
+
+Step 5  RE-BENCHMARK (lightweight)
+        Re-run BENCHMARK on the failing test cases only (not full suite).
+        If those cases now pass → move to next failure mode.
+        If not → try alternative fix (Step 4 retry with different approach).
+
+Step 6  STOP CONDITION
+        Stop when: benchmark delta_pass_rate ≥ 0.15 (BENCHMARK_PASS threshold)
+        OR when all top_failure_modes have been addressed.
+        Do NOT optimize beyond BENCHMARK_PASS — diminishing returns on token cost.
+```
+
+**S16 vs. S13 (Pragmatic Failure Recovery)**:
+- S13 uses user-provided task samples (3–5 manual examples)
+- S16 uses benchmark.json from automated parallel A/B runs (systematic, reproducible)
+- S16 produces a re-benchmarkable result; S13 is one-shot per user session
+
+**S16 in the selection matrix**:
+```
+Updated §5 Strategy Selection Matrix additions (v3.5.0):
+  /benchmark result available AND delta_pass_rate < 0.15 → S16 (before S1–S9)
+  token_overhead_pct > 100% in benchmark → S15 (before S16)
+  Both issues present → S15 first (slim), then S16 (fix failures)
+```
+
+**After S16**: Run `/benchmark compare v_before v_after` to confirm improvement.
+Update `production.benchmark_delta_pass_rate` and `last_benchmark_at` in YAML frontmatter.

@@ -28,6 +28,18 @@ When the user asks to **create, evaluate, optimize, install, or share a skill**:
 | "share my skill" / "publish" / "分享技能"                | SHARE mode                        |
 | "graph view" / "skill dependencies" / "技能图"           | GRAPH mode                        |
 | "collect session" / "record session" / "采集"            | COLLECT mode                      |
+| "benchmark" / "A/B test" / "基准测试" / "对比测试"        | BENCHMARK mode                    |
+
+## v3.5.0 Quick Reference
+
+**New in v3.5.0**:
+- `/benchmark` — parallel A/B empirical mode: two subagents (with-skill vs. baseline),
+  independent blind Grader, token + latency tracking per case, non-discriminating detection
+- `grader.md` — new `comparative` and `discriminating_check` modes for true blind grading
+- `S15` Skill Body Slimming — reduce token overhead 30–50% without losing LEAN tier
+- `S16` Benchmark-Driven Fix — OPTIMIZE from empirical failure data, not rubric gaps
+- `production:` YAML block in all templates — declare `cost_budget_usd` + `est_tokens_p50/p95`
+- Full spec: `refs/modes/benchmark.md`
 
 ## v3.4.0 Quick Reference
 

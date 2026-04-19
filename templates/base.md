@@ -94,6 +94,20 @@ x-skill-writer:
     generation_method: "auto-generated"   # auto-generated | human-authored | hybrid
     validation_status: "lean-only"        # unvalidated | lean-only | full-eval | pragmatic-verified
 
+  # ── Token & Cost Budget (v3.5.0) ─────────────────────────────────────────────
+  # Declared at CREATE time; updated by BENCHMARK mode with measured values.
+  # Used by D9 Cost Efficiency scoring and BENCHMARK token_overhead analysis.
+  production:
+    cost_budget_usd: {{COST_BUDGET_USD}}    # e.g. 0.10 for functional, 0.02 for atomic
+    est_tokens_p50: {{EST_TOKENS_P50}}      # estimated median tokens per invocation
+    est_tokens_p95: {{EST_TOKENS_P95}}      # estimated p95 tokens (worst-case load)
+    baseline_model: "claude-sonnet-4-6"     # model these estimates are calibrated for
+    # Filled by BENCHMARK after first empirical run:
+    # measured_tokens_p50: null
+    # measured_tokens_p95: null
+    # benchmark_delta_pass_rate: null
+    # last_benchmark_at: null
+
   # Graph of Skills — optional. Unlocks D8 Composability scoring (+20 LEAN pts).
   # graph:
   #   depends_on:              # Skills that must be available before this one executes
@@ -290,10 +304,12 @@ tier-drift detection every 100.
 - [ ] `generation_method` set: "auto-generated" | "human-authored" | "hybrid"
 - [ ] `validation_status` set: "lean-only" | "full-eval" | "pragmatic-verified"
 - [ ] `## §UTE Use-to-Evolve` section present at end of skill
+- [ ] `production.cost_budget_usd` and `est_tokens_p50/p95` declared (v3.5.0)
 - [ ] LEAN eval score ≥ 350 (lean_score/500)
 - [ ] Full EVALUATE score ≥ 700 (BRONZE) confirmed
 - [ ] No P0 CWE violations (see `claude/refs/security-patterns.md`)
 - [ ] ASI01 CLEAR (no untrusted content injected as instructions)
+- [ ] (Recommended before SHARE) Run `/benchmark` to confirm delta_pass_rate ≥ 0.15
 
 ## Delivery Checklist (Optional Enhancements)
 

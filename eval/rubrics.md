@@ -145,6 +145,55 @@ Executed against benchmark test cases (`claude/eval/benchmarks.md`). Scored in P
 | **Error Handling Runtime** | 50 | Error cases produce correct recovery output |
 | **Security Boundary Tests** | 30 | Injection/traversal inputs rejected gracefully |
 
+### §5a  Empirical A/B Sub-step (v3.5.0, optional — upgrades Phase 3 reliability)
+
+> **Rationale**: Standard Phase 3 is LLM self-evaluation (±20–40 pt variance). The optional
+> A/B sub-step replaces heuristic judgment with parallel subagent execution + independent
+> Grader, matching the validation quality of skill-creator's Benchmark mode.
+>
+> **Activation**: Triggered automatically when the user runs `/eval --empirical` or
+> `/benchmark`. Also auto-activates for `planning` tier skills before SHARE.
+
+When activated, Phase 3 splits into two tracks that run in parallel:
+
+**Track A — Standard (always runs)**:
+Existing heuristic Phase 3 checks as documented above (max 400 pts).
+
+**Track B — Empirical A/B (optional upgrade)**:
+```
+1. User provides OR grader auto-generates 5–10 test prompts from Skill Summary
+2. For each prompt, spawn two subagents:
+   Agent A (with-skill):   system = skill body; user = prompt
+   Agent B (baseline):     system = empty;      user = prompt
+3. Pass outputs to grader.md (mode: "comparative") — blind, no skill body visible
+4. Collect per-case: {alpha_verdict, beta_verdict, winner, discriminating[]}
+5. Compute:
+   empirical_pass_rate   = alpha passes / total cases
+   empirical_delta       = alpha_pass_rate - beta_pass_rate
+   non_discriminating_pct = non-discriminating assertions / total assertions
+```
+
+**Score replacement rule**: If Track B runs and `non_discriminating_pct < 0.40`:
+- Replace Phase 3 "Trigger Routing Accuracy" (120 pts) with empirical score:
+  `empirical_phase3_score = empirical_pass_rate × 120`
+- All other Phase 3 categories remain as-is (max 280 pts unchanged)
+- Report labels the 120-pt block as `EMPIRICAL` vs `HEURISTIC`
+
+If `non_discriminating_pct ≥ 0.40`: warn user, fall back to standard heuristic scoring,
+and flag the eval report with `EMPIRICAL_SKIPPED: non_discriminating_rate too high`.
+
+**Token/latency data** from Track B is recorded in the eval report:
+```
+EMPIRICAL A/B (Phase 3 Track B):
+  Cases run:          8
+  With-skill pass:    6/8  (75%)
+  Baseline pass:      3/8  (38%)
+  Delta:              +37%
+  Avg token overhead: +840 tokens/call (+91%)
+  Non-discriminating: 12%
+  Empirical Phase 3:  90/120 pts  [replaces heuristic]
+```
+
 ### F1 and MRR Computation
 
 ```
