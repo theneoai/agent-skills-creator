@@ -7,6 +7,8 @@ on:
     paths:
       - 'docs/**'
       - 'refs/**'
+      - 'agents/**'
+      - 'eval/**'
       - 'skill-framework.md'
       - 'README.md'
       - '.github/workflows/pages.yml'

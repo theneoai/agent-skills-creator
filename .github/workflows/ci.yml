@@ -191,3 +191,10 @@ jobs:
 
       - name: Import check — emit_spec_pure (help)
         run: python3 scripts/emit_spec_pure.py --help > /dev/null
+
+      - name: Import check — run_benchmark (dry-run)
+        run: |
+          python3 scripts/run_benchmark.py \
+            --skill claude/skill-writer.md \
+            --cases eval/trigger-eval.example.json \
+            --dry-run

@@ -26,7 +26,7 @@ Skill Writer 是一个元技能，让 AI 助手可以通过自然语言交互来
 - **Agent 安装**：一行 "read [URL] and install" 命令完成安装 —— 适用于所有支持的平台
 - **零 CLI 界面**：自然语言交互，不需要记忆任何命令
 - **跨平台**：支持 8 个平台 —— Claude、OpenClaw、OpenCode、Cursor、Gemini、OpenAI、Kimi、Hermes
-- **八大模式**：CREATE、LEAN、EVALUATE、OPTIMIZE、INSTALL、COLLECT、SHARE、GRAPH
+- **九大模式**：CREATE、LEAN、EVALUATE、OPTIMIZE、BENCHMARK、INSTALL、COLLECT、SHARE、GRAPH
 - **模板驱动**：4 个内置模板覆盖常见技能模式
 - **质量保证**：1000 分评分体系 + 认证等级
 - **分级评估（Tier-Aware）**：按 `planning` / `functional` / `atomic` 三级架构动态调整 Phase 2 权重
@@ -34,6 +34,7 @@ Skill Writer 是一个元技能，让 AI 助手可以通过自然语言交互来
 - **内建安全**：基于 CWE + OWASP Agentic Skills Top 10（ASI01–ASI10）的检测，以及拉取技能时的供应链信任校验
 - **持续改进**：自动化优化 + 收敛检测 + 协同进化 VERIFY 步骤 + 持久化分数历史
 - **自进化**：UTE（Use-to-Evolve）L1 会话内始终开启；L2 集体进化依赖 hooks / 后端
+- **实证 A/B 基准测试**：BENCHMARK 模式并行调用 API（有技能 vs 无技能），盲评打分，输出 delta_pass_rate + token 开销 + PASS/FAIL 结论（v3.5.0）
 - **诚实技能标签**：`generation_method` + `validation_status` 字段，防止未验证技能悄悄进入生产环境
 - **行为验证器**：可选的任务样本测试，产出独立于理论分数的 `pragmatic_success_rate`
 - **多遍自审**：Generate / Review / Reconcile 质量协议
@@ -54,6 +55,7 @@ Skill Writer 是一个元技能，让 AI 助手可以通过自然语言交互来
 | COLLECT — 输出 Session Artifact JSON | `[CORE]` | 无（手动保存） |
 | Pragmatic Test Phase（任务样本验证） | `[CORE]` | 用户提供 3–5 个任务样本 |
 | GoS `depends_on` 依赖解析 | `[CORE]` | 技能 YAML 中有 `graph:` 块 |
+| BENCHMARK A/B 实证测试（`scripts/run_benchmark.py`） | `[CORE]` | 需要 `ANTHROPIC_API_KEY` + `anthropic` 包 |
 | UTE L1 — 跨会话调用计数 | `[EXTENDED]` | Claude Code hooks（`ute-tracker.js`） |
 | UTE L2 — 跨用户集体进化 | `[EXTENDED]` | AGGREGATE 流水线 + 共享后端 |
 | SHARE — 推送 / 拉取远程注册表 | `[EXTENDED]` | S3 / OSS / HTTP 后端 |
@@ -103,8 +105,9 @@ cd skill-writer
 
 - [skill-framework.md](skill-framework.md) — 规范主文件（精简主入口 ≤ 500 行，细节拆入 refs/）
 - [skill-framework-index.md](skill-framework-index.md) — refs/ 文件索引
-- [refs/mode-router.md](refs/mode-router.md) — 8 个模式的路由表
-- [refs/modes/](refs/modes/) — 逐模式详细规格（CREATE / LEAN / EVALUATE / OPTIMIZE / INSTALL / COLLECT / SHARE / GRAPH）
+- [refs/mode-router.md](refs/mode-router.md) — 9 个模式的路由表
+- [refs/modes/](refs/modes/) — 逐模式详细规格（CREATE / LEAN / EVALUATE / OPTIMIZE / BENCHMARK / INSTALL / COLLECT / SHARE / GRAPH）
+- [agents/](agents/) — BENCHMARK 模式 Agent 规格（executor / comparator / analyzer / grader）
 - [eval/rubrics.md](eval/rubrics.md) — 1000 分评分细则
 - [optimize/strategies.md](optimize/strategies.md) — 8 维度 10 步优化方法
 - [CHANGELOG.md](CHANGELOG.md) — 更新日志

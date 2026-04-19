@@ -62,12 +62,13 @@ Not all features require infrastructure. This table shows what works out-of-the-
 | Trust-chain verification for pulled skills | `[EXTENDED]` | Registry with Ed25519 dual-layer signing (v3.5.0) |
 | Real trigger-accuracy eval (`scripts/run_trigger_eval.py`) | `[CORE]` | Needs `ANTHROPIC_API_KEY` + a trigger-eval JSON set |
 | Iterative description optimizer (`scripts/optimize_description.py`) | `[CORE]` | Needs `ANTHROPIC_API_KEY`; 60/40 train/test split |
+| BENCHMARK A/B empirical test (`scripts/run_benchmark.py`) | `[CORE]` | Needs `ANTHROPIC_API_KEY` + `anthropic` package |
 
 > **Legend**:
 > - `[CORE]` — shipped and works anywhere with zero setup.
 > - `[EXTENDED]` — shipped but needs opt-in infra (hooks, backend, signing).
 >
-> **Unsure?** Assume `[CORE]` only. All 8 modes work fully without any backend — `[EXTENDED]` adds persistence and collective learning.
+> **Unsure?** Assume `[CORE]` only. All 9 modes work fully without any backend — `[EXTENDED]` adds persistence and collective learning.
 >
 > Features previously listed as `[ROADMAP]` (GoS full bundle retrieval, GEPA S15 reflective OPTIMIZE, MCP tool server) are no longer advertised here. See `experimental/` for skeleton code; do not base production workflows on it.
 

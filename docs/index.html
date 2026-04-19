@@ -176,7 +176,7 @@
                         <div class="stat-label" data-i18n="stats.platforms">Supported platforms</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">8</div>
+                        <div class="stat-number">9</div>
                         <div class="stat-label" data-i18n="stats.modes">Work modes</div>
                     </div>
                 </div>
@@ -334,6 +334,18 @@
                         <li data-i18n="features.ute.li2"><strong>Time:</strong> freshness check</li>
                         <li data-i18n="features.ute.li3"><strong>Usage:</strong> usage-rate analysis</li>
                         <li data-i18n="features.ute.li4">8-dimension, 10-step optimization loop</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔬</div>
+                    <h3 class="feature-title" data-i18n="features.benchmark.title">Empirical A/B Benchmarking</h3>
+                    <p class="feature-desc" data-i18n="features.benchmark.desc">BENCHMARK mode runs parallel API calls (with-skill vs. baseline), blind-grades via Comparator agent, and reports delta_pass_rate + token overhead + PASS/FAIL verdict. (v3.5.0)</p>
+                    <ul class="feature-list">
+                        <li data-i18n="features.benchmark.li1">Parallel execution: ThreadPoolExecutor A/B harness</li>
+                        <li data-i18n="features.benchmark.li2">Blind grading: Comparator agent sees no labels</li>
+                        <li data-i18n="features.benchmark.li3">Token overhead: LOW / MODERATE / HIGH / CRITICAL tiers</li>
+                        <li data-i18n="features.benchmark.li4">Verdicts: BENCHMARK_PASS / MARGINAL / FAIL / INCONCLUSIVE</li>
                     </ul>
                 </div>
             </div>
@@ -583,6 +595,7 @@
                             <li data-i18n="roadmap.current.li6">OWASP Agentic Skills Top 10 (ASI01–ASI10) security scanning</li>
                             <li data-i18n="roadmap.current.li7">8-platform support (Claude / OpenClaw / OpenCode / Cursor / Gemini / OpenAI / Kimi / Hermes)</li>
                             <li data-i18n="roadmap.current.li8">Real trigger-accuracy evaluation that breaks generator self-bias</li>
+                            <li data-i18n="roadmap.current.li9">BENCHMARK mode: empirical A/B harness with blind Comparator grading + token overhead analysis (v3.5.0)</li>
                         </ul>
                     </div>
                 </div>
@@ -746,6 +759,12 @@
             'features.ute.li2': '<strong>Time：</strong>新鲜度检查',
             'features.ute.li3': '<strong>Usage：</strong>使用率分析',
             'features.ute.li4': '8 维度 10 步优化循环',
+            'features.benchmark.title': '实证 A/B 基准测试',
+            'features.benchmark.desc': 'BENCHMARK 模式并行调用 API（有技能 vs 无技能），通过 Comparator Agent 盲评打分，输出 delta_pass_rate + token 开销 + PASS/FAIL 结论。（v3.5.0）',
+            'features.benchmark.li1': '并行执行：ThreadPoolExecutor A/B 测试框架',
+            'features.benchmark.li2': '盲评打分：Comparator Agent 不知道哪个是有技能版本',
+            'features.benchmark.li3': 'Token 开销：LOW / MODERATE / HIGH / CRITICAL 四级',
+            'features.benchmark.li4': '结论：BENCHMARK_PASS / MARGINAL / FAIL / INCONCLUSIVE',
             'cert.title': '认证等级',
             'cert.subtitle': '4 级认证体系，让质量一目了然。',
             'cert.platinum': '卓越品质，各项指标优秀。',
@@ -791,6 +810,7 @@
             'roadmap.current.li6': 'OWASP Agentic Skills Top 10（ASI01–ASI10）安全检测',
             'roadmap.current.li7': '8 平台支持（Claude / OpenClaw / OpenCode / Cursor / Gemini / OpenAI / Kimi / Hermes）',
             'roadmap.current.li8': '真实触发词准确度评测（打破生成器自偏差）',
+            'roadmap.current.li9': 'BENCHMARK 模式：实证 A/B 框架，盲评 Comparator + token 开销分析（v3.5.0）',
             'roadmap.next.title': '下一步 — 计划中',
             'roadmap.next.li1': '技能市场 / 注册表 Web UI',
             'roadmap.next.li2': 'VS Code 插件',
