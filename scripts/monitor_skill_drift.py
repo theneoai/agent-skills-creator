@@ -41,12 +41,13 @@ Exit codes:
   0 = OK (drift within normal range)
   1 = error
   2 = WARNING (drift -20 to -50 pts — re-evaluation recommended)
-  3 = DRIFT (drift > -50 pts — re-certification required)
+  3 = DRIFT (drift <= -50 pts — re-certification required)
 """
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 from pathlib import Path

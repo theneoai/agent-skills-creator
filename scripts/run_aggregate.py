@@ -314,13 +314,13 @@ Based on this data, produce ranked improvement recommendations as JSON."""
 
 # ── Report generation ─────────────────────────────────────────────────────────
 
-def build_report(stats: dict, synthesis: dict, dry_run: bool = False) -> tuple[dict, str]:
+def build_report(stats: dict, synthesis: dict, model: str = DEFAULT_MODEL) -> tuple[dict, str]:
     """Build the final JSON report and Markdown summary."""
     report = {
         "skill": stats["primary_skill"],
         "n_artifacts": stats["n_artifacts"],
         "generated_by": "run_aggregate.py",
-        "model": MODEL,
+        "model": model,
         "statistics": stats,
         "synthesis": synthesis,
     }
@@ -462,7 +462,7 @@ def run_aggregate(
             print(f"  ⚠ Synthesis error: {synthesis['error']}", file=sys.stderr)
             return 1
 
-    report, md = build_report(stats, synthesis, dry_run)
+    report, md = build_report(stats, synthesis, model=model)
 
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "aggregate-report.json").write_text(json.dumps(report, indent=2))
