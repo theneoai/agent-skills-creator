@@ -1,16 +1,16 @@
 ---
 name: skill-writer
-version: "3.4.0"
-description: "Meta-skill framework: CREATE from templates, LEAN/EVALUATE/OPTIMIZE lifecycle, GRAPH mode for GoS bundle retrieval, COLLECT for collective skill evolution, Edit Audit Guard, Skill Registry v2.0 + Skill Summary heuristic weighted ranking, three-tier Hook routing layer (AGENTS.md + UserPromptSubmit Hook + triggers), Trigger Discovery pipeline, UTE 2.0 two-tier self-improvement, and deploy to 8 platforms including MCP."
+version: "3.5.1"
+description: "Meta-skill framework: CREATE from templates, LEAN/EVALUATE/OPTIMIZE lifecycle, GRAPH mode for GoS bundle retrieval, COLLECT for collective skill evolution, Edit Audit Guard, Skill Registry v2.0 + Skill Summary heuristic weighted ranking, three-tier Hook routing layer (AGENTS.md + UserPromptSubmit Hook + triggers), Trigger Discovery pipeline, UTE 2.0 two-tier self-improvement, GEPA reflective evolutionary optimizer (S17), statistical multi-run EVALUATE (S18), GitHub Gist zero-infra UTE backend, and deploy to 8 platforms including MCP."
 description_i18n:
-  en: "Full lifecycle meta-skill framework: CREATE from templates (3-tier hierarchy, negative boundaries, Skill Summary, optional graph: block), LEAN fast-eval (500pt triage), EVALUATE 4-phase 1000pt pipeline + OWASP Agentic Top 10, OPTIMIZE 8-dim loop + S10/S11/S12 graph strategies + co-evolutionary VERIFY, GRAPH mode (GoS bundle retrieval, health checks, dependency resolution), COLLECT with bundle context for collective evolution (collective-evolution design + reinforcement-style evolution design compatible), skill registry v2.0 + SHARE, Skill Summary heuristic weighted ranking + quality threshold gate, three-tier Hook routing (AGENTS.md + UserPromptSubmit Hook + trigger phrases), Trigger Discovery pipeline (AGGREGATE Rule 4), UTE 2.0 L1/L2, deploy to 8 platforms."
-  zh: "全生命周期元技能框架：支持可选graph:块的三层层级结构+负向边界+检索优化摘要的CREATE、LEAN快速评测（500分分诊）、OWASP Agentic Top 10安全检测的4阶段EVALUATE、含S10/S11/S12图策略+协同进化VERIFY的OPTIMIZE、GoS包检索+健康检查+依赖解析的GRAPH模式、含包上下文的reinforcement-style evolution design+collective-evolution design兼容COLLECT、技能注册表v2.0+共享、Skill Summary heuristic加权排序+质量阈值门控、三层Hook路由（AGENTS.md+UserPromptSubmit Hook+触发词短语）、触发词发现流水线（AGGREGATE规则4）、UTE 2.0双层自进化、部署至8平台。"
+  en: "Full lifecycle meta-skill framework: CREATE from templates (3-tier hierarchy, negative boundaries, Skill Summary, optional graph: block), LEAN fast-eval (500pt triage), EVALUATE 4-phase 1000pt pipeline + OWASP Agentic Top 10, OPTIMIZE 8-dim loop + S10/S11/S12 graph strategies + co-evolutionary VERIFY, GEPA reflective evolutionary optimizer (S17, scripts/run_gepa_optimize.py), statistical multi-run EVALUATE (S18, scripts/run_multi_eval.py), GitHub Gist zero-infra UTE backend (scripts/ute_gist_backend.py), GRAPH mode (GoS bundle retrieval, health checks, dependency resolution), COLLECT with bundle context for collective evolution, skill registry v2.0 + SHARE, three-tier Hook routing (AGENTS.md + UserPromptSubmit Hook + trigger phrases), Trigger Discovery pipeline (AGGREGATE Rule 4), UTE 2.0 L1/L2, deploy to 8 platforms."
+  zh: "全生命周期元技能框架：支持可选graph:块的三层层级结构+负向边界+检索优化摘要的CREATE、LEAN快速评测（500分分诊）、OWASP Agentic Top 10安全检测的4阶段EVALUATE、含S10/S11/S12图策略+协同进化VERIFY的OPTIMIZE、GEPA反射进化优化器（S17，scripts/run_gepa_optimize.py）、统计多轮评测（S18，scripts/run_multi_eval.py）、GitHub Gist零基础设施UTE后端（scripts/ute_gist_backend.py）、GoS包检索+健康检查+依赖解析的GRAPH模式、含包上下文的COLLECT、技能注册表v2.0+共享、三层Hook路由（AGENTS.md+UserPromptSubmit Hook+触发词短语）、触发词发现流水线（AGGREGATE规则4）、UTE 2.0双层自进化、部署至8平台。"
 
 license: MIT
 author:
   name: theneoai
 created: "2026-03-31"
-updated: "2026-04-15"
+updated: "2026-04-22"
 type: meta-framework
 skill_tier: planning
 
@@ -36,6 +36,9 @@ triggers:
     - "benchmark"
     - "run benchmark"
     - "A/B test this skill"
+    - "compose skills"
+    - "grasp plan"
+    - "build skill graph"
   zh:
     - "创建技能"
     - "评测技能"
@@ -44,11 +47,13 @@ triggers:
     - "技能图"
     - "基准测试"
     - "对比测试"
+    - "技能合成"
+    - "组合技能"
 
 interface:
   input: user-natural-language
   output: structured-skill
-  modes: [create, lean, evaluate, optimize, install, share, collect, graph, benchmark]
+  modes: [create, lean, evaluate, optimize, install, share, collect, graph, benchmark, compose]
   platforms: [claude, opencode, openclaw]
 
 extends:
@@ -103,7 +108,13 @@ replacement_skill: null
   Real eval pipeline (Bash-callable from any LLM session with tool access):
     scripts/run_trigger_eval.py       — trigger-accuracy eval (precision/recall/f1)
     scripts/optimize_description.py   — iterative description optimizer (60/40 train/test)
+    scripts/run_benchmark.py          — parallel A/B benchmark (with-skill vs. baseline)
     scripts/aggregate_benchmark.py    — aggregate grader outputs to benchmark.json
+    scripts/run_gepa_optimize.py      — GEPA reflective evolutionary optimizer (S17) [NEW v3.5.1]
+    scripts/run_multi_eval.py         — statistical multi-run EVALUATE w/ CI (S18) [NEW v3.5.1]
+    scripts/ute_gist_backend.py       — GitHub Gist zero-infra UTE L2 backend [NEW v3.5.1]
+    scripts/skill_graph.py            — GoS typed DAG model + gRaSP precondition-effect layer [NEW v3.5.1]
+    scripts/run_grasp_compose.py      — gRaSP 4-stage skill composition pipeline [NEW v3.5.1]
     scripts/emit_spec_pure.py         — emit agentskills.io v1.0 spec-pure frontmatter
     agents/grader.md                  — independent-grader prompt (spawn as subagent)
 -->
@@ -129,10 +140,14 @@ questions, direct API calls, or non-skill automation tasks — see Negative Boun
 | Create a new skill | `/create` + one-sentence description | `/创建` + 一句描述 | 2–5 min |
 | Fast quality check | `/lean` + skill content | `/快评` + 技能内容 | <5s |
 | Full certification | `/eval` + skill content | `/评测` + 技能内容 | ~60s |
+| **High-confidence cert** | **`run_multi_eval.py --runs 3`** | **统计多轮评测** | **~3 min** |
 | **Empirical A/B test** | **`/benchmark`** + skill + eval prompts | **`/基准测试`** + 技能 + 测试用例 | **2–10 min** |
 | Improve an existing skill | `/opt` + skill + eval report | `/优化` + 技能 + 评测报告 | 5–20 min |
+| **GEPA deep optimization** | **`run_gepa_optimize.py --skill <f>`** | **反射进化优化** | **10–30 min** |
 | Deploy to platforms | `/install [platform]` | `/安装 [平台]` | <30s |
 | Record session data | `/collect` | `/采集` | ~10s |
+| **UTE cross-session tracking** | **`ute_gist_backend.py record`** | **跨会话追踪** | **<5s** |
+| **gRaSP skill composition** | **`run_grasp_compose.py --objective "..."`** | **技能合成** | **~30s** |
 
 > **双语支持 / Bilingual**: All 8 modes work in English and Chinese. The router auto-detects
 > your language — use `/eval` or `评测`, `create a skill` or `创建新技能`, interchangeably.

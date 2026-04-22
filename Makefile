@@ -12,6 +12,13 @@
 #   make verify ARTIFACT=path  Verify Ed25519 signature on a release artifact
 #   make eval-trigger ARGS="--skill ... --eval-set ..."   Run real trigger-accuracy eval
 #   make optimize-description ARGS="--skill ... --eval-set ..." Iterative description optimizer
+#   make gepa-optimize ARGS="--skill ..."  GEPA reflective evolutionary optimizer (S17)
+#   make multi-eval ARGS="--skill ..."     Statistical multi-run EVALUATE w/ CI (S18)
+#   make aggregate ARGS="--artifacts-dir ..." AGGREGATE collective evolution pipeline
+#   make drift-check ARGS="--skill ..."   Monitor skill LEAN score drift vs baseline
+#   make ute-init SKILL=name LEAN=N       Initialize GitHub Gist UTE backend
+#   make ute-record SKILL=name            Record one skill invocation to Gist
+#   make ute-status SKILL=name            Show UTE state and pending cadence events
 #   make install           Auto-detect and install to local platforms
 #   make install-all       Install to all 8 platforms
 #   make ci                Run lint + validate + check-version + check-spec-compat
@@ -20,6 +27,8 @@
 .PHONY: help lint validate check-version check-spec-compat \
         build-platforms build-platforms-check sign verify \
         eval-trigger optimize-description emit-spec-pure \
+        gepa-optimize multi-eval aggregate drift-check \
+        ute-init ute-record ute-status \
         check-platform-sync install install-all ci
 
 VERSION := $(shell cat VERSION)
@@ -42,6 +51,22 @@ help:
 	@echo "  optimize-description     Iterative description optimizer (needs ANTHROPIC_API_KEY)"
 	@echo "  emit-spec-pure           Emit skill to agentskills.io v1.0 spec-pure layout"
 	@echo "  check-platform-sync      Diff all platform skill files against claude/skill-writer.md"
+	@echo ""
+	@echo "  ── v3.5.1 evolutionary & statistical tools (need ANTHROPIC_API_KEY) ──"
+	@echo "  gepa-optimize ARGS=...   GEPA reflective evolutionary optimizer (S17)"
+	@echo "                           Example: make gepa-optimize ARGS='--skill my-skill.md --rounds 10'"
+	@echo "  multi-eval ARGS=...      Statistical multi-run EVALUATE w/ CI (S18)"
+	@echo "                           Example: make multi-eval ARGS='--skill my-skill.md --runs 3'"
+	@echo "  aggregate ARGS=...       AGGREGATE collective evolution pipeline"
+	@echo "                           Example: make aggregate ARGS='--artifacts-dir artifacts/'"
+	@echo "  drift-check ARGS=...     Monitor LEAN drift vs certified baseline"
+	@echo "                           Example: make drift-check ARGS='--skill my-skill.md'"
+	@echo ""
+	@echo "  ── UTE GitHub Gist backend (need GITHUB_TOKEN) ──────────────────────"
+	@echo "  ute-init SKILL=name LEAN=N  Initialize Gist state for a skill"
+	@echo "  ute-record SKILL=name       Record one invocation"
+	@echo "  ute-status SKILL=name       Show state + cadence events"
+	@echo ""
 	@echo "  install                  Auto-detect installed platforms and install"
 	@echo "  install-all              Install to all 8 platforms"
 	@echo "  ci                       Full local CI (lint + validate + version + spec-compat + build-check + platform-sync)"
@@ -65,9 +90,6 @@ check-version:
 	@python3 scripts/check-version.py "$(VERSION)"
 
 # ── Platform sync check ──────────────────────────────────────────────────────
-# Compares each platform's skill-writer.md against the canonical claude/skill-writer.md.
-# Ignores platform-specific blocks (metadata.openclaw, Triggers: footer, MDC header, AGENTS.md refs).
-# Exits non-zero if any platform has diverged beyond platform-specific sections.
 
 check-platform-sync:
 	@echo "==> platform sync check (canonical: claude/skill-writer.md)"
@@ -80,8 +102,6 @@ check-spec-compat:
 	@python3 scripts/check-spec-compat.py
 
 # ── Single-source platform build (v3.5.0+) ────────────────────────────────────
-# Strict mode regenerates files from platforms.yaml; migration mode only warns
-# on drift. v3.5.0 ships in migration mode; v3.6.0 flips to strict.
 
 build-platforms:
 	@echo "==> build all platform files from platforms.yaml (strict)"
@@ -114,6 +134,56 @@ eval-trigger:
 optimize-description:
 	@echo "==> iterative description optimizer"
 	@python3 scripts/optimize_description.py $(ARGS)
+
+# ── v3.5.1 Evolutionary & statistical tools ──────────────────────────────────
+
+gepa-optimize:
+	@echo "==> GEPA reflective evolutionary optimizer (S17)"
+	@python3 scripts/run_gepa_optimize.py $(ARGS)
+
+multi-eval:
+	@echo "==> statistical multi-run EVALUATE (S18)"
+	@python3 scripts/run_multi_eval.py $(ARGS)
+
+aggregate:
+	@echo "==> AGGREGATE collective evolution pipeline"
+	@python3 scripts/run_aggregate.py $(ARGS)
+
+drift-check:
+	@echo "==> skill health drift check"
+	@python3 scripts/monitor_skill_drift.py $(ARGS)
+
+# ── gRaSP skill composition pipeline ─────────────────────────────────────────
+
+grasp-compose:
+	@echo "==> gRaSP 4-stage skill composition pipeline"
+	@if [ -z "$(OBJECTIVE)" ]; then \
+		echo "usage: make grasp-compose OBJECTIVE=\"<task>\" [SKILLS_DIR=<dir>] [SKILLS=<file...>] [ARGS=...]"; \
+		echo "  OBJECTIVE   task description for skill selection (required)"; \
+		echo "  SKILLS_DIR  directory of SKILL.md files (default: ~/.claude/skills/)"; \
+		echo "  SKILLS      space-separated list of specific skill files"; \
+		echo "  ARGS        extra flags: --dry-run, --json, --out DIR, --model MODEL"; \
+		exit 1; \
+	fi
+	@python3 scripts/run_grasp_compose.py \
+		$(if $(SKILLS_DIR),--skills-dir "$(SKILLS_DIR)",) \
+		$(if $(SKILLS),--skills $(SKILLS),) \
+		--objective "$(OBJECTIVE)" \
+		$(ARGS)
+
+# ── UTE GitHub Gist backend ──────────────────────────────────────────────────
+
+ute-init:
+	@if [ -z "$(SKILL)" ]; then echo "usage: make ute-init SKILL=<name> [LEAN=<score>]"; exit 1; fi
+	@python3 scripts/ute_gist_backend.py init --skill "$(SKILL)" $(if $(LEAN),--lean-score $(LEAN),)
+
+ute-record:
+	@if [ -z "$(SKILL)" ]; then echo "usage: make ute-record SKILL=<name>"; exit 1; fi
+	@python3 scripts/ute_gist_backend.py record --skill "$(SKILL)"
+
+ute-status:
+	@if [ -z "$(SKILL)" ]; then echo "usage: make ute-status SKILL=<name>"; exit 1; fi
+	@python3 scripts/ute_gist_backend.py status --skill "$(SKILL)"
 
 # ── Spec-pure emission (agentskills.io v1.0 conformance) ──────────────────────
 

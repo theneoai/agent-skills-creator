@@ -496,7 +496,139 @@ For graphs > 20 skills: show subgraph for specified skill only:
 
 ---
 
-## §9  Relationship to Other Specs
+## §9  gRaSP Layer: Precondition-Effect Verified Execution `[AVAILABLE]`
+
+> **Status**: `[AVAILABLE]` — `scripts/skill_graph.py` + `scripts/run_grasp_compose.py` ship in v3.5.1.
+> **Research basis**: "Graph-Structured Skill Compositions for LLM Agents" (arXiv:2604.17870, Tencent AI Lab, 2026).
+> **Key insight**: focused 2–5 skill DAGs with typed pre/postcondition edges outperform comprehensive skill lists;
+> DAG compilation reduces replanning complexity from O(N) to O(d^h).
+
+### §9.1  What gRaSP Adds to GoS
+
+| GoS Concept | gRaSP Extension |
+|-------------|----------------|
+| `depends_on` edges (YAML-declared) | + typed `preconditions`/`postconditions` per node |
+| LLM reads YAML, executes manually | + Python DAG compiler + runtime execution engine |
+| Cycle detection by DFS visited_set | + confidence-weighted cycle removal (weakest edge) |
+| No verification at each node | + postcondition check after each skill executes |
+| No repair on failure | + 5 typed structural repair operators |
+
+### §9.2  New YAML Frontmatter Fields
+
+Add to any SKILL.md frontmatter to enable gRaSP semantics:
+
+```yaml
+preconditions:
+  - "ANTHROPIC_API_KEY is set"
+  - "input skill.md file exists and is valid YAML"
+postconditions:
+  - "multi-eval-report.json written to out directory"
+  - "median LEAN score and CI computed across N runs"
+```
+
+These are declarative strings. The gRaSP compiler infers edges when a postcondition phrase
+of skill A has ≥ 2 keyword overlap with a precondition of skill B (heuristic, confidence=0.6).
+LLM-proposed edges retain confidence=1.0 and override heuristic duplicates.
+
+### §9.3  Four-Stage gRaSP Pipeline (`run_grasp_compose.py`)
+
+```
+Stage 1 — RETRIEVE
+  LLM selects 2–5 most relevant skills from the library for the given objective.
+  Rationale: focused subgraph outperforms loading all skills (context pollution).
+
+Stage 2 — COMPILE DAG
+  a. LLM proposes dependency edges (JSON, confidence=1.0)
+  b. Heuristic inference via compile_edges_from_conditions() (keyword overlap, confidence=0.6)
+  c. remove_cycles(): iteratively drop lowest-confidence blocking edge until DAG
+  d. Output: SkillDAG with topological execution order
+
+Stage 3 — VERIFIED EXECUTE
+  For each node in topological order:
+    Execute the skill (or simulate in dry-run)
+    Verify postconditions against declared postconditions
+    Mark node: verified=True | failure_type=<type>
+
+Stage 4 — TYPED REPAIR
+  On failure, select operator based on failure_type:
+    argument_refinement    — fix bad input arguments
+    alternative_invocation — use a similar_to substitute skill
+    precondition_correction — re-run precondition setup step
+    postcondition_relaxation — accept partial success if core output present
+    dependency_reordering  — swap execution order of non-blocking nodes
+  MAX_REPAIR_DEPTH = 2 (nested repairs)
+  FALLBACK_THRESHOLD = 0.40 cumulative confidence → signal ReAct fallback
+```
+
+### §9.4  Python API (`scripts/skill_graph.py`)
+
+```python
+from skill_graph import load_skill_library, SkillDAG, SkillNode, SkillEdge
+
+# Load all *.md files in a directory
+dag: SkillDAG = load_skill_library(Path("~/.claude/skills"))
+
+# Topological sort (Kahn's algorithm, blocking edges only)
+order: list[str] = dag.topological_sort()
+
+# Infer edges from precondition/postcondition keyword overlap (no API)
+inferred: list[SkillEdge] = dag.compile_edges_from_conditions()
+
+# Cycle resolution (removes weakest-confidence blocking edge)
+removed: list[SkillEdge] = dag.remove_cycles()
+
+# Subgraph for focused execution
+sub: SkillDAG = dag.subgraph(["skill-a", "skill-b", "skill-c"])
+```
+
+### §9.5  CLI Usage (`scripts/run_grasp_compose.py`)
+
+```bash
+# Compose 2–5 skills for an objective (full pipeline)
+python3 scripts/run_grasp_compose.py \
+  --skills-dir ~/.claude/skills/ \
+  --objective "run multi-eval on a skill and report LEAN drift" \
+  --out ./out/
+
+# Makefile shortcut
+make grasp-compose OBJECTIVE="run multi-eval on a skill" SKILLS_DIR=~/.claude/skills/
+
+# Dry-run: heuristic edge inference only, no API calls
+make grasp-compose OBJECTIVE="..." SKILLS_DIR=... ARGS="--dry-run"
+
+# JSON output for CI/automation
+python3 scripts/run_grasp_compose.py --objective "..." --json --out ./out/
+```
+
+Exit codes: `0`=all OK, `1`=error, `2`=partial failure, `3`=ReAct fallback triggered.
+
+### §9.6  Repair Operators Reference
+
+| Operator | When applied | What it does |
+|----------|-------------|--------------|
+| `argument_refinement` | bad input / wrong arg format | Re-prompts skill with corrected arguments |
+| `alternative_invocation` | skill not found / tier mismatch | Substitutes a `similar_to` skill |
+| `precondition_correction` | precondition not satisfied | Runs the prerequisite setup step first |
+| `postcondition_relaxation` | postcondition partially met | Accepts partial result if core output present |
+| `dependency_reordering` | execution order conflict | Reorders non-blocking nodes in the subgraph |
+
+### §9.7  Relationship to GoS MVR (§2a)
+
+gRaSP **supplements** the LLM-executable MVR, it does not replace it:
+
+| Feature | MVR §2a `[CORE]` | gRaSP §9 `[AVAILABLE]` |
+|---------|-----------------|----------------------|
+| Dependency resolution | ✓ LLM reads YAML | ✓ Python DAG compiler |
+| Requires API key | ✗ LLM-native | ✓ Yes (Stage 1+2+3) |
+| Cycle detection | ✓ visited_set guard | ✓ Confidence-weighted removal |
+| Postcondition verification | ✗ | ✓ Per-node after execution |
+| Structured repair | ✗ | ✓ 5 typed operators |
+| Dry-run / offline | ✓ Always | ✓ `--dry-run` flag |
+| Token budget check | ✓ 12k limit | ✗ Not enforced in pipeline |
+
+---
+
+## §10  Relationship to Other Specs
 
 | Spec | Role |
 |------|------|

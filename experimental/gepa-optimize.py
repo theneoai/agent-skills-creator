@@ -1,31 +1,32 @@
 #!/usr/bin/env python3
 """
-scripts/gepa-optimize.py — Reflective prompt evolution for skill OPTIMIZE mode.
+experimental/gepa-optimize.py — DEPRECATED SKELETON
 
-Status: SKELETON / ROADMAP v3.6.0
-   This file is scaffolding. It documents the shape of the S15 strategy
-   described in `optimize/strategies.md §4a`. The full GEPA integration
-   requires optional dependencies (dspy, gepa) and runtime LM access.
+This file has been superseded by the fully functional implementation at:
 
-Usage (future):
-    python3 scripts/gepa-optimize.py SKILL.md
-    python3 scripts/gepa-optimize.py --dry-run SKILL.md   # plan only, no calls
+    scripts/run_gepa_optimize.py
 
-Design notes:
-  - We deliberately keep this file runnable without dspy/gepa installed. When
-    the user asks for real optimization, we detect missing deps and print an
-    install hint.
-  - Rollouts = EVALUATE invocations. Budget capped at 500 per run (GEPA paper
-    reports SOTA with <500 rollouts).
-  - Fitness = 7-dim vector (NOT scalar), preserved for Pareto selection.
-  - Reflection step is an LM call that consumes up to 3 trajectory summaries
-    and returns 3 concrete diff proposals.
+The new script implements the complete GEPA reflective evolutionary algorithm
+(Agrawal et al. 2025, arXiv 2507.19457) using only the Anthropic API —
+no dspy or gepa package required.
 
-References:
-  - Agrawal et al. 2025, "GEPA: Reflective Prompt Evolution..." (arXiv 2507.19457)
-  - https://dspy.ai/api/optimizers/GEPA/overview/
-  - https://github.com/gepa-ai/gepa
+Usage (see scripts/run_gepa_optimize.py for full docs):
+    export ANTHROPIC_API_KEY=...
+    python3 scripts/run_gepa_optimize.py --skill my-skill.md --rounds 10
+
+This file is retained for reference only. Do not use for production optimization.
+See: optimize/strategies.md §4a (S17) for the strategy specification.
 """
+import sys
+
+def main() -> int:
+    print("⚠ This skeleton has been superseded by scripts/run_gepa_optimize.py")
+    print("  Run: python3 scripts/run_gepa_optimize.py --skill <skill.md>")
+    print("  See: optimize/strategies.md §4a (S17) for full specification")
+    return 2
+
+if __name__ == "__main__":
+    sys.exit(main())
 
 from __future__ import annotations
 

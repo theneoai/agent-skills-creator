@@ -178,9 +178,10 @@ def tool_optimize_plan(args: dict) -> dict:
         return {
             "mode": "optimize",
             "skill_path": skill_path,
-            "strategy": "gepa",
-            "status": "ROADMAP v3.6.0 — skeleton at scripts/gepa-optimize.py",
-            "fallback": "dimension-loop",
+            "strategy": "gepa-S17",
+            "status": "AVAILABLE — scripts/run_gepa_optimize.py",
+            "command": f"python3 scripts/run_gepa_optimize.py --skill {skill_path} --rounds 10",
+            "note": "No dspy/gepa required. Uses Anthropic API only.",
         }
     return {
         "mode": "optimize",
@@ -192,12 +193,155 @@ def tool_optimize_plan(args: dict) -> dict:
     }
 
 
+def tool_benchmark_plan(args: dict) -> dict:
+    """Return a plan + CLI command for running A/B benchmark."""
+    skill_path = args.get("skill_path")
+    cases_path = args.get("cases_path", "eval/trigger-eval.example.json")
+    out = args.get("out", "benchmarks/")
+    return {
+        "mode": "benchmark",
+        "skill_path": skill_path,
+        "command": (
+            f"python3 scripts/run_benchmark.py "
+            f"--skill {skill_path} --cases {cases_path} --out {out}"
+        ),
+        "script_ref": "scripts/run_benchmark.py",
+        "output": "benchmarks/<ISO-timestamp>/benchmark.json + benchmark.md",
+        "verdicts": ["BENCHMARK_PASS", "BENCHMARK_MARGINAL", "BENCHMARK_FAIL", "BENCHMARK_INCONCLUSIVE"],
+    }
+
+
+def tool_multi_eval(args: dict) -> dict:
+    """Run statistical multi-run EVALUATE via subprocess or return plan."""
+    skill_path = args.get("skill_path")
+    runs = args.get("runs", 3)
+    out = args.get("out", "eval/out")
+    execute = args.get("execute", False)
+    if execute:
+        cmd = [
+            sys.executable, str(ROOT / "scripts" / "run_multi_eval.py"),
+            "--skill", skill_path, "--runs", str(runs), "--out", out,
+        ]
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        return {
+            "exit_code": proc.returncode,
+            "stdout": proc.stdout,
+            "stderr": proc.stderr,
+            "pass": proc.returncode == 0,
+            "borderline": proc.returncode == 3,
+        }
+    return {
+        "mode": "multi_eval",
+        "skill_path": skill_path,
+        "runs": runs,
+        "command": f"python3 scripts/run_multi_eval.py --skill {skill_path} --runs {runs} --out {out}",
+        "script_ref": "scripts/run_multi_eval.py",
+        "output": f"{out}/multi-eval-report.json + multi-eval-report.md",
+        "exit_codes": {"0": "certified", "2": "FAIL", "3": "BORDERLINE"},
+    }
+
+
+def tool_gepa_optimize(args: dict) -> dict:
+    """Run GEPA reflective evolutionary optimizer via subprocess or return plan."""
+    skill_path = args.get("skill_path")
+    rounds = args.get("rounds", 10)
+    population = args.get("population", 5)
+    out = args.get("out", "gepa-output")
+    execute = args.get("execute", False)
+    if execute:
+        cmd = [
+            sys.executable, str(ROOT / "scripts" / "run_gepa_optimize.py"),
+            "--skill", skill_path, "--rounds", str(rounds),
+            "--population", str(population), "--out", out,
+        ]
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        return {
+            "exit_code": proc.returncode,
+            "stdout": proc.stdout[-3000:],   # trim for MCP payload size
+            "stderr": proc.stderr,
+            "pass": proc.returncode == 0,
+        }
+    return {
+        "mode": "gepa_optimize",
+        "strategy": "S17",
+        "skill_path": skill_path,
+        "rounds": rounds,
+        "population": population,
+        "command": (
+            f"python3 scripts/run_gepa_optimize.py "
+            f"--skill {skill_path} --rounds {rounds} --population {population} --out {out}"
+        ),
+        "script_ref": "scripts/run_gepa_optimize.py",
+        "output": f"{out}/best-skill.md + gepa-report.json + gepa-report.md",
+        "note": "No dspy/gepa required. Requires ANTHROPIC_API_KEY.",
+    }
+
+
+def tool_aggregate(args: dict) -> dict:
+    """Run AGGREGATE pipeline on session artifacts."""
+    artifacts_dir = args.get("artifacts_dir")
+    artifacts = args.get("artifacts", [])
+    out = args.get("out", "aggregate-out")
+    execute = args.get("execute", False)
+    if execute:
+        cmd = [sys.executable, str(ROOT / "scripts" / "run_aggregate.py"),
+               "--out", out]
+        if artifacts_dir:
+            cmd += ["--artifacts-dir", artifacts_dir]
+        elif artifacts:
+            cmd += ["--artifacts"] + artifacts
+        else:
+            return {"error": "provide artifacts_dir or artifacts list"}
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        return {
+            "exit_code": proc.returncode,
+            "stdout": proc.stdout,
+            "stderr": proc.stderr,
+        }
+    return {
+        "mode": "aggregate",
+        "artifacts_dir": artifacts_dir,
+        "command": f"python3 scripts/run_aggregate.py --artifacts-dir {artifacts_dir or 'artifacts/'} --out {out}",
+        "script_ref": "scripts/run_aggregate.py",
+        "output": f"{out}/aggregate-report.json + aggregate-report.md",
+    }
+
+
+def tool_drift_check(args: dict) -> dict:
+    """Check skill drift vs certified baseline."""
+    skill_path = args.get("skill_path")
+    execute = args.get("execute", False)
+    if execute:
+        cmd = [sys.executable, str(ROOT / "scripts" / "monitor_skill_drift.py"),
+               "--skill", skill_path, "--json"]
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        try:
+            return json.loads(proc.stdout) if proc.stdout else {"exit_code": proc.returncode}
+        except json.JSONDecodeError:
+            return {"exit_code": proc.returncode, "stdout": proc.stdout}
+    return {
+        "mode": "drift_check",
+        "skill_path": skill_path,
+        "command": f"python3 scripts/monitor_skill_drift.py --skill {skill_path} --json",
+        "script_ref": "scripts/monitor_skill_drift.py",
+        "thresholds": {"OK": "drift > -20 pts", "WARNING": "-20 to -50 pts", "DRIFT": "< -50 pts"},
+    }
+
+
 # ── MCP server shim (attempts real SDK, falls back to stdio JSON-RPC) ────────
 
 TOOL_TABLE = {
+    # LLM-delegation tools (return plan for host LLM to execute)
     "skill_writer__lean":            tool_lean_plan,
     "skill_writer__evaluate":        tool_evaluate_plan,
     "skill_writer__optimize":        tool_optimize_plan,
+    # Script-execution tools (run local scripts directly)
+    "skill_writer__benchmark":       tool_benchmark_plan,
+    "skill_writer__multi_eval":      tool_multi_eval,
+    "skill_writer__gepa":            tool_gepa_optimize,
+    "skill_writer__aggregate":       tool_aggregate,
+    "skill_writer__drift_check":     tool_drift_check,
+    # Utility tools
     "skill_writer__check_spec":      tool_check_spec,
     "skill_writer__build_platforms": tool_build_platforms,
     "skill_writer__verify_sig":      tool_verify_sig,
@@ -205,13 +349,34 @@ TOOL_TABLE = {
 }
 
 TOOL_DESCRIPTIONS = {
-    "skill_writer__lean": "Produce a LEAN fast-eval plan for a skill file (host LLM executes).",
-    "skill_writer__evaluate": "Produce an EVALUATE 4-phase plan for a skill file (host LLM executes).",
-    "skill_writer__optimize": "Produce an OPTIMIZE plan (dimension-loop or GEPA).",
-    "skill_writer__check_spec": "Run scripts/check-spec-compat.py locally.",
-    "skill_writer__build_platforms": "Run scripts/build-platforms.py in check mode.",
-    "skill_writer__verify_sig": "Verify Ed25519 signatures on release artifacts.",
-    "skill_writer__list_skills": "Enumerate installed skill files.",
+    "skill_writer__lean":
+        "Produce a LEAN fast-eval plan for a skill file (host LLM executes).",
+    "skill_writer__evaluate":
+        "Produce an EVALUATE 4-phase plan for a skill file (host LLM executes).",
+    "skill_writer__optimize":
+        "Produce an OPTIMIZE plan (dimension-loop or GEPA S17).",
+    "skill_writer__benchmark":
+        "Return benchmark CLI command + plan for A/B parallel evaluation.",
+    "skill_writer__multi_eval":
+        "Run statistical multi-run EVALUATE (S18) — N passes, median score + CI. "
+        "Set execute=true to run immediately.",
+    "skill_writer__gepa":
+        "Run GEPA reflective evolutionary optimizer (S17) — no dspy required. "
+        "Set execute=true to run immediately.",
+    "skill_writer__aggregate":
+        "Run AGGREGATE pipeline on session artifacts — synthesize collective "
+        "evolution recommendations. Set execute=true to run immediately.",
+    "skill_writer__drift_check":
+        "Check skill health: compare current LEAN score vs certified baseline. "
+        "Set execute=true to run immediately.",
+    "skill_writer__check_spec":
+        "Run scripts/check-spec-compat.py locally.",
+    "skill_writer__build_platforms":
+        "Run scripts/build-platforms.py in check mode.",
+    "skill_writer__verify_sig":
+        "Verify Ed25519 signatures on release artifacts.",
+    "skill_writer__list_skills":
+        "Enumerate installed skill files.",
 }
 
 

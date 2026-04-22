@@ -110,59 +110,114 @@ CURATE:
 
 ---
 
-## §4a  Reflective Optimization Frontier — GEPA (S15) `[ROADMAP v3.6.0]`
+## §4a  Reflective Optimization Frontier — GEPA (S17) `[AVAILABLE]`
 
 > **Research basis**: Agrawal et al. 2025, *"GEPA: Reflective Prompt Evolution
 > Can Outperform Reinforcement Learning"* (arXiv 2507.19457).
-> **Status**: Design ready; skeleton at `experimental/gepa-optimize.py`; end-to-end
-> integration pending v3.6.0.
+> **Status**: Fully implemented in `scripts/run_gepa_optimize.py` — requires only
+> `pip install anthropic` (no dspy or gepa package needed).
 > **Why add GEPA**: The in-session 10-step loop (§2) is a local hill climber.
 > GEPA is a *reflective evolutionary* optimizer that leverages the LM's ability
 > to reflect on trajectories ("what went well / what didn't / what to try")
-> rather than purely scalar rewards. It has been shown to converge in **100–500
-> rollouts vs 10,000+ for RL** with better final scores — a strong fit for
-> skill optimization where each rollout costs real inference time.
+> rather than purely scalar rewards. It converges in **100–500 rollouts vs
+> 10,000+ for RL** with better final scores — a strong fit for skill optimization
+> where each rollout costs real inference time.
 
-### S15 — Reflective Prompt Evolution
+### S17 — Reflective Prompt Evolution (GEPA)
 
 **Target dimension**: ANY (GEPA is dimension-agnostic; it optimizes the full skill)
 **Estimated delta**: comparable to 15–20 rounds of S1–S14 combined, in ~1/3 the rollouts
-**Runs**: Opt-in alternative to the standard 10-step loop; activated via `/optimize --gepa`
+**Activation**: `/optimize --gepa` OR `python3 scripts/run_gepa_optimize.py --skill <skill.md>`
 
-**Algorithm (simplified)**:
+**Quickstart**:
 
-1. **Initialize** — seed population with the current skill + N=3 diverse perturbations (e.g. S1, S3, S5 applied independently).
-2. **Evaluate** — run EVALUATE on every member; record dimension scores + rich textual feedback.
-3. **Reflect** — ask the LM: "Given these trajectories and feedback, what specific edits would most improve the lowest-dimension skills? Propose 3 concrete changes and why."
-4. **Crossover + Mutate** — produce K=5 offspring by combining winning edits from different parents (Pareto-optimal on 7 dimensions).
-5. **Select** — keep top-M=3 by sum-of-dimensions, retain 1 elite, replace rest.
-6. **Repeat** until convergence detected (§3) or round budget exhausted.
-7. **VERIFY** — final cross-validation identical to §2 step 10.
+```bash
+export ANTHROPIC_API_KEY=...
+python3 scripts/run_gepa_optimize.py --skill my-skill.md --rounds 10 --out gepa-out/
+# Output: gepa-out/best-skill.md  gepa-out/gepa-report.json  gepa-out/gepa-report.md
+```
 
-**Why it works**: Step 3's *reflection* turns natural-language EVALUATE feedback
-into structured edit proposals. Unlike RL, there's no scalar reward gradient to
-estimate — each rollout yields a detailed reason-trace that the LM consumes.
+**Algorithm (7 stages)**:
+
+1. **Seed** — base skill + N=3 diverse perturbations via S1/S3/S5 strategies
+2. **Evaluate** — 7-dim LEAN scoring + textual feedback per variant (LLM judge)
+3. **Reflect** — LM proposes 3 concrete edit candidates from top-K trajectories
+4. **Crossover** — apply edits to Pareto-optimal parents → produce K=5 offspring
+5. **Select** — keep top-M=3 by total score, retain 1 elite (never replaced)
+6. **Loop** — until convergence (plateau/volatility) or round budget exhausted
+7. **Verify** — context-reset independent LEAN pass (identical to §2 step 10)
+
+**Why it outperforms §2**: Step 3's *reflection* turns natural-language evaluation
+feedback into structured edit proposals. Unlike RL, no scalar reward gradient —
+each rollout yields a detailed reason-trace consumed by the next generation.
+Diverse population avoids local optima that the sequential §2 loop gets stuck in.
 
 **When to prefer over §2**:
-- Expensive rollouts (e.g. Pragmatic Test with real API calls)
-- Skills that plateau in §2 below SILVER (score 800)
-- Multi-objective targeting (optimize D5 + D6 simultaneously)
+- Skills that plateau in §2 below SILVER (score < 800 after 10+ rounds)
+- Multi-objective targeting (optimize D5 + D6 simultaneously without regressing D3)
+- First optimization pass on a completely new skill domain (broad exploration needed)
 
 **When §2 still wins**:
-- Single-dimension bottleneck (S1–S14 are more surgical)
-- Skills already ≥ GOLD (900) — diminishing returns
-- Offline/cached environments where rollout cost is negligible
+- Single-dimension bottleneck (S1–S14 are more surgical for targeted fixes)
+- Skills already ≥ GOLD (900) — diminishing returns from population diversity
+- Budget-constrained environments (GEPA uses N×population API calls per round)
 
-**Integration plan**:
+**Cost estimate**: `rounds × population × 3` API calls per run.
+Default (10 rounds, 5 pop): ~150 API calls. Approx $0.30–0.60 at Sonnet pricing.
 
-| Version  | Milestone |
-|----------|-----------|
-| v3.5.0   | Skeleton + design doc shipped; `/optimize --gepa` returns "planned" |
-| v3.5.1   | DSPy + gepa-ai/gepa optional dependency; `--dry-run` produces plan |
-| v3.6.0   | Full integration; S15 default for skills in FAIL tier on first OPTIMIZE |
+**Reference**: `scripts/run_gepa_optimize.py` (replaces `experimental/gepa-optimize.py`)
 
-**Reference implementation**: `experimental/gepa-optimize.py` (skeleton; requires
-`pip install dspy gepa` at runtime — NOT a hard dep of skill-writer).
+---
+
+## §10  Statistical Certification (S18) `[AVAILABLE]`
+
+> **Why S18?** The 4-phase EVALUATE pipeline has inherent LLM-judged variance
+> of ±20–40 pts in Phase 3. For PLATINUM/GOLD certification, a ±30 pt swing
+> can change the tier. S18 runs N independent evaluation passes and uses the
+> median score + confidence interval for certification decisions — eliminating
+> single-run noise from high-stakes certification.
+
+### S18 — Multi-Run Statistical Evaluation
+
+**Target dimension**: Certification reliability (meta-strategy, not content improvement)
+**When to use**:
+- Targeting PLATINUM (≥950) or GOLD (≥900) tier where ±30 pts changes the result
+- Skill is consistently at the border between two tiers
+- Team or production-critical skills where certification confidence matters
+- After `/opt` converges near a tier boundary and you want confirmation
+
+**Activation**:
+```bash
+export ANTHROPIC_API_KEY=...
+python3 scripts/run_multi_eval.py --skill my-skill.md --runs 3 --out eval/out/
+# Output: eval/out/multi-eval-report.json  eval/out/multi-eval-report.md
+```
+
+**What it computes**:
+- Median score across N=3 independent LLM evaluator passes
+- Confidence interval (max–min spread across runs)
+- Per-dimension coefficient of variation (identifies noisy dimensions)
+- Borderline detection: flags if median is within 30/1000 pts of a tier boundary
+
+**Interpretation**:
+| CI width | Meaning | Action |
+|----------|---------|--------|
+| ≤ 20 pts | Consistent — safe to certify | Use median tier |
+| 20–40 pts | Moderate variance | Note uncertainty; use median tier |
+| > 40 pts | High variance — unreliable | Fix high-CV dimensions first, then re-run |
+| Borderline | Within 30 pts of boundary | Run 1 additional pass; use conservative tier |
+
+**Cost**: `runs × 1` API calls per run. Default (3 runs): ~3 API calls. Approx $0.01–0.03.
+
+**S18 does NOT improve the skill** — it improves certification confidence.
+Always pair S18 with content improvement strategies (S1–S17) when score is below target tier.
+
+**In the selection matrix**:
+```
+Targeting PLATINUM/GOLD AND score near boundary → S18 (run for certification confidence)
+High-variance Phase 3 score (re-run shows ±40+ pts) → S18 to identify noisy dimensions
+After S17 (GEPA) converges → S18 to get reliable final certification
+```
 
 ---
 
@@ -649,6 +704,18 @@ Lowest-scoring dimension → apply strategy
   Skill > 400 lines    → S10 (extraction, consider proactively)
   Pragmatic Test WEAK/FAIL → S13 (pragmatic failure recovery)
   Score plateau ≥ 5 rounds → S14 (score history analysis → strategy switch)
+
+  ── Token-efficiency (v3.5.0) ──
+  /benchmark token_overhead_pct > 100%   → S15 (body slimming, then S16)
+  /benchmark delta_pass_rate < 0.15      → S16 (benchmark-driven fix)
+  Both present                           → S15 first, then S16
+
+  ── Evolutionary / statistical (v3.5.1) ──
+  Score plateau below SILVER after 10+ rounds → S17 (GEPA reflective evolution)
+  Multi-dimension bottleneck (≥2 dims < 50%)  → S17 (population diversity breaks deadlock)
+  Targeting PLATINUM/GOLD near tier boundary  → S18 (multi-run statistical eval)
+  Phase 3 variance ±30+ pts between runs      → S18 (identify noisy dimensions)
+  After S17 converges → run S18 for reliable final score
 ```
 
 **Cycle budget**:

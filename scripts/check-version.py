@@ -23,7 +23,8 @@ def get_expected_version(argv):
         return argv[1].strip()
     version_file = os.path.join(ROOT, 'VERSION')
     if os.path.exists(version_file):
-        return open(version_file).read().strip()
+        with open(version_file) as f:
+            return f.read().strip()
     print('  ✗ no VERSION argument and VERSION file not found', file=sys.stderr)
     sys.exit(1)
 
@@ -40,7 +41,8 @@ def main():
             print(f'  ⚠ {p}/skill-writer.{ext}: missing (skipped)')
             continue
 
-        content = open(skill_file).read()
+        with open(skill_file) as f:
+            content = f.read()
         m = re.search(r'^version:\s+"?([^"\n]+)"?', content, re.MULTILINE)
         if not m:
             errors.append(f'{p}/skill-writer.{ext}: no version field found in YAML frontmatter')

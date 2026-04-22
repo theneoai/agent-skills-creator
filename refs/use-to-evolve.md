@@ -186,6 +186,78 @@ This is the complete implementation described in §1–§6 above.
 
 ---
 
+## §7b  GitHub Gist Backend `[AVAILABLE — zero infrastructure]`
+
+> **Why Gist?** UTE L2 cross-session tracking requires a persistent counter store,
+> but most deployments don't have SQLite, Redis, or a custom API. GitHub Gist is
+> free, requires only a personal access token (scope: `gist`), and stores structured
+> JSON that any Claude session can read via the GitHub API.
+>
+> This upgrades `cumulative_invocations`, `cadence_events`, and artifact storage
+> from `[EXTENDED]` (session-local) to near-`[CORE]` (persisted cross-session)
+> with **zero server setup**.
+
+### Setup (5 minutes)
+
+```bash
+# 1. Install (requests is optional; script falls back to urllib)
+pip install requests   # optional — improves error messages
+
+# 2. Set your GitHub token (scope: gist)
+export GITHUB_TOKEN=ghp_your_token_here
+
+# 3. Initialize a UTE state Gist for your skill
+python3 scripts/ute_gist_backend.py init --skill my-skill --lean-score 380
+#  ✓ Creates: https://gist.github.com/<your-gist-id>  (private)
+
+# 4. Add the Gist ID to your skill's YAML frontmatter
+#    use_to_evolve:
+#      gist_id: "<returned-gist-id>"
+```
+
+### Daily Operations
+
+```bash
+# After each skill invocation (call from a PostToolUse hook or manually):
+python3 scripts/ute_gist_backend.py record --skill my-skill
+# Returns exit 2 when a cadence event fires (health check due)
+
+# Check current state and pending events:
+python3 scripts/ute_gist_backend.py status --skill my-skill
+
+# After running COLLECT mode, store the session artifact:
+python3 scripts/ute_gist_backend.py add-artifact --skill my-skill --artifact session.json
+
+# When you have 2+ artifacts, export for AGGREGATE mode:
+python3 scripts/ute_gist_backend.py export-artifacts --skill my-skill --out artifacts/
+# Then: paste artifacts/my-skill-artifacts-all.json into AGGREGATE mode
+```
+
+### Enforcement status with Gist backend
+
+| UTE Item | Without Gist | With Gist backend |
+|----------|-------------|-------------------|
+| `cumulative_invocations` persistence | `[EXTENDED]` — resets | `[CORE]` — Gist-persisted |
+| Cadence checks (10/50/100) | `[EXTENDED]` — approximate | `[CORE]` — count-gated |
+| Session artifact storage | `[EXTENDED]` — manual | `[CORE]` — API-persisted |
+| Patch history log | `[EXTENDED]` — session-only | `[CORE]` — Gist-logged |
+| Multi-user collective (L2) | `[EXTENDED]` — not supported | `[EXTENDED]` — share Gist URL with team |
+
+### Limitations vs. full L2 backend
+
+- **Gist rate limits**: GitHub's API rate limit is 5,000 requests/hr per token — adequate
+  for cadence-gated recording (not real-time per-message tracking)
+- **Concurrent writes**: If multiple agents run simultaneously, use `record --skill` sequentially.
+  Gist does not have write locking — concurrent updates may lose counts.
+- **Team sharing**: Share the Gist URL with teammates for read-only dashboards; each team
+  member should have their own Gist for write access.
+- **Max artifact storage**: Script caps at 50 stored artifacts per Gist to stay within
+  GitHub's 1 MB Gist size limit.
+
+> Full script: `scripts/ute_gist_backend.py`
+
+---
+
 ## §8  Platform Hook Integration `[ENFORCED with hooks backend]`
 
 > This section upgrades UTE's `[EXTENDED]` cross-session items to `[CORE]` by

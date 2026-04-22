@@ -29,6 +29,7 @@ When the user asks to **create, evaluate, optimize, install, or share a skill**:
 | "graph view" / "skill dependencies" / "技能图"           | GRAPH mode                        |
 | "collect session" / "record session" / "采集"            | COLLECT mode                      |
 | "benchmark" / "A/B test" / "基准测试" / "对比测试"        | BENCHMARK mode                    |
+| "compose skills" / "grasp plan" / "技能合成" / "组合技能"  | COMPOSE mode (run_grasp_compose.py) |
 
 ## v3.5.0 Quick Reference
 

@@ -97,3 +97,55 @@ Full protocol: `refs/self-review.md §2`
 
 ---
 
+### Statistical Multi-Run Evaluation (`--multi-run`) `[AVAILABLE]`
+
+> **When to use**: Targeting PLATINUM/GOLD certification, or when a single /eval
+> run places you within 30 pts of a tier boundary. The standard 4-phase pipeline
+> has inherent LLM-judge variance of ±20–40 pts in Phase 3 — a ±30 pt swing can
+> change the certification tier.
+
+**Activation**:
+```bash
+# Via script (recommended for production certification):
+python3 scripts/run_multi_eval.py --skill my-skill.md --runs 3
+
+# Inline in session (natural language):
+"run /eval 3 times and give me the median score with confidence interval"
+```
+
+**What the multi-run mode adds**:
+
+| Metric | Standard /eval | Multi-run (N=3) |
+|--------|---------------|-----------------|
+| Score | Single run | Median of N runs |
+| Variance | Unknown | CI = max–min spread |
+| Per-dim reliability | Unknown | CV% per dimension |
+| Borderline detection | No | Flags if within 30/1000 pts of tier |
+| Cost | 1 API call | N API calls (~$0.02–0.05) |
+
+**Interpreting results**:
+
+```
+multi-eval-report.md output example:
+
+  Median score : 478/700  (CI: ±12 pts)
+  Est. EVALUATE: ~683/1000 → BRONZE
+  Borderline   : NO  (nearest boundary: SILVER at 560/700, dist=82 pts)
+  High-variance: d3_workflow (CI=28 pts) ← fix this dimension
+
+  Recommendation: CERTIFIED BRONZE (statistical confidence: CI=24 pts)
+```
+
+**Decision rules**:
+
+| CI width (700-pt scale) | Action |
+|-------------------------|--------|
+| ≤ 20 pts | Safe to certify at median tier |
+| 20–40 pts | Certify at median tier, note uncertainty in registry |
+| > 40 pts | Fix high-CV dimensions first, then re-run |
+| Score within 21/700 of tier boundary | Run 1 additional pass; use conservative (lower) tier |
+
+> Script: `scripts/run_multi_eval.py` — full spec in `scripts/run_multi_eval.py` docstring
+
+---
+
